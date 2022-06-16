@@ -8,7 +8,7 @@ const unlinkFile = util.promisify(fs.unlink);
 const { uploadFile, deleteFile } = require("../utils/s3");
 const Post = require("../models/Post");
 const PostLike = require("../models/PostLike");
-const PlaceCreatedBy = require("../models/PlaceCreatedBy");
+const PlaceAddeddBy = require("../models/PlaceAddedBy");
 const ContributionPoint = require("../models/ContributionPoint");
 const SavePostPlace = require("../models/SavePostPlace");
 const Contribution = require("../models/Contribution");
@@ -196,7 +196,7 @@ exports.createPost = async (req, res) => {
     place.posts.push(post._id);
     await place.save();
 
-    //ADD PLACE IN PLACECREATEDBY TABLE AND CONTRIBUTION TABLE
+    //ADD PLACE IN PlaceAddeddBy TABLE AND CONTRIBUTION TABLE
     //FIND CONTRIBUTION OR CREATE NEW
     let contribution = await Contribution.findOne({ userId: user._id });
     if (!contribution) {
@@ -207,18 +207,18 @@ exports.createPost = async (req, res) => {
     contribution.photos.push(post._id);
     //Add to placeCreatedTableBy
     if (newPlaceCreated) {
-      await PlaceCreatedBy.create({
+      await PlaceAddeddBy.create({
         place: place._id,
         user: user._id,
       });
       contribution.added_places.push(place._id);
     } else {
       //ADD to contribution table if this place creation contribution is not added before
-      const findPostCreatedBy = await PlaceCreatedBy.findOne({
+      const findPostCreatedBy = await PlaceAddeddBy.findOne({
         place: place._id,
       });
       if (!findPostCreatedBy) {
-        await PlaceCreatedBy.create({
+        await PlaceAddeddBy.create({
           place: place._id,
           user: user._id,
         });
@@ -340,7 +340,7 @@ exports.editPost = async (req, res) => {
 
         //DELETE PLACE IF NO POST AVAILABLE
         if (place.posts.length === 0) {
-          const placeCreated = await PlaceCreatedBy.findOne({
+          const placeCreated = await PlaceAddeddBy.findOne({
             place: place._id,
           });
 
@@ -394,7 +394,7 @@ exports.editPost = async (req, res) => {
 
     //Add to placeCreatedTableBy
     if (newPlaceCreated) {
-      await PlaceCreatedBy.create({
+      await PlaceAddeddBy.create({
         place: place._id,
         user: authUser._id,
       });
@@ -406,11 +406,11 @@ exports.editPost = async (req, res) => {
       //IF PLACE IS SAME AND FIRST POST WITH COORDINATES CREATED
       if (samePlace) {
         //ADD to contribution table if this place creeation contribution is not added before
-        const findPostCreatedBy = await PlaceCreatedBy.findOne({
+        const findPostCreatedBy = await PlaceAddeddBy.findOne({
           place: place._id,
         });
         if (!findPostCreatedBy) {
-          await PlaceCreatedBy.create({
+          await PlaceAddeddBy.create({
             place: place._id,
             user: authUser._id,
           });
@@ -580,19 +580,19 @@ exports.deletePost = async (req, res) => {
     const place = await Place.findById(post.place);
     //DELETE PLACE if no more posts and remove review and contribution from user
     if (place.posts.length == 1) {
-      const placeCreatedBy = await PlaceCreatedBy.findOne({ place: place._id });
-      if (placeCreatedBy) {
-        const user = await User.findById(placeCreatedBy.user);
+      const PlaceAddeddBy = await PlaceAddeddBy.findOne({ place: place._id });
+      if (PlaceAddeddBy) {
+        const user = await User.findById(PlaceAddeddBy.user);
         const contribution = await Contribution.findOne({ userId: user._id });
         if (contribution) {
           contribution.added_places = contribution.added_places.filter(
-            (place) => place.toString() != placeCreatedBy.place.toString()
+            (place) => place.toString() != PlaceAddeddBy.place.toString()
           );
           await contribution.save();
         }
         user.total_contribution = contribution.calculateTotalContribution();
         await user.save();
-        await placeCreatedBy.remove();
+        await PlaceAddeddBy.remove();
       }
 
       if (place.reviewed_status === false) {
