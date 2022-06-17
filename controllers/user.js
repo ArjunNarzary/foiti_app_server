@@ -1281,7 +1281,6 @@ exports.setExpoToken = async (req, res) => {
 
       //IF no token existed before
       if(!hasToken){
-        console.log("Sending push notification setting");
         let notification = await Notification.findOne({ user: authUser._id });
         if (!notification) {
           notification = await Notification.create({
