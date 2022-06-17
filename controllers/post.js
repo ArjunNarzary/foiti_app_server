@@ -470,7 +470,10 @@ exports.viewPost = async (req, res) => {
       });
     }
 
-    const post = await Post.findById(postId).populate("user").populate("place");
+    const post = await Post.findById(postId)
+      .select("_id content user place caption like")
+      .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
+      .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
 
     if (!post || post.status === "deactivated") {
       errors.general = "Post not found";
@@ -516,7 +519,7 @@ exports.viewPost = async (req, res) => {
       let state = "";
       if (
         post.place.address.administrative_area_level_1 != null &&
-        post.place.types[0] != "administrative_area_level_1"
+        post.place.google_types[0] != "administrative_area_level_1"
       ) {
         state = post.place.address.administrative_area_level_1;
       } else if (post.place.address.administrative_area_level_2 != null) {

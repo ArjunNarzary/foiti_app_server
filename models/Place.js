@@ -132,7 +132,7 @@ placeSchema.virtual("avgRating").get(function () {
 //SET VIRTUAL FOR FOLLOWING COUNT
 placeSchema.virtual("display_address_for_own_country").get(function () {
   let address =
-    this.types[0] != "administrative_area_level_1"
+    this.google_types[0] != "administrative_area_level_1"
       ? this.address.administrative_area_level_1
       : "";
   if (

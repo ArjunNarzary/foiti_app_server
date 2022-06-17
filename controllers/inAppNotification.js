@@ -124,7 +124,6 @@ exports.deleteInAppNotification = async (req, res) => {
     try{
         const { authUser, notification } = req.body;
         const appNotification = await InAppNotification.findById(notification);
-        console.log("appNotification == ", appNotification);
         if(!appNotification){
             return res.status(404).json({
                 success: false,
