@@ -12,15 +12,15 @@ exports.validateUser = (method) => {
           .withMessage("Please provide email address")
           .isEmail()
           .withMessage("Please provide valid email address")
-          .bail()
-          .custom(async (val) => {
-            return await User.findOne({ email: val }).then((user) => {
-              if (user) {
-                return Promise.reject("Email already exist");
-              }
-              return true;
-            });
-          }),
+          .bail(),
+          // .custom(async (val) => {
+          //   return await User.findOne({ email: val }).then((user) => {
+          //     if (user) {
+          //       return Promise.reject("Email already exist");
+          //     }
+          //     return true;
+          //   });
+          // }),
         body("password")
           .trim()
           .exists({ checkFalsy: true })

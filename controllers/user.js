@@ -109,7 +109,7 @@ exports.registerUser = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.log(error.message);
+    console.log(error);
     errors.general = "Something went wrong";
     // errors.general = error.message;
     res.status(500).json({
@@ -1382,6 +1382,7 @@ exports.joinRequest = async (req, res) => {
   let errors = {};
   try{
     const validate = validationResult(req);
+    console.lo(req);
     if (!validate.isEmpty()) {
       return res.status(400).json({
         success: false,
