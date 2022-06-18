@@ -47,7 +47,7 @@ exports.autocompletePlace = async (req, res) => {
     const results = await Place.find({
       name: { $regex: `${trimedPlace}`, $options: "i" },
     })
-      .select("_id name address cover_photo short_address local_address types")
+      .select("_id name address cover_photo short_address local_address types google_types")
       .limit(count);
 
     //FORMAT ADDRESS
@@ -66,7 +66,7 @@ exports.autocompletePlace = async (req, res) => {
         let state = "";
         if (
           place.address.administrative_area_level_1 != null &&
-          place.types[0] != "administrative_area_level_1"
+          place.google_types[0] != "administrative_area_level_1"
         ) {
           state = place.address.administrative_area_level_1;
         } else if (place.address.administrative_area_level_2 != null) {
@@ -173,7 +173,7 @@ exports.getPlace = async (req, res) => {
       let state = "";
       if (
         place.address.administrative_area_level_1 != null &&
-        place.types[0] != "administrative_area_level_1"
+        place.google_types[0] != "administrative_area_level_1"
       ) {
         state = place.address.administrative_area_level_1;
       } else if (place.address.administrative_area_level_2 != null) {
@@ -335,7 +335,7 @@ exports.getPlacePosts = async (req, res) => {
 
     let posts = [];
 
-    if (place.types[0] === "country") {
+    if (place.google_types[0] === "country") {
       const places = await Place.find({})
         .where("address.country")
         .equals(place.address.country)
@@ -346,7 +346,7 @@ exports.getPlacePosts = async (req, res) => {
             posts = [...posts, ...p.posts];
           });
         });
-    } else if (place.types[0] === "administrative_area_level_1") {
+    } else if (place.google_types[0] === "administrative_area_level_1") {
       const places = await Place.find({})
         .where("address.administrative_area_level_1")
         .equals(place.address.administrative_area_level_1)
@@ -359,7 +359,7 @@ exports.getPlacePosts = async (req, res) => {
             posts = [...posts, ...p.posts];
           });
         });
-    } else if (place.types[0] === "administrative_area_level_2") {
+    } else if (place.google_types[0] === "administrative_area_level_2") {
       const places = await Place.find({})
         .where("address.administrative_area_level_2")
         .equals(place.address.administrative_area_level_2)
@@ -374,7 +374,7 @@ exports.getPlacePosts = async (req, res) => {
             posts = [...posts, ...p.posts];
           });
         });
-    } else if (place.types[0] === "locality") {
+    } else if (place.google_types[0] === "locality") {
       if (
         place.address.administrative_area_level_2 != "" ||
         place.address.administrative_area_level_2 !== undefined
