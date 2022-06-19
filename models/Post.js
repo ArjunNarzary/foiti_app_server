@@ -87,6 +87,7 @@ const postSchema = new mongoose.Schema(
       type: String,
       enum: ["silent", "active", "deactivated", "blocked"],
     },
+    last_status:String,
     terminated: {
       type: Boolean,
       default: false,

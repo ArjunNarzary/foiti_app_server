@@ -165,6 +165,12 @@ exports.loginUser = async (req, res) => {
       });
     }
 
+    //Active user if deactivated
+    if (user.account_status === "deactivated") {
+      user.account_status = user.last_account_status || "silent";
+      await user.save();
+    }
+
     const token = await user.generateToken();
 
     user.password = "";

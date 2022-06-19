@@ -130,6 +130,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["silent", "active", "deactivated"],
   },
+  last_account_status: String,
   terminated: {
     type: Boolean,
     default: false,
