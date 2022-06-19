@@ -514,31 +514,31 @@ exports.viewPost = async (req, res) => {
     }
 
     if (post.place.address.short_country == country) {
-      post.place.local_address = post.display_address_for_own_country;
+      post.place.local_address = post.place.display_address_for_own_country;
     } else {
-      let state = "";
-      if (
-        post.place.address.administrative_area_level_1 != null &&
-        post.place.google_types[0] != "administrative_area_level_1"
-      ) {
-        state = post.place.address.administrative_area_level_1;
-      } else if (post.place.address.administrative_area_level_2 != null) {
-        state = post.place.address.administrative_area_level_2;
-      } else if (post.place.address.locality != null) {
-        state = post.place.address.locality;
-      } else if (post.place.address.sublocality_level_1 != null) {
-        state = post.place.address.sublocality_level_1;
-      } else if (post.place.address.sublocality_level_2 != null) {
-        state = post.place.address.sublocality_level_2;
-      } else if (post.place.address.neighborhood != null) {
-        state = post.place.address.neighborhood;
-      }
+      // let state = "";
+      // if (
+      //   post.place.address.administrative_area_level_1 != null &&
+      //   post.place.google_types[0] != "administrative_area_level_1"
+      // ) {
+      //   state = post.place.address.administrative_area_level_1;
+      // } else if (post.place.address.administrative_area_level_2 != null) {
+      //   state = post.place.address.administrative_area_level_2;
+      // } else if (post.place.address.locality != null) {
+      //   state = post.place.address.locality;
+      // } else if (post.place.address.sublocality_level_1 != null) {
+      //   state = post.place.address.sublocality_level_1;
+      // } else if (post.place.address.sublocality_level_2 != null) {
+      //   state = post.place.address.sublocality_level_2;
+      // } else if (post.place.address.neighborhood != null) {
+      //   state = post.place.address.neighborhood;
+      // }
 
-      if (state != "") {
-        state = state + ", ";
-      }
-
-      post.place.short_address = state + post.place.address.country;
+      // if (state != "") {
+      //   state = state;
+      // }
+      //New Country Condition
+      post.place.short_address = post.place.display_address_for_other_country;
     }
 
     return res.status(200).json({
@@ -901,24 +901,10 @@ exports.randomPosts = async (req, res) => {
     randomPosts.forEach((post) => {
       // console.log("post1", post.display_address_for_own_country);
       if (post.place.address.short_country == country) {
-        post.place.local_address = post.display_address_for_own_country;
+        post.place.local_address = post.place.display_address_for_own_country;
       } else {
-        let state = "";
-        if (post.place.address.administrative_area_level_1 != null) {
-          state = post.place.address.administrative_area_level_1;
-        } else if (post.place.address.administrative_area_level_2 != null) {
-          state = post.place.address.administrative_area_level_2;
-        } else if (post.place.address.locality != null) {
-          state = post.place.address.locality;
-        } else if (post.place.address.sublocality_level_1 != null) {
-          state = post.place.address.sublocality_level_1;
-        } else if (post.place.address.sublocality_level_2 != null) {
-          state = post.place.address.sublocality_level_2;
-        } else if (post.place.address.neighborhood != null) {
-          state = post.place.address.neighborhood;
-        }
 
-        post.place.short_address = state + ", " + post.place.address.country;
+        post.place.short_address = post.place.display_address_for_other_country;
       }
     });
 
@@ -954,7 +940,7 @@ exports.viewFollowersPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like comments"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address types")
+      .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -980,7 +966,7 @@ exports.viewFollowersPosts = async (req, res) => {
           "user",
           "name username total_contribution profileImage foiti_ambassador"
         )
-        .populate("place", "name address short_address local_address types")
+        .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
         .sort({ createdAt: -1 })
         .skip(suggestedSkip)
         .limit(limit);
@@ -1012,47 +998,10 @@ exports.viewFollowersPosts = async (req, res) => {
     }
 
     posts.forEach((post) => {
-      // console.log("post1", post.display_address_for_own_country);
       if (post.place.address.short_country == country) {
-        post.place.local_address = post.display_address_for_own_country;
+        post.place.local_address = post.place.display_address_for_own_country;
       } else {
-        let state = "";
-        if (
-          post.place.address.administrative_area_level_1 != null &&
-          post.place.types[0] != "administrative_area_level_1"
-        ) {
-          state = post.place.address.administrative_area_level_1;
-        } else if (
-          post.place.address.administrative_area_level_2 != null &&
-          post.place.types[0] != "administrative_area_level_2"
-        ) {
-          state = post.place.address.administrative_area_level_2;
-        } else if (
-          post.place.address.locality != null &&
-          post.place.types[0] != "locality"
-        ) {
-          state = post.place.address.locality;
-        } else if (
-          post.place.address.sublocality_level_1 != null &&
-          post.place.types[0] != "sublocality_level_1"
-        ) {
-          state = post.place.address.sublocality_level_1;
-        } else if (
-          post.place.address.sublocality_level_2 != null &&
-          post.place.types[0] != "sublocality_level_2"
-        ) {
-          state = post.place.address.sublocality_level_2;
-        } else if (
-          post.place.address.neighborhood != null &&
-          post.place.types[0] != "neighborhood"
-        ) {
-          state = post.place.address.neighborhood;
-        }
-        if (state != "") {
-          post.place.short_address = state + ", " + post.place.address.country;
-        } else {
-          post.place.short_address = post.place.address.country;
-        }
+        post.place.short_address = post.place.display_address_for_other_country;
       }
     });
 

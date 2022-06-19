@@ -80,11 +80,9 @@ exports.autocompletePlace = async (req, res) => {
         } else if (place.address.neighborhood != null) {
           state = place.address.neighborhood;
         }
-        if (state != "") {
-          state = state + ", ";
-        }
+        
 
-        place.short_address = state + place.address.country;
+        place.short_address = state + (place.address.country != undefined ? ", "+place.address.country : "");
       }
     });
 
@@ -187,11 +185,9 @@ exports.getPlace = async (req, res) => {
       } else if (place.address.neighborhood != null) {
         state = place.address.neighborhood;
       }
-      if (state != "") {
-        state = state + ", ";
-      }
+      
 
-      place.short_address = state + place.address.country;
+      place.short_address = state + (place.address.country != undefined ? ", "+place.address.country : "");
     }
 
     return res.status(200).json({
@@ -265,23 +261,25 @@ exports.addEditReview = async (req, res) => {
     if (!contribution) {
       contribution = await Contribution({ userId: authUser._id });
     }
-    let review_200_characters = review.length;
+    if (review != "" && review != undefined){
+      let review_200_characters = review.length;
     //Add contribution for review
-    if ((review_200_characters) => 200) {
-      if (!contribution.review_200_characters.includes(reviewModel._id)) {
-        contribution.review_200_characters.push(reviewModel._id);
+      if (review_200_characters >= 200) {
+        if (!contribution.review_200_characters.includes(reviewModel._id)) {
+          contribution.review_200_characters.push(reviewModel._id);
+        }
+      } else {
+        if (contribution.review_200_characters.includes(reviewModel._id)) {
+          contribution.review_200_characters =
+            contribution.review_200_characters.filter(
+              (review) => review.toString() != reviewModel._id.toString()
+            );
+        }
       }
-    } else {
-      if (contribution.review_200_characters.includes(reviewModel._id)) {
-        contribution.review_200_characters =
-          contribution.review_200_characters.filter(
-            (review) => review.toString() != reviewModel._id.toString()
-          );
-      }
-    }
 
-    if (!contribution.reviews.includes(reviewModel._id)) {
-      contribution.reviews.push(reviewModel._id);
+      if (!contribution.reviews.includes(reviewModel._id)) {
+        contribution.reviews.push(reviewModel._id);
+      }
     }
 
     //Add contribution for rating

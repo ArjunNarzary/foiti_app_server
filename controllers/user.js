@@ -444,13 +444,10 @@ exports.viewOwnProfile = async (req, res) => {
     const posts = await Post.find({ user: user._id }).populate("place");
 
     const totalPosts = posts.length;
-    const post1 = await Post.find({ user: user._id })
-        // .where("coordinate_status")
-        // .ne(false)
-        .populate("place")
+
     //Unique Place
     let helpNavigate = 0;
-    const totalPlaces = post1.map((post) => {
+    const totalPlaces = posts.map((post) => {
       if(post.location_viewers_count != undefined){
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
@@ -464,9 +461,15 @@ exports.viewOwnProfile = async (req, res) => {
 
     //Country Visited
     let countryVisited = 0;
-    const totalCountries = post1.map((post) => {
+    const totalCountriesSaved = posts.map((post) => {
       return post.place.address.country;
     });
+
+    const totalCountries = totalCountriesSaved.filter(c => {
+      return c != undefined;
+    });
+
+
     const uniqueCountryVisited = [...new Set(totalCountries)];
 
     const countryVisitedCount = uniqueCountryVisited.length;
@@ -561,9 +564,14 @@ exports.viewOthersProfile = async (req, res) => {
 
     //Country Visited
     let countryVisited = 0;
-    const totalCountries = posts.map((post) => {
-          return post.place.address.country;
-        });
+    const totalCountriesSaved = posts.map((post) => {
+      return post.place.address.country;
+    });
+
+    const totalCountries = totalCountriesSaved.filter(c =>{
+      return c != undefined;
+    });
+
     const uniqueCountryVisited = [...new Set(totalCountries)];
     
     const countryVisitedCount =  uniqueCountryVisited.length;
@@ -694,24 +702,9 @@ exports.viewAllPost = async (req, res) => {
       // console.log("post1", post.display_address_for_own_country);
       if (post.place.address.short_country == country) {
         post.place.address.country = "";
-        post.place.local_address = post.display_address_for_own_country;
+        post.place.local_address = post.place.display_address_for_own_country;
       } else {
-        let state = "";
-        if (post.place.address.administrative_area_level_1 != null) {
-          state = post.place.address.administrative_area_level_1;
-        } else if (post.place.address.administrative_area_level_2 != null) {
-          state = post.place.address.administrative_area_level_2;
-        } else if (post.place.address.locality != null) {
-          state = post.place.address.locality;
-        } else if (post.place.address.sublocality_level_1 != null) {
-          state = post.place.address.sublocality_level_1;
-        } else if (post.place.address.sublocality_level_2 != null) {
-          state = post.place.address.sublocality_level_2;
-        } else if (post.place.address.neighborhood != null) {
-          state = post.place.address.neighborhood;
-        }
-
-        post.place.short_address = state + ", " + post.place.address.country;
+        post.place.short_address = post.place.display_address_for_other_country;
       }
     });
 
