@@ -8,7 +8,7 @@ const unlinkFile = util.promisify(fs.unlink);
 const { uploadFile, deleteFile } = require("../utils/s3");
 const Post = require("../models/Post");
 const PostLike = require("../models/PostLike");
-const PlaceAddeddBy = require("../models/PlaceAddedBy");
+const PlaceAddedBy = require("../models/PlaceAddedBy");
 const ContributionPoint = require("../models/ContributionPoint");
 const SavePostPlace = require("../models/SavePostPlace");
 const Contribution = require("../models/Contribution");
@@ -196,7 +196,7 @@ exports.createPost = async (req, res) => {
     place.posts.push(post._id);
     await place.save();
 
-    //ADD PLACE IN PlaceAddeddBy TABLE AND CONTRIBUTION TABLE
+    //ADD PLACE IN PlaceAddedBy TABLE AND CONTRIBUTION TABLE
     //FIND CONTRIBUTION OR CREATE NEW
     let contribution = await Contribution.findOne({ userId: user._id });
     if (!contribution) {
@@ -207,18 +207,18 @@ exports.createPost = async (req, res) => {
     contribution.photos.push(post._id);
     //Add to placeCreatedTableBy
     if (newPlaceCreated) {
-      await PlaceAddeddBy.create({
+      await PlaceAddedBy.create({
         place: place._id,
         user: user._id,
       });
       contribution.added_places.push(place._id);
     } else {
       //ADD to contribution table if this place creation contribution is not added before
-      const findPostCreatedBy = await PlaceAddeddBy.findOne({
+      const findPostCreatedBy = await PlaceAddedBy.findOne({
         place: place._id,
       });
       if (!findPostCreatedBy) {
-        await PlaceAddeddBy.create({
+        await PlaceAddedBy.create({
           place: place._id,
           user: user._id,
         });
@@ -340,7 +340,7 @@ exports.editPost = async (req, res) => {
 
         //DELETE PLACE IF NO POST AVAILABLE
         if (place.posts.length === 0) {
-          const placeCreated = await PlaceAddeddBy.findOne({
+          const placeCreated = await PlaceAddedBy.findOne({
             place: place._id,
           });
 
@@ -394,7 +394,7 @@ exports.editPost = async (req, res) => {
 
     //Add to placeCreatedTableBy
     if (newPlaceCreated) {
-      await PlaceAddeddBy.create({
+      await PlaceAddedBy.create({
         place: place._id,
         user: authUser._id,
       });
@@ -406,11 +406,11 @@ exports.editPost = async (req, res) => {
       //IF PLACE IS SAME AND FIRST POST WITH COORDINATES CREATED
       if (samePlace) {
         //ADD to contribution table if this place creeation contribution is not added before
-        const findPostCreatedBy = await PlaceAddeddBy.findOne({
+        const findPostCreatedBy = await PlaceAddedBy.findOne({
           place: place._id,
         });
         if (!findPostCreatedBy) {
-          await PlaceAddeddBy.create({
+          await PlaceAddedBy.create({
             place: place._id,
             user: authUser._id,
           });
@@ -471,7 +471,7 @@ exports.viewPost = async (req, res) => {
     }
 
     const post = await Post.findById(postId)
-      .select("_id content user place caption like")
+      .select("_id content user place caption like viewers")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
       .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
 
@@ -583,19 +583,19 @@ exports.deletePost = async (req, res) => {
     const place = await Place.findById(post.place);
     //DELETE PLACE if no more posts and remove review and contribution from user
     if (place.posts.length == 1) {
-      const PlaceAddeddBy = await PlaceAddeddBy.findOne({ place: place._id });
-      if (PlaceAddeddBy) {
-        const user = await User.findById(PlaceAddeddBy.user);
+      const placeAddedBy = await PlaceAddedBy.findOne({ place: place._id });
+      if (placeAddedBy) {
+        const user = await User.findById(placeAddedBy.user);
         const contribution = await Contribution.findOne({ userId: user._id });
         if (contribution) {
           contribution.added_places = contribution.added_places.filter(
-            (place) => place.toString() != PlaceAddeddBy.place.toString()
+            (place) => place.toString() != placeAddedBy.place.toString()
           );
           await contribution.save();
         }
         user.total_contribution = contribution.calculateTotalContribution();
         await user.save();
-        await PlaceAddeddBy.remove();
+        await placeAddedBy.remove();
       }
 
       if (place.reviewed_status === false) {
