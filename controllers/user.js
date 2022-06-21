@@ -94,6 +94,7 @@ exports.registerUser = async (req, res) => {
       //CHANGES BELOW IN FUTURE
       upload_status: true,
       account_status: "silent",
+      last_account_status: "silent",
     };
 
     const user = await User.create(newUserData);
@@ -542,6 +543,8 @@ exports.viewOthersProfile = async (req, res) => {
         message: "This account has been terminated",
       });
     }
+
+    // console.log(profileUser);
 
     //CHECK WHEATHER FOLLOWED CURRENT USER
     let isFollowed = false;
@@ -1412,6 +1415,21 @@ exports.joinRequest = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: errors,
+    })
+  }
+}
+
+//Deactivate User
+exports.deactivate = async (req, res) => {
+  let errors = {};
+  try{
+
+  }catch(error){
+    console.log(error);
+    errors.general ="Something went wrong, please try again."
+    res.status(500).json({
+      success: false,
+      message: errors
     })
   }
 }

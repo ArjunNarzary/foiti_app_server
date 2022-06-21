@@ -63,26 +63,7 @@ exports.autocompletePlace = async (req, res) => {
       if (place.address.short_country == country) {
         place.local_address = place.display_address_for_own_country;
       } else {
-        let state = "";
-        if (
-          place.address.administrative_area_level_1 != null &&
-          place.google_types[0] != "administrative_area_level_1"
-        ) {
-          state = place.address.administrative_area_level_1;
-        } else if (place.address.administrative_area_level_2 != null) {
-          state = place.address.administrative_area_level_2;
-        } else if (place.address.locality != null) {
-          state = place.address.locality;
-        } else if (place.address.sublocality_level_1 != null) {
-          state = place.address.sublocality_level_1;
-        } else if (place.address.sublocality_level_2 != null) {
-          state = place.address.sublocality_level_2;
-        } else if (place.address.neighborhood != null) {
-          state = place.address.neighborhood;
-        }
-        
-
-        place.short_address = state + (place.address.country != undefined ? ", "+place.address.country : "");
+        place.short_address = place.display_address_for_other_country;
       }
     });
 
@@ -168,26 +149,7 @@ exports.getPlace = async (req, res) => {
     if (place.address.short_country == country) {
       place.local_address = place.display_address_for_own_country;
     } else {
-      let state = "";
-      if (
-        place.address.administrative_area_level_1 != null &&
-        place.google_types[0] != "administrative_area_level_1"
-      ) {
-        state = place.address.administrative_area_level_1;
-      } else if (place.address.administrative_area_level_2 != null) {
-        state = place.address.administrative_area_level_2;
-      } else if (place.address.locality != null) {
-        state = place.address.locality;
-      } else if (place.address.sublocality_level_1 != null) {
-        state = place.address.sublocality_level_1;
-      } else if (place.address.sublocality_level_2 != null) {
-        state = place.address.sublocality_level_2;
-      } else if (place.address.neighborhood != null) {
-        state = place.address.neighborhood;
-      }
-      
-
-      place.short_address = state + (place.address.country != undefined ? ", "+place.address.country : "");
+      place.short_address = place.display_address_for_other_country;
     }
 
     return res.status(200).json({

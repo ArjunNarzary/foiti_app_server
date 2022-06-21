@@ -87,7 +87,10 @@ const postSchema = new mongoose.Schema(
       type: String,
       enum: ["silent", "active", "deactivated", "blocked"],
     },
-    last_status:String,
+    deactivated:{
+      type:Boolean,
+      default:false,
+    },
     terminated: {
       type: Boolean,
       default: false,
@@ -152,6 +155,9 @@ postSchema.pre("save", function (next) {
   }
   if (this.isModified("location_viewers")) {
     this.location_viewers_count = this.location_viewers.length;
+  }
+  if (this.isModified("status")) {
+    this.last_status = this.status;
   }
   next();
 });

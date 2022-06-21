@@ -190,6 +190,7 @@ exports.createPost = async (req, res) => {
       content,
       caption: req.body.caption,
       status: user.account_status,
+      last_status: user.account_status,
     });
 
     //ADD POST IN PLACE
@@ -474,14 +475,15 @@ exports.viewPost = async (req, res) => {
       .select("_id content user place caption like viewers")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
       .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
-
-    if (!post || post.status === "deactivated") {
+    if (!post || post.status === "deactivated" || post.terminated === true) {
       errors.general = "Post not found";
       return res.status(404).json({
         success: false,
         message: errors,
       });
     }
+
+    // console.log(post.user);
 
     //Insert in post view Table
     if (post.user._id.toString() !== authUser._id.toString()) {
@@ -1000,6 +1002,7 @@ exports.viewFollowersPosts = async (req, res) => {
     posts.forEach((post) => {
       if (post.place.address.short_country == country) {
         post.place.local_address = post.place.display_address_for_own_country;
+        // console.log("dasd", post.place.local_address);
       } else {
         post.place.short_address = post.place.display_address_for_other_country;
       }

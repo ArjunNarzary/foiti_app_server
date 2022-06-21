@@ -26,6 +26,7 @@ const {
   getNotificationSettings,
   setNotificationSettings,
   joinRequest,
+  deactivate,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -96,6 +97,8 @@ router.route("/notification").get(isAuthenticated, getNotificationSettings)
       .post(isAuthenticated, setNotificationSettings);
 //JOIN REQUEST
 router.route("/join").post(validateUser("joinRequest"), joinRequest);
+//Deactivated user
+router.route("/deactivate").post(isAuthenticated, deactivate);
 
 //FOLLOW UNFOLLOW VIEW OTHERS PROFILE USER
 router
