@@ -472,10 +472,11 @@ exports.viewPost = async (req, res) => {
     }
 
     const post = await Post.findById(postId)
-      .select("_id content user place caption like viewers")
+      .select("_id content user place caption like viewers status terminated deactivated")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
       .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
-    if (!post || post.status === "deactivated" || post.terminated === true) {
+    
+      if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
       errors.general = "Post not found";
       return res.status(404).json({
         success: false,
@@ -843,28 +844,22 @@ exports.randomPosts = async (req, res) => {
       //Random post form post screen, showing others post
       posts = await Post.find({})
         // .or([{ 'status': 'active' }, { 'status': 'silent' }])
-        .where("status")
-        .equals("active")
-        .where("coordinate_status")
-        .ne(false)
-        .where("terminated")
-        .ne(true)
-        .where("user")
-        .ne(authUser._id)
+        .where("status").equals("active")
+        .where("coordinate_status").ne(false)
+        .where('deactivated').ne(true)
+        .where("terminated").ne(true)
+        .where("user").ne(authUser._id)
         .populate("place")
         .limit(6)
         .sort({ createdAt: -1 });
     } else {
       //Random post form explorer screen, showing all posts
       posts = await Post.find({})
-        .where("status")
-        .equals("active")
-        .where("coordinate_status")
-        .ne(false)
-        .where("terminated")
-        .ne(true)
-        .where("user")
-        .ne(authUser._id)
+        .where("status").equals("active")
+        .where("coordinate_status").ne(false)
+        .where('deactivated').ne(true)
+        .where("terminated").ne(true)
+        .where("user").ne(authUser._id)
         .populate("place")
         .skip(skip)
         .limit(limit)
@@ -934,10 +929,10 @@ exports.viewFollowersPosts = async (req, res) => {
     let skipCount = skip;
     let suggestedSkipCount = suggestedSkip;
     posts = await Post.find({ user: { $in: authUser.following } })
-      .where("status")
-      .equals("active")
-      .where("coordinate_status")
-      .equals(true)
+      .where("status").equals("active")
+      .where("coordinate_status").equals(true)
+      .where('deactivated').ne(true)
+      .where("terminated").ne(true)
       .select(
         "_id user place createdAt status coordinate_status content caption like comments"
       )
@@ -957,10 +952,10 @@ exports.viewFollowersPosts = async (req, res) => {
           { user: { $ne: authUser._id } },
         ],
       })
-        .where("status")
-        .equals("active")
-        .where("coordinate_status")
-        .equals(true)
+        .where("status").equals("active")
+        .where("coordinate_status").equals(true)
+        .where('deactivated').ne(true)
+        .where("terminated").ne(true)
         .select(
           "_id user place createdAt status coordinate_status content caption like comments"
         )

@@ -376,10 +376,12 @@ exports.getPlacePosts = async (req, res) => {
         .where("place")
         .equals(place_id)
         .where("status").equals("active")
+        .where('deactivated').ne(true)
+        .where("terminated").ne(true)
         .sort({ createdAt: -1 });
     }
 
-    posts = posts.filter((post) => post.status === "active");
+    posts = posts.filter((post) => post.status === "active" && post.deactivated !== true && post.terminated !== true);
 
     return res.status(200).json({
       success: true,

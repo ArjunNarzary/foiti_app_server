@@ -167,9 +167,10 @@ exports.loginUser = async (req, res) => {
     }
 
     //Active user if deactivated
-    if (user.account_status === "deactivated") {
+    if (user.account_status == "deactivated") {
       user.account_status = user.last_account_status || "silent";
       await user.save();
+      await Post.updateMany({ user: user._id }, { deactivated: false });
     }
 
     const token = await user.generateToken();
@@ -555,6 +556,7 @@ exports.viewOthersProfile = async (req, res) => {
     //TOTOAL NUMBER
     const posts = await Post.find({ user: profileUser._id })
       .or([{ 'status': 'active' }, { 'status': 'silent' }])
+      .where('deactivated').ne(true)
       // .where('coordinate_status').ne(false)
       .where('terminated').ne(true)
       .populate("place");
@@ -646,8 +648,8 @@ exports.viewAllPost = async (req, res) => {
           "_id name user place content coordinate_status display_address_for_own_country updatedAt"
         )
         .populate("place")
-        .where("user")
-        .equals(profileId)
+        .where("user").equals(profileId)
+        .where('deactivated').ne(true)
         .sort({ createdAt: -1 })
         .skip(parseInt(skip))
         .limit(parseInt(limit));
@@ -662,6 +664,7 @@ exports.viewAllPost = async (req, res) => {
           .equals(profileId)
           .populate("place")
           .or([{ 'status': 'active' }, { 'status': 'silent' }])
+          .where('deactivated').ne(true)
           .where('terminated').ne(true)
           .sort({ createdAt: -1 })
           .skip(parseInt(skip))
@@ -675,6 +678,7 @@ exports.viewAllPost = async (req, res) => {
           .equals(profileId)
           .or([{ 'status': 'active' }, { 'status': 'silent' }])
           .where('coordinate_status').ne(false)
+          .where('deactivated').ne(true)
           .where('terminated').ne(true)
           .populate("place")
           .sort({ createdAt: -1 })
@@ -1423,6 +1427,27 @@ exports.joinRequest = async (req, res) => {
 exports.deactivate = async (req, res) => {
   let errors = {};
   try{
+    const { authUser, password } = req.body;
+    const user = await User.findById(authUser._id).select("+password");
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      errors.password = "Password does not match";
+      return res.status(401).json({
+        success: false,
+        message: errors,
+      });
+    }
+    // const l_status = user.account_status
+    user.last_account_status = user.account_status;
+    user.account_status = "deactivated";
+    await user.save();
+    await Post.updateMany({ user: user._id }, { deactivated : true});
+
+    return res.status(200).json({
+      success: true,
+      message: "Your account has been deactivated"
+    })
 
   }catch(error){
     console.log(error);
