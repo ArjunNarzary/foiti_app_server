@@ -14,6 +14,7 @@ const crypto = require("crypto");
 const { sendEmail } = require("../utils/sentEmail");
 const { getCountry } = require("../utils/getCountry");
 const RecommendedTraveller = require("../models/RecommendedTraveller");
+const Contribution = require("../models/Contribution");
 const Notification = require("../models/Notification");
 const JoinRequest = require("../models/JoinRequest");
 const { deleteNotificationOnUnfollow, sendFollowNotification } = require("../utils/sendInAppNotifiation");
@@ -959,6 +960,36 @@ exports.updatePassword = async (req, res) => {
     });
   }
 };
+
+//Total number of Contribution
+exports.contributions = async (req, res) => {
+  errors = {};
+  try {
+    const { userId } = req.params;
+    const contribution = await Contribution.findOne({userId})
+    
+    if(!contribution){
+      errors.general = "No contribution found";
+      res.status(400).json({
+        success: false,
+        message: errors
+      });
+    }
+
+    res.status(200).json({
+      contribution,
+      success: true
+    })
+  } catch (error) {
+    errors.general = "Server error"
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
 
 //VIEW FOLLOW DETAILS
 exports.viewFollowDetails = async (req, res) => {
