@@ -28,6 +28,8 @@ const {
   joinRequest,
   deactivate,
   contributions,
+  addCurrentLocation,
+  removeCurrentLocation,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -48,7 +50,9 @@ router
 router
   .route("/")
   .put(isAuthenticated, validateUser("editProfile"), editProfile)
-  .get(isAuthenticated, viewOwnProfile);
+  .get(isAuthenticated, viewOwnProfile)
+  .post(isAuthenticated, addCurrentLocation)
+  .delete(isAuthenticated, removeCurrentLocation);
 
 //View posts of perticular user
 router.route("/posts/:id").post(isAuthenticated, viewAllPost);

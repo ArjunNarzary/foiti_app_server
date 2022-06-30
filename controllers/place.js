@@ -444,3 +444,73 @@ exports.addPlaceLocationClickedDetails = async (req, res) => {
     });
   }
 };
+
+//PLACES VISITED
+exports.placesVisited = async(req, res) =>{
+  let errors = {};
+  try{
+    const { userId } = req.params;
+    const { ip } = req.headers;
+    if (!ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user"
+      });
+    }
+    let posts = [];
+    const distPost = await Post.find({ user:userId }).distinct('place');
+
+    const promises = distPost.map(async (id) => {
+      return Post.findOne({ $and: [{ user: userId }, { place: id }] })
+        .where('status').equals('active')
+        .where('deactivated').ne(true)
+        .where('terminated').ne(true)
+        .select('content place status deactivated terminated')
+        .populate('place');
+
+    });
+    if(distPost.length > 0){
+      posts = await Promise.all(promises);
+    }
+
+    if(posts.length == 0){
+      errors.general = "No posts found";
+      console.log(errors);
+      return res.status(404).json({
+        success: false,
+        message: errors
+      });
+    }
+
+    //FORMAT ADDRESS
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    
+    posts.forEach((post) => {
+      if (post.place.address.short_country == country) {
+        post.place.local_address = post.place.display_address_for_own_country;
+      } else {
+        post.place.short_address = post.place.display_address_for_other_country;
+      }
+    });
+
+    return res.status(200).json({
+      posts,
+      success: true,
+    });
+
+  }catch(error){
+    errors.general = "Fetching data failed. Please try again";
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}

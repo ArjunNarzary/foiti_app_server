@@ -19,8 +19,7 @@ exports.sendEmail = async (options) => {
   });
 
   const mailOptions = {
-    from: "no-replay@foiti.com",
-    // from: process.env.SMTP_USER,
+    from: options.from,
     to: options.email,
     subject: options.subject,
     html: `
@@ -78,4 +77,50 @@ exports.sendEmail = async (options) => {
   };
 
     await transporter.sendMail(mailOptions);
+};
+
+exports.sendSupportEmail = async (options) => {
+
+  // SES transporter
+  let transporter = nodemailer.createTransport({
+    SES: new AWS.SES({
+      region: process.env.AWS_BUCKET_REGION,
+      apiVersion: "2012-10-17",
+    }),
+  });
+
+  const mailOptions = {
+    from: options.from,
+    to: options.email,
+    replyTo: options.user,
+    subject: options.subject,
+    html: `
+          <head>
+            <style>
+            .container:{
+              padding: 0 5rem;
+            }
+            .textSize{
+                  margin: 0 1rem; 
+                  font-size:0.8rem;
+                }
+              @media only screen and (max-width: 800px) {
+                .textSize{
+                  margin: 0 0.5rem; 
+                  font-size:0.5rem;
+                } 
+                .container:{
+                  padding: 0;
+                }
+              }
+            </style>
+          </head>
+          <body style="container">
+          <div style="background-color:#fff">
+            ${options.html}
+          </div>
+          </body>`,
+  };
+
+  await transporter.sendMail(mailOptions);
 };

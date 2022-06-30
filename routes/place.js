@@ -6,6 +6,7 @@ const {
   autocompletePlace,
   getPlacePosts,
   addPlaceLocationClickedDetails,
+  placesVisited,
 } = require("../controllers/place");
 const router = express.Router();
 
@@ -26,6 +27,10 @@ router
 router
   .route("/directionClick/:id")
   .post(isAuthenticated, addPlaceLocationClickedDetails);
+  //PLACES VISITED
+router
+  .route("/visited/:userId")
+  .get(isAuthenticated, placesVisited);
 
 //GET PLACE
 router

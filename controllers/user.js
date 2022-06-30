@@ -18,6 +18,7 @@ const Contribution = require("../models/Contribution");
 const Notification = require("../models/Notification");
 const JoinRequest = require("../models/JoinRequest");
 const { deleteNotificationOnUnfollow, sendFollowNotification } = require("../utils/sendInAppNotifiation");
+const CurrentAddress = require("../models/CurrentAddress");
 var ObjectId = require('mongoose').Types.ObjectId;
 
 function createError(errors, validate) {
@@ -238,7 +239,7 @@ exports.editProfile = async (req, res) => {
       });
     }
 
-    const { name, bio, website, address, authUser } = req.body;
+    const { name, bio, website, address, currentAddress, authUser } = req.body;
 
     const user = await User.findById(authUser._id);
 
@@ -260,6 +261,11 @@ exports.editProfile = async (req, res) => {
     }
     user.address = address;
 
+    if(currentAddress != null){
+      user.current_location.address = currentAddress;
+      user.current_location.createDate = Date.now();
+    }
+
     await user.save();
 
     return res.status(200).json({
@@ -276,6 +282,72 @@ exports.editProfile = async (req, res) => {
     });
   }
 };
+
+exports.addCurrentLocation = async(req, res) => {
+  try{
+    const { address, authUser, types, name } = req.body;
+
+    const user = await User.findById(authUser._id);
+
+    if (name != null) {
+      let currentAddress = await CurrentAddress.findOne({ userId: user._id });
+      if(!currentAddress){
+        currentAddress = await CurrentAddress.create({ userId: user._id });
+      }
+
+      currentAddress.name = name;
+      currentAddress.address = address;
+      currentAddress.google_types = types;
+      await currentAddress.save();
+      user.currently_in = currentAddress._id;
+    }
+
+
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile edited successful",
+      user,
+    });
+  }catch(error){
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
+
+exports.removeCurrentLocation = async(req, res) => {
+  let errors = {};
+  try{
+    const { authUser } = req.body;
+    const user = await User.findById(authUser._id);
+    const currentlyAt = await CurrentAddress.findOne({ userId : authUser._id});
+    if(currentlyAt){
+      await currentlyAt.remove();
+    }
+
+    if(user){
+      user.currently_in = undefined;
+      await user.save();
+    }
+
+    return res.status(200).json({
+      success : true,
+      message: "Your current location has been removed successfully"
+    })
+  }catch(error){
+    errors.general = error.message;
+    console.log(error);
+    return res.status(500).json({
+      success :false,
+      message: errors
+    })
+  }
+}
 
 //Update Username
 exports.updateUsername = async (req, res) => {
@@ -448,9 +520,30 @@ exports.viewOwnProfile = async (req, res) => {
   let errors = {};
   try {
     const { authUser } = req.body;
-    const user = authUser;
+    const { ip } = req.headers;
+    // const user = authUser;
+    const user = await User.findById(authUser._id).populate('currently_in');
+    //FORMAT ADDRESS
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    if(user.currently_in?.name != undefined){
+      if (user.currently_in.address.short_country == country) {
+        user.currently_in.formattedAddress = user.currently_in.display_address_for_own_country;
+      } else {
+        user.currently_in.formattedAddress = user.currently_in.display_address_for_other_country;
+      }
+    }
+
+    // console.log(user);
+
     //COUNT TOTAL POST UPLOADS
-    const posts = await Post.find({ user: user._id }).populate("place");
+    let posts = await Post.find({ user: user._id }).populate("place");
 
     const totalPosts = posts.length;
 
@@ -515,6 +608,8 @@ exports.viewOthersProfile = async (req, res) => {
   try {
     const profileId = req.params.id;
     const { authUser } = req.body;
+    const { ip } = req.headers;
+    console.log(ip);
     //Validate Object ID
     if (!ObjectId.isValid(profileId)){
       return res.status(400).json({
@@ -523,7 +618,7 @@ exports.viewOthersProfile = async (req, res) => {
       });
     }
 
-    const profileUser = await User.findById(profileId);
+    const profileUser = await User.findById(profileId).populate('currently_in');;
     if (!profileUser) {
       errors.general = "User not found";
       return res.status(404).json({
@@ -544,6 +639,23 @@ exports.viewOthersProfile = async (req, res) => {
         success: false,
         message: "This account has been terminated",
       });
+    }
+
+    //FORMAT ADDRESS
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    if (profileUser.currently_in?.name != undefined) {
+      if (profileUser.currently_in.address.short_country == country) {
+        profileUser.currently_in.formattedAddress = profileUser.currently_in.display_address_for_own_country;
+      } else {
+        profileUser.currently_in.formattedAddress = profileUser.currently_in.display_address_for_other_country;
+      }
     }
 
     // console.log(profileUser);
@@ -966,24 +1078,31 @@ exports.contributions = async (req, res) => {
   errors = {};
   try {
     const { userId } = req.params;
+    if (!ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user"
+      });
+    }
+
     const contribution = await Contribution.findOne({userId})
     
     if(!contribution){
       errors.general = "No contribution found";
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         message: errors
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       contribution,
       success: true
     })
   } catch (error) {
     errors.general = "Server error"
     console.log(error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: errors
     })
@@ -1071,6 +1190,7 @@ exports.resetPassword = async (req, res) => {
     //SEND EMAIL
     try {
       await sendEmail({
+        from: "Foiti - Reset Password <authentication@foiti.com>",
         email: user.email,
         subject: "Reset Password",
         message,

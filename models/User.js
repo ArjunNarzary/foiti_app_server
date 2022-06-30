@@ -62,14 +62,9 @@ const userSchema = new mongoose.Schema({
     country: String,
     short_country: String,
   },
-  current_location: {
-    address: {
-      name: String,
-      administrative_area_level_1: String,
-      country: String,
-      short_country: String,
-    },
-    createDate: Date,
+  currently_in: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CurrentAddress",
   },
   bio: {
     type: String,
@@ -153,6 +148,13 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
+});
+
+userSchema.virtual('currently_at', {
+  ref: 'currentaddresses',
+  localField: 'current_location',
+  foreignField: '_id',
+  justOne: true
 });
 
 //HASH PASSWORD
