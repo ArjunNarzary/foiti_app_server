@@ -472,7 +472,7 @@ exports.viewPost = async (req, res) => {
     }
 
     const post = await Post.findById(postId)
-      .select("_id content user place caption like viewers status terminated deactivated")
+      .select("_id content user place caption like viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
       .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
     
@@ -734,7 +734,9 @@ exports.likeUnlikePost = async (req, res) => {
       });
 
       //SEND POST LIKE IN APP NOTIFICATION
-      sendPostLikeNotification(authUser, post);
+      if(post.user.toString() !== authUser._id.toString()){
+        sendPostLikeNotification(authUser, post);
+      }
 
       return res.status(200).json({
         success: true,
@@ -934,7 +936,7 @@ exports.viewFollowersPosts = async (req, res) => {
       .where('deactivated').ne(true)
       .where("terminated").ne(true)
       .select(
-        "_id user place createdAt status coordinate_status content caption like comments"
+        "_id user place createdAt status coordinate_status content caption like comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
       .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
@@ -957,7 +959,7 @@ exports.viewFollowersPosts = async (req, res) => {
         .where('deactivated').ne(true)
         .where("terminated").ne(true)
         .select(
-          "_id user place createdAt status coordinate_status content caption like comments"
+          "_id user place createdAt status coordinate_status content caption like comments saved"
         )
         .populate(
           "user",
@@ -1066,3 +1068,57 @@ exports.addPostLocationClickedDetails = async (req, res) => {
     });
   }
 };
+
+exports.viewSavedPosts = async (req, res) => {
+  let errors ={};
+  try{
+    const { authUser, skip, limit, ip } = req.body;
+    console.log(skip);
+    
+    const posts = await Post.find({ saved: { $in: authUser._id } })
+      .where('deactivated').ne(true)
+      .where("terminated").ne(true)
+      .select(
+        "_id user place createdAt status coordinate_status content caption like comments saved"
+      )
+      .populate("user", "name username total_contribution profileImage foiti_ambassador")
+      .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const skipData = skip + posts.length;
+
+    let skipCount = skip + posts.length;
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    posts.forEach((post) => {
+      // console.log("post1", post.display_address_for_own_country);
+      if (post.place.address.short_country == country) {
+        post.place.local_address = post.place.display_address_for_own_country;
+      } else {
+
+        post.place.short_address = post.place.display_address_for_other_country;
+      }
+    });
+    return res.status(200).json({
+      posts,
+      skipData,
+      success: true,
+    })
+    
+  }catch(error){
+    console.log(error);
+    errors.general = error.message;
+    return res.status(500).json({
+      success: false,
+      message:errors
+    })
+  }
+}

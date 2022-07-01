@@ -12,6 +12,7 @@ const {
   viewFollowersPosts,
   deletePost,
   addPostLocationClickedDetails,
+  viewSavedPosts,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
@@ -32,6 +33,8 @@ router.route("/random").post(isAuthenticated, randomPosts);
 
 //GET FOLLOWERS POSTS
 router.route("/followersPosts").post(isAuthenticated, viewFollowersPosts);
+//GET SAVED POSTS
+router.route("/savedPosts").post(isAuthenticated, viewSavedPosts);
 
 //ADD DIRECTION CLIKED DETAILS
 router
