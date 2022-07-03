@@ -841,6 +841,7 @@ exports.randomPosts = async (req, res) => {
   let errors = {};
   try {
     const { ip, authUser, skip, limit } = req.body;
+    // console.log(skip);
     let posts;
     if (skip === undefined || skip === null) {
       //Random post form post screen, showing others post

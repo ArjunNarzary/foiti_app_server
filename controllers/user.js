@@ -609,7 +609,6 @@ exports.viewOthersProfile = async (req, res) => {
     const profileId = req.params.id;
     const { authUser } = req.body;
     const { ip } = req.headers;
-    console.log(ip);
     //Validate Object ID
     if (!ObjectId.isValid(profileId)){
       return res.status(400).json({

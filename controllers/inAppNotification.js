@@ -26,14 +26,13 @@ exports.getNewInAppNotification = async (req, res) => {
 exports.viewInAppNotification = async (req, res) => {
     let errors = {};
     try {
-        const { authUser } = req.body;
+        const { authUser, skip, limit } = req.body;
 
         //GET NEW NOTIFICATIONS AND MARK AS UNREAD
         await InAppNotification.updateMany({ $and: [{ "user": authUser._id }, {"status": "new"}] }, { status: "unread" });
 
         //GET ALL NOTIFICATION
-        const allNotification = await InAppNotification.find({ "user": authUser._id }).populate("post").populate('action_taken_by').sort({ createdAt: -1 });
-
+        const allNotification = await InAppNotification.find({ "user": authUser._id }).populate("post").populate('action_taken_by').sort({ createdAt: -1 }).skip(skip).limit(limit);
         if(!allNotification){
             errors.general = "No notifications found";
             return res.status(404).json({
@@ -50,10 +49,12 @@ exports.viewInAppNotification = async (req, res) => {
         //         readNotification.push(notification);
         //     }
         // });
+        const skipData = skip + allNotification.length;
 
         return res.status(200).json({
             success: true,
-            allNotification
+            allNotification,
+            skipData
         })
 
     } catch (error) {
