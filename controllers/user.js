@@ -824,12 +824,19 @@ exports.viewAllPost = async (req, res) => {
     }
 
     posts.forEach((post) => {
-      // console.log("post1", post.display_address_for_own_country);
       if (post.place.address.short_country == country) {
-        post.place.address.country = "";
-        post.place.local_address = post.place.display_address_for_own_country;
+        if (post.place.display_address_for_own_country != "") {
+          post.place.local_address = post.place.display_address_for_own_country.substr(2);
+        } else {
+          post.place.local_address = post.place.display_address_for_own_country;
+        }
       } else {
-        post.place.short_address = post.place.display_address_for_other_country;
+        if (post.place.display_address_for_other_country != "") {
+          post.place.short_address = post.place.display_address_for_other_country.substr(2);
+        } else {
+          post.place.short_address = post.place.display_address_for_other_country;
+
+        }
       }
     });
 

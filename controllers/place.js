@@ -59,12 +59,23 @@ exports.autocompletePlace = async (req, res) => {
       country = "IN";
     }
 
+    console.log("Here");
+
     results.forEach((place) => {
       if (place.address.short_country == country) {
-        place.local_address = place.display_address_for_own_country;
+        if (place.display_address_for_own_country != "") {
+          place.local_address = place.display_address_for_own_country.substr(2);
+        } else {
+          place.local_address = place.display_address_for_own_country;
+        }
       } else {
-        place.short_address = place.display_address_for_other_country;
+        if (place.display_address_for_other_country != "") {
+          place.short_address = place.display_address_for_other_country.substr(2);
+        } else {
+          place.short_address = place.display_address_for_other_country
+        }
       }
+
     });
 
     return res.status(200).json({
@@ -147,9 +158,17 @@ exports.getPlace = async (req, res) => {
     }
 
     if (place.address.short_country == country) {
-      place.local_address = place.display_address_for_own_country;
+      if (place.display_address_for_own_country != "") {
+        place.local_address = place.display_address_for_own_country.substr(2);
+      } else {
+        place.local_address = place.display_address_for_own_country;
+      }
     } else {
-      place.short_address = place.display_address_for_other_country;
+      if (place.display_address_for_other_country != "") {
+        place.short_address = place.display_address_for_other_country.substr(2);
+      } else {
+        place.short_address = place.display_address_for_other_country
+      }
     }
 
     return res.status(200).json({
@@ -462,7 +481,7 @@ exports.placesVisited = async(req, res) =>{
 
     const promises = distPost.map(async (id) => {
       return Post.findOne({ $and: [{ user: userId }, { place: id }] })
-        .where('status').equals('active')
+        // .where('status').equals('active')
         .where('deactivated').ne(true)
         .where('terminated').ne(true)
         .select('content place status deactivated terminated')

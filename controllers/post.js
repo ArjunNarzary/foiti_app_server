@@ -484,7 +484,6 @@ exports.viewPost = async (req, res) => {
       });
     }
 
-    // console.log(post.user);
 
     //Insert in post view Table
     if (post.user._id.toString() !== authUser._id.toString()) {
@@ -517,31 +516,17 @@ exports.viewPost = async (req, res) => {
     }
 
     if (post.place.address.short_country == country) {
-      post.place.local_address = post.place.display_address_for_own_country;
+      if (post.place.display_address_for_own_country != "") {
+        post.place.local_address = post.place.display_address_for_own_country.substr(2);
+      } else {
+        post.place.local_address = post.place.display_address_for_own_country;
+      }
     } else {
-      // let state = "";
-      // if (
-      //   post.place.address.administrative_area_level_1 != null &&
-      //   post.place.google_types[0] != "administrative_area_level_1"
-      // ) {
-      //   state = post.place.address.administrative_area_level_1;
-      // } else if (post.place.address.administrative_area_level_2 != null) {
-      //   state = post.place.address.administrative_area_level_2;
-      // } else if (post.place.address.locality != null) {
-      //   state = post.place.address.locality;
-      // } else if (post.place.address.sublocality_level_1 != null) {
-      //   state = post.place.address.sublocality_level_1;
-      // } else if (post.place.address.sublocality_level_2 != null) {
-      //   state = post.place.address.sublocality_level_2;
-      // } else if (post.place.address.neighborhood != null) {
-      //   state = post.place.address.neighborhood;
-      // }
-
-      // if (state != "") {
-      //   state = state;
-      // }
-      //New Country Condition
-      post.place.short_address = post.place.display_address_for_other_country;
+      if (post.place.display_address_for_other_country != "") {
+        post.place.short_address = post.place.display_address_for_other_country.substr(2);
+      } else {
+        post.place.short_address = post.place.display_address_for_other_country
+      }
     }
 
     return res.status(200).json({
@@ -899,12 +884,18 @@ exports.randomPosts = async (req, res) => {
     }
 
     randomPosts.forEach((post) => {
-      // console.log("post1", post.display_address_for_own_country);
       if (post.place.address.short_country == country) {
-        post.place.local_address = post.place.display_address_for_own_country;
+        if (post.place.display_address_for_own_country != ""){
+          post.place.local_address = post.place.display_address_for_own_country.substr(2);
+        }else{
+          post.place.local_address = post.place.display_address_for_own_country;
+        }
       } else {
-
-        post.place.short_address = post.place.display_address_for_other_country;
+        if (post.place.display_address_for_other_country != ""){
+          post.place.short_address = post.place.display_address_for_other_country.substr(2);
+        }else{
+          post.place.short_address = post.place.display_address_for_other_country
+        }
       }
     });
 
@@ -932,8 +923,8 @@ exports.viewFollowersPosts = async (req, res) => {
     let skipCount = skip;
     let suggestedSkipCount = suggestedSkip;
     posts = await Post.find({ user: { $in: authUser.following } })
-      .where("status").equals("active")
-      .where("coordinate_status").equals(true)
+      // .where("status").equals("active")
+      // .where("coordinate_status").equals(true)
       .where('deactivated').ne(true)
       .where("terminated").ne(true)
       .select(
@@ -1000,7 +991,6 @@ exports.viewFollowersPosts = async (req, res) => {
     posts.forEach((post) => {
       if (post.place.address.short_country == country) {
         post.place.local_address = post.place.display_address_for_own_country;
-        // console.log("dasd", post.place.local_address);
       } else {
         post.place.short_address = post.place.display_address_for_other_country;
       }

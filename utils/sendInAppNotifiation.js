@@ -105,7 +105,7 @@ exports.sendNewPostNotification = async (user, post) => {
                 id: post._id,
                 body: `${user.name} uploaded a new post.`,
             }
-            sendPushNotification(post._id, message);
+            sendPushNotification(follower, message);
         });
     }catch(error){
         console.log(error);

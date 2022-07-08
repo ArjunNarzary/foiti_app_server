@@ -131,96 +131,102 @@ placeSchema.virtual("avgRating").get(function () {
 
 //SET VIRTUAL FOR DISPLAYING ADDRESS FOR OWN COUNTRY
 placeSchema.virtual("display_address_for_own_country").get(function () {
-  let address =
-    this.google_types[0] != "administrative_area_level_1"
-      ? this.address.administrative_area_level_1
-      : "";
+  let addressArr = [];
+
+  if (this.address.administrative_area_level_1 != this.name && this.address.administrative_area_level_1 != undefined){
+    addressArr.push(this.address.administrative_area_level_1);
+  }
   if (
     this.address.administrative_area_level_2 != undefined &&
     this.address.administrative_area_level_2 != this.name
   ) {
-    address = this.address.administrative_area_level_2 + ", " + address;
+    addressArr.push(this.address.administrative_area_level_2);
   } else if (
     this.address.natural_feature != undefined &&
     this.address.natural_feature != this.name
   ) {
-    address = this.address.natural_feature + ", " + address;
+    addressArr.push(this.address.natural_feature);
   } else if (
     this.address.sublocality_level_1 != undefined &&
     this.address.sublocality_level_1 != this.name
   ) {
-    address = this.address.sublocality_level_1 + ", " + address;
+    addressArr.push(this.address.sublocality_level_1);
   } else if (
     this.address.sublocality_level_2 != undefined &&
     this.address.sublocality_level_2 != this.name
   ) {
-    address = this.address.sublocality_level_2 + ", " + address;
+    addressArr.push(this.address.sublocality_level_2);
   } else if (
     this.address.locality != undefined &&
     this.address.locality != this.name
   ) {
-    address = this.address.locality + ", " + address;
+    addressArr.push(this.address.locality);
   }
+  // console.log("arr", addressArr);
+
+  let reverseArr = [];
+  if(addressArr.length != 0){
+    reverseArr = addressArr.reverse();
+  }
+
+  let address = "";
+  if (reverseArr.length != 0){
+    address = ", "+reverseArr.join(", ");
+  }
+
   return address;
 });
 
 //SET VIRTUAL FOR DISPLAYING ADDRESS FOR OTHER COUNTRY
 placeSchema.virtual("display_address_for_other_country").get(function () {
-  let state = "";
-  // if (this.address.administrative_area_level_1 != null) {
-  //   state = this.address.administrative_area_level_1;
-  // } else if (this.address.administrative_area_level_2 != null) {
-  //   state = this.address.administrative_area_level_2;
-  // } else if (this.address.locality != null) {
-  //   state = this.address.locality;
-  // } else if (this.address.sublocality_level_1 != null) {
-  //   state = this.address.sublocality_level_1;
-  // } else if (this.address.sublocality_level_2 != null) {
-  //   state = this.address.sublocality_level_2;
-  // } else if (this.address.neighborhood != null) {
-  //   state = this.address.neighborhood;
-  // }
+  let arrAddress = [];
+
+  if (this.address.country != undefined && this.address.country != this.name) {
+    arrAddress.push(this.address.country);
+  }
 
   if (
-    this.address.administrative_area_level_1 != null &&
-    this.google_types[0] != "administrative_area_level_1"
+    this.address.administrative_area_level_1 != this.name && this.address.administrative_area_level_1 != undefined
   ) {
-    state = this.address.administrative_area_level_1;
+    arrAddress.push(this.address.administrative_area_level_1);
   } else if (
-    this.address.administrative_area_level_2 != null &&
-    this.google_types[0] != "administrative_area_level_2"
+    this.address.administrative_area_level_2 != undefined &&
+    this.address.administrative_area_level_2 != this.name
   ) {
-    state = this.address.administrative_area_level_2;
+    arrAddress.push(this.address.administrative_area_level_2);
   } else if (
-    this.address.locality != null &&
-    this.google_types[0] != "locality"
+    this.address.natural_feature != undefined &&
+    this.address.natural_feature != this.name
   ) {
-    state = this.address.locality;
+    arrAddress.push(this.address.natural_feature);
   } else if (
-    this.address.sublocality_level_1 != null &&
-    this.google_types[0] != "sublocality_level_1"
+    this.address.sublocality_level_1 != undefined &&
+    this.address.sublocality_level_1 != this.name
   ) {
-    state = this.address.sublocality_level_1;
+    arrAddress.push(this.address.sublocality_level_1);
   } else if (
-    this.address.sublocality_level_2 != null &&
-    this.google_types[0] != "sublocality_level_2"
+    this.address.sublocality_level_2 != undefined &&
+    this.address.sublocality_level_2 != this.name
   ) {
-    state = this.address.sublocality_level_2;
+    arrAddress.push(this.address.sublocality_level_2);
   } else if (
-    this.address.neighborhood != null &&
-    this.google_types[0] != "neighborhood"
+    this.address.locality != undefined &&
+    this.address.locality != this.name
   ) {
-    state = this.address.neighborhood;
-  }
-  let comma = " ";
-  if (state == "" || this.address.country == undefined){
-    comma = " ";
-  }else{
-    comma = ", ";
+    arrAddress.push(this.address.locality);
   }
 
-  state = state + comma + (this.address.country != undefined ? this.address.country : "");
-  return state;
+  let reverseArr = [];
+  if (arrAddress.length != 0) {
+    reverseArr = arrAddress.reverse();
+  }
+
+  let address = "";
+  if (reverseArr.length != 0) {
+    address = ", " + reverseArr.join(", ");
+  }
+
+  return address;
 });
 
 //Update view count
