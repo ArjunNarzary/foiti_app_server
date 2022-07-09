@@ -802,6 +802,23 @@ exports.savePost = async (req, res) => {
 //   }
 //   return array;
 // }
+function shuffleArraytoNew(array, length) {
+  var i = array.length,
+    j = 0,
+    temp;
+
+  while (i--) {
+    j = Math.floor(Math.random() * (i + 1));
+
+    // swap randomly chosen element with current element
+    temp = array[i];
+    array[i] = array[j];
+    array[j] = temp;
+  }
+  const newArry = array.slice(0, length);
+  return newArry;
+
+}
 
 function shuffleArray(array) {
   var i = array.length,
@@ -816,8 +833,8 @@ function shuffleArray(array) {
     array[i] = array[j];
     array[j] = temp;
   }
-
   return array;
+
 }
 
 //GET RANDOM POSTS
@@ -838,7 +855,7 @@ exports.randomPosts = async (req, res) => {
         .where("terminated").ne(true)
         .where("user").ne(authUser._id)
         .populate("place")
-        .limit(6)
+        .limit(200)
         .sort({ createdAt: -1 });
     } else {
       //Random post form explorer screen, showing all posts
@@ -872,7 +889,11 @@ exports.randomPosts = async (req, res) => {
     let randomPosts = [];
     //SUFFLE ARRAY
     if (posts.length > 0) {
-      randomPosts = shuffleArray(posts);
+      if (skip === undefined || skip === null){
+        randomPosts = shuffleArraytoNew(posts, 6);
+      }else{
+        randomPosts = shuffleArray(posts);
+      }
     }
 
     let country = "";
