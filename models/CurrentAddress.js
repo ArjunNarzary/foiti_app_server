@@ -28,8 +28,7 @@ currentAddressSchema.virtual("display_address_for_own_country").get(function () 
 
     if (this.address.administrative_area_level_1 != this.name && this.address.administrative_area_level_1 != undefined) {
         addressArr.push(this.address.administrative_area_level_1);
-    }
-    if (
+    }else if (
         this.address.administrative_area_level_2 != undefined &&
         this.address.administrative_area_level_2 != this.name
     ) {
