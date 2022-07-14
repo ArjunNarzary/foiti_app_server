@@ -848,7 +848,11 @@ exports.randomPosts = async (req, res) => {
     let posts;
     if (skip === undefined || skip === null) {
       //Random post form post screen, showing others post
-      posts = await Post.find({})
+      posts = await Post.find({ $and: [
+          { user: { $nin: authUser.blocked_users } },
+          { user: { $nin: authUser.reported_users } },
+          { _id: { $nin: authUser.reported_posts } }
+        ]})
         // .or([{ 'status': 'active' }, { 'status': 'silent' }])
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
@@ -860,7 +864,11 @@ exports.randomPosts = async (req, res) => {
         .sort({ createdAt: -1 });
     } else {
       //Random post form explorer screen, showing all posts
-      posts = await Post.find({})
+      posts = await Post.find({$and: [
+          { user: { $nin: authUser.blocked_users } },
+          { user: { $nin: authUser.reported_users } },
+          { _id: { $nin: authUser.reported_posts } }
+        ]})
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
         .where('deactivated').ne(true)
@@ -944,6 +952,7 @@ exports.viewFollowersPosts = async (req, res) => {
     let following = true;
     let skipCount = skip;
     let suggestedSkipCount = suggestedSkip;
+
     posts = await Post.find({ user: { $in: authUser.following } })
       // .where("status").equals("active")
       // .where("coordinate_status").equals(true)
@@ -966,6 +975,9 @@ exports.viewFollowersPosts = async (req, res) => {
         $and: [
           { user: { $nin: authUser.following } },
           { user: { $ne: authUser._id } },
+          { user: { $nin: authUser.blocked_users } },
+          { user: { $nin: authUser.reported_users } },
+          { _id: { $nin: authUser.reported_posts } }
         ],
       })
         .where("status").equals("active")
@@ -1086,7 +1098,6 @@ exports.viewSavedPosts = async (req, res) => {
   let errors ={};
   try{
     const { authUser, skip, limit, ip } = req.body;
-    console.log(skip);
     
     const posts = await Post.find({ saved: { $in: authUser._id } })
       .where('deactivated').ne(true)
@@ -1112,12 +1123,18 @@ exports.viewSavedPosts = async (req, res) => {
     }
 
     posts.forEach((post) => {
-      // console.log("post1", post.display_address_for_own_country);
       if (post.place.address.short_country == country) {
-        post.place.local_address = post.place.display_address_for_own_country;
+        if (post.place.display_address_for_own_country != "") {
+          post.place.local_address = post.place.display_address_for_own_country.substr(2);
+        } else {
+          post.place.local_address = post.place.display_address_for_own_country;
+        }
       } else {
-
-        post.place.short_address = post.place.display_address_for_other_country;
+        if (post.place.display_address_for_other_country != "") {
+          post.place.short_address = post.place.display_address_for_other_country.substr(2);
+        } else {
+          post.place.short_address = post.place.display_address_for_other_country
+        }
       }
     });
     return res.status(200).json({
@@ -1138,12 +1155,9 @@ exports.viewSavedPosts = async (req, res) => {
 
 //REPORT POST
 exports.reportPost = async (req, res) => {
-  console.log("hreh");
   let errors = {};
   try{
     const { authUser, post_id, message } = req.body;
-    console.log(req.body);
-    return;
     //Validate Object ID
     if (!ObjectId.isValid(post_id)) {
       return res.status(400).json({
@@ -1178,7 +1192,7 @@ exports.reportPost = async (req, res) => {
       user.reported_posts.push(post._id);
       await ReportPost.create({
         reporter: user._id,
-        post: post._id,
+        post_id: post._id,
         body: message,
       });
     }

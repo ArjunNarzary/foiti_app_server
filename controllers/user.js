@@ -19,6 +19,7 @@ const Notification = require("../models/Notification");
 const JoinRequest = require("../models/JoinRequest");
 const { deleteNotificationOnUnfollow, sendFollowNotification } = require("../utils/sendInAppNotifiation");
 const CurrentAddress = require("../models/CurrentAddress");
+const ReportUser = require("../models/ReportUser");
 var ObjectId = require('mongoose').Types.ObjectId;
 
 function createError(errors, validate) {
@@ -769,7 +770,7 @@ exports.viewAllPost = async (req, res) => {
     } else {
       //IF OTHERS PROFILE
       if (!showGeoPost){
-        posts = await Post.find({})
+        posts = await Post.find({ })
           .select(
             "_id name user place content  display_address_for_own_country updatedAt"
           )
@@ -1390,8 +1391,13 @@ exports.viewRecommendedTraveller = async (req, res) => {
   let errors = {};
   try {
     const { authUser } = req.body;
-    const recommendedTravellers = await RecommendedTraveller.find({$and: [{userId: {$nin: authUser.following}}, {userId: {$ne: authUser._id}}]})
-                                  .populate("userId", "_id name profileImage foiti_ambassador").limit(100);
+    const recommendedTravellers = await RecommendedTraveller.find({$and: [
+                      {userId: {$nin: authUser.following}}, 
+                      {userId: {$ne: authUser._id}},
+                      {userId: { $nin: authUser.blocked_users } },
+                      {userId: { $nin: authUser.reported_users } },
+                    ]})
+                    .populate("userId", "_id name profileImage foiti_ambassador").limit(100);
     
     if(!recommendedTravellers){
       errors.general = "No recommended traveller found";
@@ -1616,5 +1622,117 @@ exports.deactivate = async (req, res) => {
     })
   }
 }
+
+//BLOCK USER
+exports.blockUser = async (req, res) => {
+  let errors = {};
+  try{
+      const { authUser, user_id } = req.body;
+
+      //Validate Object ID
+      if (!ObjectId.isValid(user_id)) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid user"
+          });
+        }
+
+      if(user_id.toString() === authUser._id.toString()){
+        return res.status(401).json({
+          success: fasle,
+          message: "You cannot block yourself"
+        })
+      }
+
+      const user = await User.findById(user_id);
+      if(!user){
+        errors.general = "User not found";
+        return res.status(404).json({
+          success: false,
+          message: errors
+        })
+      }
+
+      const currentUser = await User.findById(authUser._id);
+      //CHECK IF ALREADY BLOCKED
+      if (!currentUser.blocked_users.includes(user._id)){
+        currentUser.blocked_users.push(user._id);
+      }
+
+      await currentUser.save();
+
+      return res.status(200).json({
+        success: true,
+        message: "User has been blocked"
+      })
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong. Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+};
+
+//REPORT USER
+exports.reportUser = async (req, res) => {
+  let errors = {};
+  try{
+    const { authUser, user_id, message } = req.body;
+
+    //Validate Object ID
+    if (!ObjectId.isValid(user_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user"
+      });
+    }
+
+    if (user_id.toString() === authUser._id.toString()) {
+      return res.status(401).json({
+        success: fasle,
+        message: "You cannot report yourself"
+      })
+    }
+
+    const user = await User.findById(user_id);
+    if (!user) {
+      errors.general = "User not found";
+      return res.status(404).json({
+        success: false,
+        message: errors
+      })
+    }
+
+    const currentUser = await User.findById(authUser._id);
+    //CHECK IF ALREADY REPORTED
+    if (!currentUser.reported_users.includes(user._id)) {
+      currentUser.reported_users.push(user._id);
+      await ReportUser.create({
+        reporter_id: currentUser._id,
+        user_id,
+        body: message
+      })
+    }
+
+    await currentUser.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "User has been reported"
+    })
+
+
+  }catch(error){
+    errors.general = "Something went wrong. Please try again.";
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}; 
 
 

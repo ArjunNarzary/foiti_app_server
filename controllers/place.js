@@ -133,20 +133,20 @@ exports.getPlace = async (req, res) => {
     placeViewer.save();
 
     // format Type
-    let formattedType = "";
-    if(place.types.length > 0 && place.types[1] != ""){
-      formattedType = place.types[1];
-    }
-    else if (place.google_types.length > 0) {
-      let type = place.google_types[0];
-      const typeArr = type.split("_");
-      const capitalizedType = typeArr.map((type) => {
-        return type.charAt(0).toUpperCase() + type.slice(1);
-      });
-      formattedType = capitalizedType.join(" ");
-    }else{
-      formattedType = "";
-    }
+    // let formattedType = "";
+    // if(place.types.length > 0 && place.types[1] != ""){
+    //   formattedType = place.types[1];
+    // }
+    // else if (place.google_types.length > 0) {
+    //   let type = place.google_types[0];
+    //   const typeArr = type.split("_");
+    //   const capitalizedType = typeArr.map((type) => {
+    //     return type.charAt(0).toUpperCase() + type.slice(1);
+    //   });
+    //   formattedType = capitalizedType.join(" ");
+    // }else{
+    //   formattedType = "";
+    // }
 
     //FORMAT ADDRESS
     let country = "";
@@ -174,7 +174,7 @@ exports.getPlace = async (req, res) => {
     return res.status(200).json({
       success: true,
       place,
-      formattedType,
+      // formattedType,
       avgRating: place.avgRating,
     });
   } catch (error) {

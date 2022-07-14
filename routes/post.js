@@ -43,6 +43,12 @@ router
   .route("/directionClick/:id")
   .post(isAuthenticated, addPostLocationClickedDetails);
 
+//REPORT POST
+router.route("/report").post(isAuthenticated, reportPost);
+
+
+
+// ==============ADD ALL ROUTES ABOVE THIS ROUTE==================
 //EDIT, VIEW and DELETE POST
 router
   .route("/:id")
@@ -50,7 +56,5 @@ router
   .post(isAuthenticated, viewPost)
   .delete(isAuthenticated, deletePost);
 
-//REPORT POST
-router.route("/report").post(isAuthenticated, reportPost);
 
 module.exports = router;

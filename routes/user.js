@@ -30,6 +30,8 @@ const {
   contributions,
   addCurrentLocation,
   removeCurrentLocation,
+  blockUser,
+  reportUser,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -106,6 +108,10 @@ router.route("/join").post(validateUser("joinRequest"), joinRequest);
 router.route("/deactivate").post(isAuthenticated, deactivate);
 router.route("/contributions/:userId").get(isAuthenticated, contributions);
 
+router.route("/block").post(isAuthenticated, blockUser);
+router.route("/report").post(isAuthenticated, reportUser);
+
+// ==============ADD ROUTES ABOVE THIS ====================
 //FOLLOW UNFOLLOW VIEW OTHERS PROFILE USER
 router
   .route("/:id")

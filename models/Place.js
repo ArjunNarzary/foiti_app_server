@@ -96,10 +96,10 @@ const placeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
     },
-    duplicate_place_id: {
+    duplicate_place_id: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
-    },
+    }],
     created_place: {
       type: Boolean,
       default: false,
