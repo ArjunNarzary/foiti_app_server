@@ -13,6 +13,8 @@ const {
   deletePost,
   addPostLocationClickedDetails,
   viewSavedPosts,
+  reportPost,
+  reportPost1,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
@@ -47,5 +49,8 @@ router
   .put(isAuthenticated, editPost)
   .post(isAuthenticated, viewPost)
   .delete(isAuthenticated, deletePost);
+
+//REPORT POST
+router.route("/report").post(isAuthenticated, reportPost);
 
 module.exports = router;

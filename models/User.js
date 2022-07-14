@@ -133,6 +133,21 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  blocked_users:[
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+  reported_users:[
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    }],
+  reported_posts:[
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+    }],
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   tokenVersion: {

@@ -17,6 +17,7 @@ const Review = require("../models/Review");
 const PostViewer = require("../models/PostViewer");
 const PostLocationViewer = require("../models/PostLocationViewer");
 const { deleteNotificationOnUnlike, sendPostLikeNotification, sendNewPostNotification } = require("../utils/sendInAppNotifiation");
+const ReportPost = require("../models/ReportPost");
 var ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createContributionPoints = async (req, res) => {
@@ -1131,6 +1132,70 @@ exports.viewSavedPosts = async (req, res) => {
     return res.status(500).json({
       success: false,
       message:errors
+    })
+  }
+}
+
+//REPORT POST
+exports.reportPost = async (req, res) => {
+  console.log("hreh");
+  let errors = {};
+  try{
+    const { authUser, post_id, message } = req.body;
+    console.log(req.body);
+    return;
+    //Validate Object ID
+    if (!ObjectId.isValid(post_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post"
+      });
+    }
+
+    const post = await Post.findById(post_id);
+    //CHECK IF POST EXIST
+    if(!post){
+      errors.general = "Post not found";
+      console.log(errors);
+      return res.status(404).json({
+        succes: false,
+        message: errors
+      })
+    }
+
+    //CHECK IF POST IS UPLOADED BY AUTHENTICATED USER
+    if(post.user.toString() === authUser._id.toString()){
+      errors.general = "You cannot report your own post";
+      console.log(errors);
+      return res.status(401).json({
+        succes:false,
+        message: errors
+      })
+    }
+
+    const user = await User.findById(authUser._id);
+    if (!user.reported_posts.includes(post._id)){
+      user.reported_posts.push(post._id);
+      await ReportPost.create({
+        reporter: user._id,
+        post: post._id,
+        body: message,
+      });
+    }
+
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Reported successful"
+    })
+
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong. Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors
     })
   }
 }
