@@ -37,7 +37,7 @@ exports.searchPlace = async (req, res) => {
   }
 };
 
-//Autocomplete places
+//Autocomplete places for place search
 exports.autocompletePlace = async (req, res) => {
   try {
     const { place, count } = req.query;
@@ -46,7 +46,7 @@ exports.autocompletePlace = async (req, res) => {
 
     const results = await Place.find({
       name: { $regex: `${trimedPlace}`, $options: "i" },
-    })
+    }).where("duplicate").ne(true)
       .select("_id name address cover_photo short_address local_address types google_types")
       .limit(count);
 
@@ -58,8 +58,6 @@ exports.autocompletePlace = async (req, res) => {
     } else {
       country = "IN";
     }
-
-    console.log("Here");
 
     results.forEach((place) => {
       if (place.address.short_country == country) {

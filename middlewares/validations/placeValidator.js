@@ -7,9 +7,13 @@ exports.validatePlace = (method) => {
       return [
         body("review")
           .trim()
+          .exists({ checkFalsy: true })
+          .withMessage("Please write your review")
+          .isLength({ min: 10 })
+          .withMessage("Review must be atleast 10 characters long")
           .isLength({ max: 5000 })
           .withMessage("Please enter your review within 5000 characters")
-          .optional({ nullable: true })
+          // .optional({ nullable: true })
           .bail(),
         body("rating")
           .trim()

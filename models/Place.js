@@ -7,6 +7,7 @@ const placeSchema = new mongoose.Schema(
       require: [true, "Name of place is required"],
       index: true,
     },
+    alias:String,
     google_place_id: {
       type: String,
       index: true,
