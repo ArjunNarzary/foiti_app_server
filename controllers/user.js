@@ -17,10 +17,13 @@ const RecommendedTraveller = require("../models/RecommendedTraveller");
 const Contribution = require("../models/Contribution");
 const Notification = require("../models/Notification");
 const JoinRequest = require("../models/JoinRequest");
-const { deleteNotificationOnUnfollow, sendFollowNotification } = require("../utils/sendInAppNotifiation");
+const {
+  deleteNotificationOnUnfollow,
+  sendFollowNotification,
+} = require("../utils/sendInAppNotifiation");
 const CurrentAddress = require("../models/CurrentAddress");
 const ReportUser = require("../models/ReportUser");
-var ObjectId = require('mongoose').Types.ObjectId;
+var ObjectId = require("mongoose").Types.ObjectId;
 
 function createError(errors, validate) {
   const arrError = validate.array();
@@ -57,14 +60,12 @@ function shuffleArray(array) {
     temp;
 
   while (i--) {
-
     j = Math.floor(Math.random() * (i + 1));
 
     // swap randomly chosen element with current element
     temp = array[i];
     array[i] = array[j];
     array[j] = temp;
-
   }
 
   return array;
@@ -105,7 +106,7 @@ exports.registerUser = async (req, res) => {
     const token = await user.generateToken();
     user.password = "";
     //Create notification table
-    await Notification.create({user: user._id});
+    await Notification.create({ user: user._id });
 
     return res.status(201).json({
       success: true,
@@ -186,7 +187,7 @@ exports.loginUser = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.log(error); 
+    console.log(error);
     errors.general = "Something went wrong while logging in";
     return res.status(500).json({
       success: false,
@@ -263,7 +264,7 @@ exports.editProfile = async (req, res) => {
     }
     user.address = address;
 
-    if(currentAddress != null){
+    if (currentAddress != null) {
       user.current_location.address = currentAddress;
       user.current_location.createDate = Date.now();
     }
@@ -285,15 +286,15 @@ exports.editProfile = async (req, res) => {
   }
 };
 
-exports.addCurrentLocation = async(req, res) => {
-  try{
+exports.addCurrentLocation = async (req, res) => {
+  try {
     const { address, authUser, types, name } = req.body;
 
     const user = await User.findById(authUser._id);
 
     if (name != null) {
       let currentAddress = await CurrentAddress.findOne({ userId: user._id });
-      if(!currentAddress){
+      if (!currentAddress) {
         currentAddress = await CurrentAddress.create({ userId: user._id });
       }
 
@@ -304,8 +305,6 @@ exports.addCurrentLocation = async(req, res) => {
       user.currently_in = currentAddress._id;
     }
 
-
-
     await user.save();
 
     return res.status(200).json({
@@ -313,43 +312,43 @@ exports.addCurrentLocation = async(req, res) => {
       message: "Profile edited successful",
       user,
     });
-  }catch(error){
+  } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: error.message
-    })
+      message: error.message,
+    });
   }
-}
+};
 
-exports.removeCurrentLocation = async(req, res) => {
+exports.removeCurrentLocation = async (req, res) => {
   let errors = {};
-  try{
+  try {
     const { authUser } = req.body;
     const user = await User.findById(authUser._id);
-    const currentlyAt = await CurrentAddress.findOne({ userId : authUser._id});
-    if(currentlyAt){
+    const currentlyAt = await CurrentAddress.findOne({ userId: authUser._id });
+    if (currentlyAt) {
       await currentlyAt.remove();
     }
 
-    if(user){
+    if (user) {
       user.currently_in = undefined;
       await user.save();
     }
 
     return res.status(200).json({
-      success : true,
-      message: "Your current location has been removed successfully"
-    })
-  }catch(error){
+      success: true,
+      message: "Your current location has been removed successfully",
+    });
+  } catch (error) {
     errors.general = error.message;
     console.log(error);
     return res.status(500).json({
-      success :false,
-      message: errors
-    })
+      success: false,
+      message: errors,
+    });
   }
-}
+};
 
 //Update Username
 exports.updateUsername = async (req, res) => {
@@ -524,7 +523,7 @@ exports.viewOwnProfile = async (req, res) => {
     const { authUser } = req.body;
     const { ip } = req.headers;
     // const user = authUser;
-    const user = await User.findById(authUser._id).populate('currently_in');
+    const user = await User.findById(authUser._id).populate("currently_in");
     //FORMAT ADDRESS
     let country = "";
     const location = await getCountry(ip);
@@ -534,11 +533,13 @@ exports.viewOwnProfile = async (req, res) => {
       country = "IN";
     }
 
-    if(user.currently_in?.name != undefined){
+    if (user.currently_in?.name != undefined) {
       if (user.currently_in.address.short_country == country) {
-        user.currently_in.formattedAddress = user.currently_in.display_address_for_own_country;
+        user.currently_in.formattedAddress =
+          user.currently_in.display_address_for_own_country;
       } else {
-        user.currently_in.formattedAddress = user.currently_in.display_address_for_other_country;
+        user.currently_in.formattedAddress =
+          user.currently_in.display_address_for_other_country;
       }
     }
 
@@ -552,7 +553,7 @@ exports.viewOwnProfile = async (req, res) => {
     //Unique Place
     let helpNavigate = 0;
     const totalPlaces = posts.map((post) => {
-      if(post.location_viewers_count != undefined){
+      if (post.location_viewers_count != undefined) {
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
       return post.place._id;
@@ -569,10 +570,9 @@ exports.viewOwnProfile = async (req, res) => {
       return post.place.address.country;
     });
 
-    const totalCountries = totalCountriesSaved.filter(c => {
+    const totalCountries = totalCountriesSaved.filter((c) => {
       return c != undefined;
     });
-
 
     const uniqueCountryVisited = [...new Set(totalCountries)];
 
@@ -612,14 +612,14 @@ exports.viewOthersProfile = async (req, res) => {
     const { authUser } = req.body;
     const { ip } = req.headers;
     //Validate Object ID
-    if (!ObjectId.isValid(profileId)){
+    if (!ObjectId.isValid(profileId)) {
       return res.status(400).json({
-          success: false,
-          message: "Invalid user"
+        success: false,
+        message: "Invalid user",
       });
     }
 
-    const profileUser = await User.findById(profileId).populate('currently_in');;
+    const profileUser = await User.findById(profileId).populate("currently_in");
     if (!profileUser) {
       errors.general = "User not found";
       return res.status(404).json({
@@ -653,9 +653,11 @@ exports.viewOthersProfile = async (req, res) => {
 
     if (profileUser.currently_in?.name != undefined) {
       if (profileUser.currently_in.address.short_country == country) {
-        profileUser.currently_in.formattedAddress = profileUser.currently_in.display_address_for_own_country;
+        profileUser.currently_in.formattedAddress =
+          profileUser.currently_in.display_address_for_own_country;
       } else {
-        profileUser.currently_in.formattedAddress = profileUser.currently_in.display_address_for_other_country;
+        profileUser.currently_in.formattedAddress =
+          profileUser.currently_in.display_address_for_other_country;
       }
     }
 
@@ -669,21 +671,23 @@ exports.viewOthersProfile = async (req, res) => {
 
     //TOTOAL NUMBER
     const posts = await Post.find({ user: profileUser._id })
-      .or([{ 'status': 'active' }, { 'status': 'silent' }])
-      .where('deactivated').ne(true)
+      .or([{ status: "active" }, { status: "silent" }])
+      .where("deactivated")
+      .ne(true)
       // .where('coordinate_status').ne(false)
-      .where('terminated').ne(true)
+      .where("terminated")
+      .ne(true)
       .populate("place");
 
     const totalPosts = posts.length;
     //Unique Place
     let helpNavigate = 0;
     const totalPlaces = posts.map((post) => {
-        if (post.location_viewers_count != undefined) {
-          helpNavigate = helpNavigate + post.location_viewers_count;
-        }
-        return post.place._id;
-      });
+      if (post.location_viewers_count != undefined) {
+        helpNavigate = helpNavigate + post.location_viewers_count;
+      }
+      return post.place._id;
+    });
     const uniquePlacesVisited = [...new Set(totalPlaces)];
     const placesVisited = uniquePlacesVisited.length;
 
@@ -693,20 +697,19 @@ exports.viewOthersProfile = async (req, res) => {
       return post.place.address.country;
     });
 
-    const totalCountries = totalCountriesSaved.filter(c =>{
+    const totalCountries = totalCountriesSaved.filter((c) => {
       return c != undefined;
     });
 
     const uniqueCountryVisited = [...new Set(totalCountries)];
-    
-    const countryVisitedCount =  uniqueCountryVisited.length;
+
+    const countryVisitedCount = uniqueCountryVisited.length;
 
     if (countryVisitedCount > 1) {
-        countryVisited = countryVisitedCount - 1;
-      } else {
-        countryVisited = 0;
-      }
-
+      countryVisited = countryVisitedCount - 1;
+    } else {
+      countryVisited = 0;
+    }
 
     // Make name first letter capital
     // const name = profileUser.name;
@@ -715,8 +718,6 @@ exports.viewOthersProfile = async (req, res) => {
     //   return name.charAt(0).toUpperCase() + name.slice(1);
     // })
     // profileUser.name = capitalizedName.join(" ");
-
-
 
     return res.status(200).json({
       success: true,
@@ -727,7 +728,7 @@ exports.viewOthersProfile = async (req, res) => {
       totalPosts,
       placesVisited,
       countryVisited,
-      helpNavigate
+      helpNavigate,
     });
   } catch (error) {
     console.log(error);
@@ -762,50 +763,58 @@ exports.viewAllPost = async (req, res) => {
           "_id name user place content coordinate_status display_address_for_own_country updatedAt"
         )
         .populate("place")
-        .where("user").equals(profileId)
-        .where('deactivated').ne(true)
+        .where("user")
+        .equals(profileId)
+        .where("deactivated")
+        .ne(true)
         .sort({ createdAt: -1 })
         .skip(parseInt(skip))
         .limit(parseInt(limit));
     } else {
       //IF OTHERS PROFILE
-      if (!showGeoPost){
-        posts = await Post.find({ })
-          .select(
-            "_id name user place content  display_address_for_own_country updatedAt"
-          )
-          .where("user")
-          .equals(profileId)
-          .populate("place")
-          .or([{ 'status': 'active' }, { 'status': 'silent' }])
-          .where('deactivated').ne(true)
-          .where('terminated').ne(true)
-          .sort({ createdAt: -1 })
-          .skip(parseInt(skip))
-          .limit(parseInt(limit));
-      }else{
+      if (!showGeoPost) {
         posts = await Post.find({})
           .select(
             "_id name user place content  display_address_for_own_country updatedAt"
           )
           .where("user")
           .equals(profileId)
-          .or([{ 'status': 'active' }, { 'status': 'silent' }])
-          .where('coordinate_status').ne(false)
-          .where('deactivated').ne(true)
-          .where('terminated').ne(true)
+          .populate("place")
+          .or([{ status: "active" }, { status: "silent" }])
+          .where("deactivated")
+          .ne(true)
+          .where("terminated")
+          .ne(true)
+          .sort({ createdAt: -1 })
+          .skip(parseInt(skip))
+          .limit(parseInt(limit));
+      } else {
+        posts = await Post.find({})
+          .select(
+            "_id name user place content  display_address_for_own_country updatedAt"
+          )
+          .where("user")
+          .equals(profileId)
+          .or([{ status: "active" }, { status: "silent" }])
+          .where("coordinate_status")
+          .ne(false)
+          .where("deactivated")
+          .ne(true)
+          .where("terminated")
+          .ne(true)
           .populate("place")
           .sort({ createdAt: -1 })
           .skip(parseInt(skip))
           .limit(parseInt(limit));
-        }
       }
+    }
 
     postsCount = await Post.countDocuments({})
       .where("user")
       .equals(profileId)
-      .or([{ 'status': 'active' }, { 'status': 'silent' }])
-      .where('terminated').ne(true);
+      .or([{ status: "active" }, { status: "silent" }])
+      .where("terminated")
+      .ne(true);
 
     if (posts.length === 0) {
       errors.general = "No post avialble";
@@ -828,16 +837,18 @@ exports.viewAllPost = async (req, res) => {
     posts.forEach((post) => {
       if (post.place.address.short_country == country) {
         if (post.place.display_address_for_own_country != "") {
-          post.place.local_address = post.place.display_address_for_own_country.substr(2);
+          post.place.local_address =
+            post.place.display_address_for_own_country.substr(2);
         } else {
           post.place.local_address = post.place.display_address_for_own_country;
         }
       } else {
         if (post.place.display_address_for_other_country != "") {
-          post.place.short_address = post.place.display_address_for_other_country.substr(2);
+          post.place.short_address =
+            post.place.display_address_for_other_country.substr(2);
         } else {
-          post.place.short_address = post.place.display_address_for_other_country;
-
+          post.place.short_address =
+            post.place.display_address_for_other_country;
         }
       }
     });
@@ -901,7 +912,7 @@ exports.followUnfollowUser = async (req, res) => {
       });
     } else {
       user.following.push(owner._id);
-      if(!owner.follower.includes(user._id)){
+      if (!owner.follower.includes(user._id)) {
         owner.follower.push(user._id);
       }
       await owner.save();
@@ -1089,34 +1100,33 @@ exports.contributions = async (req, res) => {
     if (!ObjectId.isValid(userId)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid user"
+        message: "Invalid user",
       });
     }
 
-    const contribution = await Contribution.findOne({userId})
-    
-    if(!contribution){
+    const contribution = await Contribution.findOne({ userId });
+
+    if (!contribution) {
       errors.general = "No contribution found";
       return res.status(400).json({
         success: false,
-        message: errors
+        message: errors,
       });
     }
 
     return res.status(200).json({
       contribution,
-      success: true
-    })
+      success: true,
+    });
   } catch (error) {
-    errors.general = "Server error"
+    errors.general = "Server error";
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: errors
-    })
+      message: errors,
+    });
   }
-}
-
+};
 
 //VIEW FOLLOW DETAILS
 exports.viewFollowDetails = async (req, res) => {
@@ -1124,10 +1134,27 @@ exports.viewFollowDetails = async (req, res) => {
   try {
     const ownerId = req.params.id;
 
-    const owner = await User.findById(ownerId).select("_id, name, following, follower")
-        .populate('following', { name: 1, total_contribution:1, profileImage:1, _id:1, follower:1, following:1, foiti_ambassador:1})
-      .populate('follower', { name: 1, total_contribution: 1, profileImage: 1, _id: 1, follower: 1, following: 1, foiti_ambassador:1 });
-    if(!owner){
+    const owner = await User.findById(ownerId)
+      .select("_id, name, following, follower")
+      .populate("following", {
+        name: 1,
+        total_contribution: 1,
+        profileImage: 1,
+        _id: 1,
+        follower: 1,
+        following: 1,
+        foiti_ambassador: 1,
+      })
+      .populate("follower", {
+        name: 1,
+        total_contribution: 1,
+        profileImage: 1,
+        _id: 1,
+        follower: 1,
+        following: 1,
+        foiti_ambassador: 1,
+      });
+    if (!owner) {
       errors.general = "User not found";
       return res.status(404).json({
         success: false,
@@ -1137,9 +1164,8 @@ exports.viewFollowDetails = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      owner
-    })
-
+      owner,
+    });
   } catch (error) {
     console.log(error.message);
     errors.general = "Something went wrong";
@@ -1148,7 +1174,7 @@ exports.viewFollowDetails = async (req, res) => {
       message: errors,
     });
   }
-}
+};
 
 //RESET PASSWORD (SENT OTP AT EMAIL)
 exports.resetPassword = async (req, res) => {
@@ -1165,7 +1191,7 @@ exports.resetPassword = async (req, res) => {
     const email = req.body.email;
     const user = await User.findOne({ email });
 
-    if(!user){
+    if (!user) {
       errors.email = "Provide email address is not registered with us";
       return res.status(404).json({
         success: false,
@@ -1332,7 +1358,7 @@ exports.crateNewPassword = async (req, res) => {
       success: true,
       message: "Your password has been successfully updated",
       user,
-      token
+      token,
     });
   } catch (error) {
     console.log(error.message);
@@ -1349,7 +1375,7 @@ exports.recommendedTraveller = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await User.findById(id).select("_id");
-    if(!user){
+    if (!user) {
       errors.general = "User not found";
       return res.status(404).json({
         success: false,
@@ -1358,48 +1384,50 @@ exports.recommendedTraveller = async (req, res) => {
     }
 
     const traveller = await RecommendedTraveller.findOne({ userId: user._id });
-    if(traveller){
+    if (traveller) {
       return res.status(200).json({
         success: true,
         traveller,
-        message: "User already exists"
-      })
-    };
-
-      const newTraveller = await RecommendedTraveller.create({
-        userId: user._id,
+        message: "User already exists",
       });
+    }
 
-      return res.status(201).json({
-        success: true,
-        traveller: newTraveller,
-        message: "User created successfully"
-      })
+    const newTraveller = await RecommendedTraveller.create({
+      userId: user._id,
+    });
 
-    }catch (error) {
-      console.log(error);
+    return res.status(201).json({
+      success: true,
+      traveller: newTraveller,
+      message: "User created successfully",
+    });
+  } catch (error) {
+    console.log(error);
     errors.general = "Something went wrong";
     return res.status(500).json({
       success: false,
       message: errors,
-    })
+    });
   }
-}
+};
 
 //VIEW RECOMMENDED TRAVELLERS
 exports.viewRecommendedTraveller = async (req, res) => {
   let errors = {};
   try {
     const { authUser } = req.body;
-    const recommendedTravellers = await RecommendedTraveller.find({$and: [
-                      {userId: {$nin: authUser.following}}, 
-                      {userId: {$ne: authUser._id}},
-                      {userId: { $nin: authUser.blocked_users } },
-                      {userId: { $nin: authUser.reported_users } },
-                    ]})
-                    .populate("userId", "_id name profileImage foiti_ambassador").limit(100);
-    
-    if(!recommendedTravellers){
+    const recommendedTravellers = await RecommendedTraveller.find({
+      $and: [
+        { userId: { $nin: authUser.following } },
+        { userId: { $ne: authUser._id } },
+        { userId: { $nin: authUser.blocked_users } },
+        { userId: { $nin: authUser.reported_users } },
+      ],
+    })
+      .populate("userId", "_id name profileImage foiti_ambassador")
+      .limit(100);
+
+    if (!recommendedTravellers) {
       errors.general = "No recommended traveller found";
       return res.status(404).json({
         success: false,
@@ -1413,7 +1441,6 @@ exports.viewRecommendedTraveller = async (req, res) => {
       success: true,
       travellers,
     });
-
   } catch (error) {
     errors.general = error.message;
     return res.status(500).json({
@@ -1421,17 +1448,17 @@ exports.viewRecommendedTraveller = async (req, res) => {
       message: errors,
     });
   }
-}
+};
 
 //SET EXPO TOKEN
 exports.setExpoToken = async (req, res) => {
   let errors = {};
-  try{
+  try {
     let { authUser, expoToken } = req.body;
-    if(expoToken != "" || expoToken != undefined){
+    if (expoToken != "" || expoToken != undefined) {
       const user = await User.findById(authUser._id);
       let hasToken = false;
-      if(user.expoToken != undefined && user.expoToken != ""){
+      if (user.expoToken != undefined && user.expoToken != "") {
         hasToken = true;
       }
       user.expoToken = expoToken;
@@ -1450,7 +1477,7 @@ exports.setExpoToken = async (req, res) => {
       // await notification.save();
 
       //IF no token existed before
-      if(!hasToken){
+      if (!hasToken) {
         let notification = await Notification.findOne({ user: authUser._id });
         if (!notification) {
           notification = await Notification.create({
@@ -1467,22 +1494,22 @@ exports.setExpoToken = async (req, res) => {
     return res.status(200).json({
       success: true,
     });
-  }catch(error){
+  } catch (error) {
     errors.general = error.message;
     return res.status(500).json({
       success: false,
-      messgae: errors
+      messgae: errors,
     });
   }
-}
+};
 
 //GET NOTIFICATION SETTINGS
 exports.getNotificationSettings = async (req, res) => {
   let errors = {};
-  try{
+  try {
     let { authUser } = req.body;
     const notification = await Notification.findOne({ user: authUser._id });
-    if(!notification){
+    if (!notification) {
       errors.general = "No notification settings found";
       return res.status(404).json({
         success: false,
@@ -1493,37 +1520,37 @@ exports.getNotificationSettings = async (req, res) => {
       success: true,
       notification,
     });
-  }catch(error){
+  } catch (error) {
     errors.general = error.message;
     return res.status(500).json({
       success: false,
       message: errors,
     });
   }
-}
+};
 
 //SET NOTIFICATION SETTINGS
 exports.setNotificationSettings = async (req, res) => {
   let errors = {};
-  try{
+  try {
     let { authUser, notification, status } = req.body;
     // console.log(notification, status);
     let notificationTable = await Notification.findOne({ user: authUser._id });
-    if(!notificationTable){
+    if (!notificationTable) {
       notificationTable = await Notification.create({
         user: authUser._id,
       });
     }
 
-    if(notification == "new_post"){
+    if (notification == "new_post") {
       notificationTable.new_post = status;
-    }else if(notification == "post_likes"){
+    } else if (notification == "post_likes") {
       notificationTable.post_likes = status;
-    }else if(notification == "new_followers"){
+    } else if (notification == "new_followers") {
       notificationTable.new_followers = status;
-    }else if(notification == "email_notitications"){
+    } else if (notification == "email_notitications") {
       notificationTable.email_notitications = status;
-    }else{
+    } else {
       notificationTable.new_post = status;
       notificationTable.post_likes = status;
       notificationTable.new_followers = status;
@@ -1535,21 +1562,19 @@ exports.setNotificationSettings = async (req, res) => {
       success: true,
       notification: notificationTable,
     });
-
-
-  }catch(error){
+  } catch (error) {
     errors.general = error.message;
     return res.status(500).json({
       success: false,
       message: errors,
-    })
+    });
   }
-}
+};
 
 //JOIN REQUEST
 exports.joinRequest = async (req, res) => {
   let errors = {};
-  try{
+  try {
     const validate = validationResult(req);
     if (!validate.isEmpty()) {
       return res.status(400).json({
@@ -1561,7 +1586,7 @@ exports.joinRequest = async (req, res) => {
     email = email.toLowerCase();
 
     const joinRequest = await JoinRequest.findOne({ email });
-    if(joinRequest){
+    if (joinRequest) {
       errors.general = "You have already sent a join request";
       return res.status(401).json({
         success: false,
@@ -1570,27 +1595,30 @@ exports.joinRequest = async (req, res) => {
     }
 
     const newJoinRequest = await JoinRequest.create({
-      email, instagram, twitter, youtube, facebook
+      email,
+      instagram,
+      twitter,
+      youtube,
+      facebook,
     });
 
     return res.status(200).json({
       success: true,
       joinRequest: newJoinRequest,
     });
-
-  }catch(error){
+  } catch (error) {
     errors.general = error.message;
     return res.status(500).json({
       success: false,
       message: errors,
-    })
+    });
   }
-}
+};
 
 //Deactivate User
 exports.deactivate = async (req, res) => {
   let errors = {};
-  try{
+  try {
     const { authUser, password } = req.body;
     const user = await User.findById(authUser._id).select("+password");
 
@@ -1606,95 +1634,41 @@ exports.deactivate = async (req, res) => {
     user.last_account_status = user.account_status;
     user.account_status = "deactivated";
     await user.save();
-    await Post.updateMany({ user: user._id }, { deactivated : true});
+    await Post.updateMany({ user: user._id }, { deactivated: true });
 
     return res.status(200).json({
       success: true,
-      message: "Your account has been deactivated"
-    })
-
-  }catch(error){
+      message: "Your account has been deactivated",
+    });
+  } catch (error) {
     console.log(error);
-    errors.general ="Something went wrong, please try again."
+    errors.general = "Something went wrong, please try again.";
     res.status(500).json({
       success: false,
-      message: errors
-    })
+      message: errors,
+    });
   }
-}
+};
 
 //BLOCK USER
 exports.blockUser = async (req, res) => {
   let errors = {};
-  try{
-      const { authUser, user_id } = req.body;
-
-      //Validate Object ID
-      if (!ObjectId.isValid(user_id)) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid user"
-          });
-        }
-
-      if(user_id.toString() === authUser._id.toString()){
-        return res.status(401).json({
-          success: fasle,
-          message: "You cannot block yourself"
-        })
-      }
-
-      const user = await User.findById(user_id);
-      if(!user){
-        errors.general = "User not found";
-        return res.status(404).json({
-          success: false,
-          message: errors
-        })
-      }
-
-      const currentUser = await User.findById(authUser._id);
-      //CHECK IF ALREADY BLOCKED
-      if (!currentUser.blocked_users.includes(user._id)){
-        currentUser.blocked_users.push(user._id);
-      }
-
-      await currentUser.save();
-
-      return res.status(200).json({
-        success: true,
-        message: "User has been blocked"
-      })
-
-  }catch(error){
-    console.log(error);
-    errors.general = "Something went wrong. Please try again";
-    return res.status(500).json({
-      success: false,
-      message: errors
-    })
-  }
-};
-
-//REPORT USER
-exports.reportUser = async (req, res) => {
-  let errors = {};
-  try{
-    const { authUser, user_id, message } = req.body;
+  try {
+    const { authUser, user_id } = req.body;
 
     //Validate Object ID
     if (!ObjectId.isValid(user_id)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid user"
+        message: "Invalid user",
       });
     }
 
     if (user_id.toString() === authUser._id.toString()) {
       return res.status(401).json({
         success: fasle,
-        message: "You cannot report yourself"
-      })
+        message: "You cannot block yourself",
+      });
     }
 
     const user = await User.findById(user_id);
@@ -1702,8 +1676,60 @@ exports.reportUser = async (req, res) => {
       errors.general = "User not found";
       return res.status(404).json({
         success: false,
-        message: errors
-      })
+        message: errors,
+      });
+    }
+
+    const currentUser = await User.findById(authUser._id);
+    //CHECK IF ALREADY BLOCKED
+    if (!currentUser.blocked_users.includes(user._id)) {
+      currentUser.blocked_users.push(user._id);
+    }
+
+    await currentUser.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "User has been blocked",
+    });
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong. Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+};
+
+//REPORT USER
+exports.reportUser = async (req, res) => {
+  let errors = {};
+  try {
+    const { authUser, user_id, message } = req.body;
+
+    //Validate Object ID
+    if (!ObjectId.isValid(user_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user",
+      });
+    }
+
+    if (user_id.toString() === authUser._id.toString()) {
+      return res.status(401).json({
+        success: fasle,
+        message: "You cannot report yourself",
+      });
+    }
+
+    const user = await User.findById(user_id);
+    if (!user) {
+      errors.general = "User not found";
+      return res.status(404).json({
+        success: false,
+        message: errors,
+      });
     }
 
     const currentUser = await User.findById(authUser._id);
@@ -1713,26 +1739,22 @@ exports.reportUser = async (req, res) => {
       await ReportUser.create({
         reporter_id: currentUser._id,
         user_id,
-        body: message
-      })
+        body: message,
+      });
     }
 
     await currentUser.save();
 
     return res.status(200).json({
       success: true,
-      message: "User has been reported"
-    })
-
-
-  }catch(error){
+      message: "User has been reported",
+    });
+  } catch (error) {
     errors.general = "Something went wrong. Please try again.";
     console.log(error);
     return res.status(500).json({
       success: false,
-      message: errors
-    })
+      message: errors,
+    });
   }
-}; 
-
-
+};

@@ -7,7 +7,7 @@ const placeSchema = new mongoose.Schema(
       require: [true, "Name of place is required"],
       index: true,
     },
-    alias:String,
+    alias: String,
     google_place_id: {
       type: String,
       index: true,
@@ -97,10 +97,12 @@ const placeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
     },
-    duplicate_place_id: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Place",
-    }],
+    duplicate_place_id: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Place",
+      },
+    ],
     created_place: {
       type: Boolean,
       default: false,
@@ -134,7 +136,10 @@ placeSchema.virtual("avgRating").get(function () {
 placeSchema.virtual("display_address_for_own_country").get(function () {
   let addressArr = [];
 
-  if (this.address.administrative_area_level_1 != this.name && this.address.administrative_area_level_1 != undefined){
+  if (
+    this.address.administrative_area_level_1 != this.name &&
+    this.address.administrative_area_level_1 != undefined
+  ) {
     addressArr.push(this.address.administrative_area_level_1);
   }
   if (
@@ -166,13 +171,13 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
   // console.log("arr", addressArr);
 
   let reverseArr = [];
-  if(addressArr.length != 0){
+  if (addressArr.length != 0) {
     reverseArr = addressArr.reverse();
   }
 
   let address = "";
-  if (reverseArr.length != 0){
-    address = ", "+reverseArr.join(", ");
+  if (reverseArr.length != 0) {
+    address = ", " + reverseArr.join(", ");
   }
 
   return address;
@@ -187,7 +192,8 @@ placeSchema.virtual("display_address_for_other_country").get(function () {
   }
 
   if (
-    this.address.administrative_area_level_1 != this.name && this.address.administrative_area_level_1 != undefined
+    this.address.administrative_area_level_1 != this.name &&
+    this.address.administrative_area_level_1 != undefined
   ) {
     arrAddress.push(this.address.administrative_area_level_1);
   } else if (
