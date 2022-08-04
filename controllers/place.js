@@ -572,11 +572,11 @@ exports.placesVisited = async (req, res) => {
   }
 };
 
+//GET SUGGESTED POSTS FOR PLACE
 exports.getPlacePosts = async (req, res) => {
   let errors = {};
   try {
     const { place_id } = req.params;
-    // let { skip, limit, extraSkip } = req.body;
     let { skip, limit, placesArr } = req.body;
 
     //Validate Object ID
@@ -721,6 +721,7 @@ exports.getPlacePosts = async (req, res) => {
       success: true,
       posts,
       skip,
+      placesArr
     });
   } catch (error) {
     console.log(error);

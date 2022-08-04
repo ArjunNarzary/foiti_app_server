@@ -382,6 +382,7 @@ exports.editPost = async (req, res) => {
             address: details.address,
             coordinates: details.coordinates,
             google_types: details.types,
+            cover_photo : post.content[0].image
           });
           newPlaceCreated = true;
         }
