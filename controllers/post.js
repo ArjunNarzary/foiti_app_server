@@ -960,7 +960,7 @@ exports.viewFollowersPosts = async (req, res) => {
       .where('deactivated').ne(true)
       .where("terminated").ne(true)
       .select(
-        "_id user place createdAt status coordinate_status content caption like comments saved"
+        "_id user place createdAt status coordinate_status content caption like like_count comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
       .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
@@ -1203,6 +1203,55 @@ exports.reportPost = async (req, res) => {
       success: true,
       message: "Reported successful"
     })
+
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong. Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+//VIEW POST LIKED USERS
+exports.viewPostLikedUsers = async (req, res) => {
+  let errors = {};
+  try{
+    const { post_id } = req.params;
+    let { skip, limit } = req.body;
+    //Validate Object ID
+    if (!ObjectId.isValid(post_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post"
+      });
+    }
+
+    const post = await Post.findById(post_id);
+    //CHECK IF POST EXIST
+    if(!post){
+      errors.general = "Post not found";
+      console.log(errors);
+      return res.status(404).json({
+        succes: false,
+        message: errors
+      })
+    }
+
+    const users = await User.find({ _id: { $in: post.like } }).select("name total_contribution profileImage").limit(limit).skip(skip);
+    console.log(users);
+
+    if(users.length > 0){
+      skip = skip + users.length;
+    }
+
+    return res.status(200).json({
+      users,
+      skip,
+      success: true,
+    });
 
 
   }catch(error){

@@ -15,6 +15,7 @@ const {
   viewSavedPosts,
   reportPost,
   reportPost1,
+  viewPostLikedUsers,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
@@ -45,6 +46,9 @@ router
 
 //REPORT POST
 router.route("/report").post(isAuthenticated, reportPost);
+
+//POST LIKED USERS
+router.route("/likedUsers/:post_id").post(isAuthenticated, viewPostLikedUsers);
 
 
 
