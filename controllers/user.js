@@ -747,6 +747,14 @@ exports.viewAllPost = async (req, res) => {
     const profileId = req.params.id;
     const { authUser, skip, limit, ip, showGeoPost } = req.body;
 
+    //Validate Object ID
+    if (!ObjectId.isValid(profileId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user",
+      });
+    }
+
     if (skip == null || limit == null) {
       errors.general = "Please provide skips and limits";
       return res.json({
@@ -862,7 +870,7 @@ exports.viewAllPost = async (req, res) => {
       postsCount,
     });
   } catch (error) {
-    console.log(error.message);
+    console.log(error);
     errors.general = "Something went wrong while viewing this user's posts";
     return res.status(500).json({
       success: false,

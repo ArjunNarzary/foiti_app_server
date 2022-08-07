@@ -10,6 +10,7 @@ const placeSchema = new mongoose.Schema(
     alias: String,
     google_place_id: {
       type: String,
+      require: [true, "Please select valid location"],
       index: true,
       unique: true,
     },

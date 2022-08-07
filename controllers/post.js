@@ -58,6 +58,17 @@ exports.createPost = async (req, res) => {
         message: errors,
       });
     }
+
+
+    //Validate PLACE
+    if (!details.place_id || !details.address.short_country) {
+      errors.location = "Please add location";
+      await unlinkFile(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: errors,
+      });
+    }
     //IF user not found
     if (!user) {
       errors.general = "Unauthorized User";
@@ -286,8 +297,9 @@ exports.editPost = async (req, res) => {
         message: errors,
       });
     }
+
     if (details.name == "" && caption.length === 0) {
-      errors.general =
+      errors.caption =
         "You must change either location or caption to edit the post";
       res.status(400).json({
         success: false,
@@ -332,7 +344,7 @@ exports.editPost = async (req, res) => {
     }
 
     //IF NEW PLACE IS NOT SAME REMOVE POST FROM PREVIOUS PLACE
-    if (details.name != "") {
+    if (details.name != "" && details.address.short_country != "") {
       if (place.google_place_id.toString() !== details.place_id.toString()) {
         if (place.posts.includes(post._id)) {
           const index = place.posts.indexOf(post._id);
@@ -474,7 +486,7 @@ exports.viewPost = async (req, res) => {
     }
 
     const post = await Post.findById(postId)
-      .select("_id content user place caption like viewers status terminated deactivated saved")
+      .select("_id content user place caption like like_count viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
       .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
     
@@ -1241,8 +1253,6 @@ exports.viewPostLikedUsers = async (req, res) => {
     }
 
     const users = await User.find({ _id: { $in: post.like } }).select("name total_contribution profileImage").limit(limit).skip(skip);
-    console.log(users);
-
     if(users.length > 0){
       skip = skip + users.length;
     }
