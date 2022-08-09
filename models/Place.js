@@ -7,14 +7,15 @@ const placeSchema = new mongoose.Schema(
       require: [true, "Name of place is required"],
       index: true,
     },
-    alias: String,
+    //This array will be used to search for the place, will be manually added by team
+    alias: [String], 
     google_place_id: {
       type: String,
       require: [true, "Please select valid location"],
       index: true,
       unique: true,
     },
-    // address: {
+    // Google address formats: {
     //   route: String,
     //   natural_feature: String,
     //   neighborhood: String,
@@ -29,14 +30,28 @@ const placeSchema = new mongoose.Schema(
     //   premise: String,
     // },
     address: {},
-    short_address: String,
-    local_address: String,
+    //If display_address_availaible true show this address
+    display_address:{        
+      locality: String,
+      administrative_area: String,
+      country: String,
+    },
+    //This is used to check if display address is available or not
+    display_address_available: { 
+      type: Boolean,
+      default: false,
+    },
+    //Address to show for other country
+    short_address: String,    
+    //Address to show for own country
+    local_address: String,  
     coordinates: {
       lat: String,
       lng: String,
     },
     google_types: [String],
-    types: [String],
+    //Custom type to show in type field ["Category-> will be used in filtering", "Display in type field"]
+    types: [String],    
     cover_photo: {
       large: {
         public_url: String,
@@ -57,7 +72,8 @@ const placeSchema = new mongoose.Schema(
         ref: "Save",
       },
     ],
-    owner_id: {
+    //This will be User objectId -> owner of the business or place
+    owner_id: { 
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
@@ -90,29 +106,34 @@ const placeSchema = new mongoose.Schema(
         ref: "Post",
       },
     ],
-    duplicate: {
+    //This will be used to check if place is duplicate or not
+    duplicate: { 
       type: Boolean,
       default: false,
     },
-    original_place_id: {
+    //If duplicate place then this will be place ID of original place
+    original_place_id: { 
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
     },
-    duplicate_place_id: [
+    //If this place has duplicate places then this will be array of place IDs
+    duplicate_place_id: [ 
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Place",
       },
     ],
-    created_place: {
+    //If this place is created by user then this will be true addrss will be taken from image coordinates
+    created_place: {   
       type: Boolean,
       default: false,
     },
-    reviewed_status: {
+    //If this place is reviewed by team then this will be true
+    reviewed_status: {  
       type: Boolean,
       default: false,
     },
-    status: {
+    status: { 
       type: Boolean,
       default: false,
     },
@@ -137,7 +158,11 @@ placeSchema.virtual("avgRating").get(function () {
 placeSchema.virtual("display_address_for_own_country").get(function () {
   let addressArr = [];
 
-  if (
+  if (this.display_address_available){
+    addressArr.push(this.display_address.administrative_area);
+    addressArr.push(this.display_address.locality);
+  }else{
+    if (
     this.address.administrative_area_level_1 != this.name &&
     this.address.administrative_area_level_1 != undefined
   ) {
@@ -168,7 +193,7 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
     this.address.locality != this.name
   ) {
     addressArr.push(this.address.locality);
-  }
+  }}
   // console.log("arr", addressArr);
 
   let reverseArr = [];
@@ -188,40 +213,49 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
 placeSchema.virtual("display_address_for_other_country").get(function () {
   let arrAddress = [];
 
-  if (this.address.country != undefined && this.address.country != this.name) {
+  if(this.display_address_available){
+    arrAddress.push(this.display_address.country);
+  }else{
+    if (this.address.country != undefined && this.address.country != this.name) {
     arrAddress.push(this.address.country);
   }
+}
 
-  if (
-    this.address.administrative_area_level_1 != this.name &&
-    this.address.administrative_area_level_1 != undefined
-  ) {
-    arrAddress.push(this.address.administrative_area_level_1);
-  } else if (
-    this.address.administrative_area_level_2 != undefined &&
-    this.address.administrative_area_level_2 != this.name
-  ) {
-    arrAddress.push(this.address.administrative_area_level_2);
-  } else if (
-    this.address.natural_feature != undefined &&
-    this.address.natural_feature != this.name
-  ) {
-    arrAddress.push(this.address.natural_feature);
-  } else if (
-    this.address.sublocality_level_1 != undefined &&
-    this.address.sublocality_level_1 != this.name
-  ) {
-    arrAddress.push(this.address.sublocality_level_1);
-  } else if (
-    this.address.sublocality_level_2 != undefined &&
-    this.address.sublocality_level_2 != this.name
-  ) {
-    arrAddress.push(this.address.sublocality_level_2);
-  } else if (
-    this.address.locality != undefined &&
-    this.address.locality != this.name
-  ) {
-    arrAddress.push(this.address.locality);
+  if(this.display_address_available){
+    arrAddress.push(this.display_address.administrative_area);
+    arrAddress.push(this.display_address.locality);
+  }else{
+    if (
+      this.address.administrative_area_level_1 != this.name &&
+      this.address.administrative_area_level_1 != undefined
+    ) {
+      arrAddress.push(this.address.administrative_area_level_1);
+    } else if (
+      this.address.administrative_area_level_2 != undefined &&
+      this.address.administrative_area_level_2 != this.name
+    ) {
+      arrAddress.push(this.address.administrative_area_level_2);
+    } else if (
+      this.address.natural_feature != undefined &&
+      this.address.natural_feature != this.name
+    ) {
+      arrAddress.push(this.address.natural_feature);
+    } else if (
+      this.address.sublocality_level_1 != undefined &&
+      this.address.sublocality_level_1 != this.name
+    ) {
+      arrAddress.push(this.address.sublocality_level_1);
+    } else if (
+      this.address.sublocality_level_2 != undefined &&
+      this.address.sublocality_level_2 != this.name
+    ) {
+      arrAddress.push(this.address.sublocality_level_2);
+    } else if (
+      this.address.locality != undefined &&
+      this.address.locality != this.name
+    ) {
+      arrAddress.push(this.address.locality);
+    }
   }
 
   let reverseArr = [];

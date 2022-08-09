@@ -31,15 +31,16 @@ function shuffleArray(array) {
   return array;
 }
 
-//Search places
+//Search places while adding location of post
 exports.searchPlace = async (req, res) => {
   try {
     const { place, count } = req.query;
     const trimedPlace = place.trim();
 
     const results = await Place.find({
-      name: { $regex: `${trimedPlace}`, $options: "i" },
-    }).limit(count);
+      $or: [{ name: { $regex: `${trimedPlace}`, $options: "i" } }, { alias: { $regex: `${trimedPlace}`, $options: "i" } }]
+    }).
+    limit(count);
 
     return res.status(200).json({
       success: true,
@@ -61,12 +62,12 @@ exports.autocompletePlace = async (req, res) => {
     const trimedPlace = place.trim();
 
     const results = await Place.find({
-      name: { $regex: `${trimedPlace}`, $options: "i" },
+      $or: [{ name: { $regex: `${trimedPlace}`, $options: "i" } }, {alias: { $regex: `${trimedPlace}`, $options: "i" }}]
     })
       .where("duplicate")
       .ne(true)
       .select(
-        "_id name address cover_photo short_address local_address types google_types"
+        "_id name address cover_photo short_address local_address types google_types alias display_address display_address_available"
       )
       .limit(count);
 
@@ -706,6 +707,7 @@ exports.getPlacePosts = async (req, res) => {
       .where("terminated")
       .ne(true)
       .sort({ createdAt: -1 })
+      .select("_id status createdAt deactivated terminated content")
       .skip(skip)
       .limit(limit);
 

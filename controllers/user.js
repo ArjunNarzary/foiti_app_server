@@ -810,7 +810,7 @@ exports.viewAllPost = async (req, res) => {
           .ne(true)
           .where("terminated")
           .ne(true)
-          .populate("place")
+          .populate("place", "name address alias display_address display_address_available")
           .sort({ createdAt: -1 })
           .skip(parseInt(skip))
           .limit(parseInt(limit));

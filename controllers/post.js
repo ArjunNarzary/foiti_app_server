@@ -200,7 +200,7 @@ exports.createPost = async (req, res) => {
       user: user._id,
       place: place._id,
       content,
-      caption: req.body.caption,
+      caption: req.body.caption.trim(),
       status: user.account_status,
       last_status: user.account_status,
     });
@@ -378,8 +378,33 @@ exports.editPost = async (req, res) => {
 
             await placeCreated.deleteOne();
           }
+
           if (place.reviewed_status === false) {
-            await place.deleteOne();
+            //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
+            if (
+              place.cover_photo.large.private_id != undefined &&
+              place.cover_photo.large.private_id !=
+              post.content[0].image.large.private_id
+            ) {
+              await deleteFile(place.cover_photo.large.private_id);
+              await deleteFile(place.cover_photo.thumbnail.private_id);
+              await deleteFile(place.cover_photo.small.private_id);
+            }
+
+            //GET ALL REVIEWS OF THE PLACE AND REMOVE
+            await Review.deleteMany({ place_id: place._id });
+            await place.remove();
+          } else {
+            //IF PLACE COVER SAME AS POST
+            if (
+              place.cover_photo.large.private_id != undefined &&
+              place.cover_photo.large.private_id ==
+              post.content[0].image.large.private_id
+            ) {
+              place.cover_photo = {};
+            }
+            place.posts = [];
+            await place.save();
           }
         }
         samePlace = false;
@@ -446,7 +471,7 @@ exports.editPost = async (req, res) => {
       post.place = place._id;
     }
     if (caption.length > 0) {
-      post.caption = req.body.caption;
+      post.caption = req.body.caption.trim();
     }
     await post.save();
 
@@ -488,7 +513,7 @@ exports.viewPost = async (req, res) => {
     const post = await Post.findById(postId)
       .select("_id content user place caption like like_count viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
-      .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types");
+      .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types alias display_address display_address_available");
     
       if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
       errors.general = "Post not found";
@@ -601,19 +626,32 @@ exports.deletePost = async (req, res) => {
       }
 
       if (place.reviewed_status === false) {
-        //REMOVE COVER PICTURE IF IMAGE IS DIFFERENT FROM POST IMAGE
+        //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
         if (
           place.cover_photo.large.private_id != undefined &&
           place.cover_photo.large.private_id !=
-            post.content[0].image.large.private_id
+          post.content[0].image.large.private_id
         ) {
           await deleteFile(place.cover_photo.large.private_id);
           await deleteFile(place.cover_photo.thumbnail.private_id);
           await deleteFile(place.cover_photo.small.private_id);
         }
+
         //GET ALL REVIEWS OF THE PLACE AND REMOVE
         await Review.deleteMany({ place_id: place._id });
         await place.remove();
+      }else{
+        //IF PLACE COVER SAME AS POST
+        //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
+        if (
+          place.cover_photo.large.private_id != undefined &&
+          place.cover_photo.large.private_id ==
+          post.content[0].image.large.private_id
+        ) {
+          place.cover_photo = {};
+        }
+        place.posts = [];
+        await place.save();
       }
     } else {
       const index = place.posts.indexOf(post._id);
@@ -866,13 +904,14 @@ exports.randomPosts = async (req, res) => {
           { user: { $nin: authUser.reported_users } },
           { _id: { $nin: authUser.reported_posts } }
         ]})
+        .select("_id content name place createdAt")
+        .populate("place", "name address alias display_address display_address_available")
         // .or([{ 'status': 'active' }, { 'status': 'silent' }])
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
         .where('deactivated').ne(true)
         .where("terminated").ne(true)
         .where("user").ne(authUser._id)
-        .populate("place")
         .limit(200)
         .sort({ createdAt: -1 });
     } else {
@@ -882,12 +921,13 @@ exports.randomPosts = async (req, res) => {
           { user: { $nin: authUser.reported_users } },
           { _id: { $nin: authUser.reported_posts } }
         ]})
+        .select("_id content name place createdAt")
+        .populate("place", "name address alias display_address display_address_available")
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
         .where('deactivated').ne(true)
         .where("terminated").ne(true)
         .where("user").ne(authUser._id)
-        .populate("place")
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 });
@@ -975,7 +1015,7 @@ exports.viewFollowersPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like like_count comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
+      .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -1004,7 +1044,7 @@ exports.viewFollowersPosts = async (req, res) => {
           "user",
           "name username total_contribution profileImage foiti_ambassador"
         )
-        .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
+        .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available")
         .sort({ createdAt: -1 })
         .skip(suggestedSkip)
         .limit(limit);
@@ -1119,7 +1159,7 @@ exports.viewSavedPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types google_types display_address_for_own_country")
+      .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
