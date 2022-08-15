@@ -734,3 +734,62 @@ exports.getPlacePosts = async (req, res) => {
     });
   }
 };
+
+//GET DESTINATIONS FOR PLACE
+exports.getPlaceDestinations = async (req, res) => {
+  let errors = {};
+  try{
+    const { place_id } = req.body;
+
+    //Validate Object ID
+    if (!ObjectId.isValid(place_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid place ID",
+      });
+    }
+
+    const place = await Place.findById(place_id);
+    if (!place) {
+      errors.place = "Place not found";
+      return res.status(404).json({
+        success: false,
+        error: errors,
+      });
+    }
+
+    if(place.types.length < 2 || place.display_address_avaialble == false){
+      return res.status(404).json({
+        success: false,
+        destinations: [],
+      });
+    }
+
+    if (place.types[1] != "state" || place.show_destinations == false){
+      return res.status(404).json({
+        success: false,
+        destinations: [],
+      });
+    }
+
+    //GET DESTINATIONS OF CURRENT PLACE
+    const destinations = await Place.find({})
+                        .where("display_address.admin_area_1").equals(place.name)
+                        .where("display_address.country").equals(place.display_address.country)
+                        .where("destination").equals(true);
+
+    return res.status(200).json({
+      success: true,
+      destinations,
+    })
+
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong.Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+}

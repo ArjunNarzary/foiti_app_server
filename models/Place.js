@@ -8,7 +8,7 @@ const placeSchema = new mongoose.Schema(
       index: true,
     },
     //This array will be used to search for the place, will be manually added by team
-    alias: [String], 
+    alias: [String],
     google_place_id: {
       type: String,
       require: [true, "Please select valid location"],
@@ -31,27 +31,28 @@ const placeSchema = new mongoose.Schema(
     // },
     address: {},
     //If display_address_availaible true show this address
-    display_address:{        
+    display_address: {
       locality: String,
-      administrative_area: String,
+      admin_area_2: String,  //District name
+      admin_area_1: String, //State name
       country: String,
     },
     //This is used to check if display address is available or not
-    display_address_available: { 
+    display_address_available: {
       type: Boolean,
       default: false,
     },
     //Address to show for other country
-    short_address: String,    
+    short_address: String,
     //Address to show for own country
-    local_address: String,  
+    local_address: String,
     coordinates: {
       lat: String,
       lng: String,
     },
     google_types: [String],
     //Custom type to show in type field ["Category-> will be used in filtering", "Display in type field"]
-    types: [String],    
+    types: [String],
     cover_photo: {
       large: {
         public_url: String,
@@ -73,7 +74,7 @@ const placeSchema = new mongoose.Schema(
       },
     ],
     //This will be User objectId -> owner of the business or place
-    owner_id: { 
+    owner_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
@@ -107,33 +108,41 @@ const placeSchema = new mongoose.Schema(
       },
     ],
     //This will be used to check if place is duplicate or not
-    duplicate: { 
+    duplicate: {
       type: Boolean,
       default: false,
     },
     //If duplicate place then this will be place ID of original place
-    original_place_id: { 
+    original_place_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
     },
     //If this place has duplicate places then this will be array of place IDs
-    duplicate_place_id: [ 
+    duplicate_place_id: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Place",
       },
     ],
     //If this place is created by user then this will be true addrss will be taken from image coordinates
-    created_place: {   
+    created_place: {
       type: Boolean,
       default: false,
     },
     //If this place is reviewed by team then this will be true
-    reviewed_status: {  
+    reviewed_status: {
       type: Boolean,
       default: false,
     },
-    status: { 
+    destination: {
+      type: Boolean,
+      default: false,
+    },
+    show_destinations: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
       type: Boolean,
       default: false,
     },
@@ -159,8 +168,14 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
   let addressArr = [];
 
   if (this.display_address_available){
-    addressArr.push(this.display_address.administrative_area);
-    addressArr.push(this.display_address.locality);
+    if (this.display_address.admin_area_1){
+      addressArr.push(this.display_address.admin_area_1);
+    }
+    if (this.display_address.locality){
+      addressArr.push(this.display_address.locality);
+    }else if(this.display_address.admin_area_2){
+      addressArr.push(this.display_address.admin_area_2);
+    }
   }else{
     if (
     this.address.administrative_area_level_1 != this.name &&
@@ -213,7 +228,7 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
 placeSchema.virtual("display_address_for_other_country").get(function () {
   let arrAddress = [];
 
-  if(this.display_address_available){
+  if (this.display_address_available && this.display_address.country){
     arrAddress.push(this.display_address.country);
   }else{
     if (this.address.country != undefined && this.address.country != this.name) {
@@ -222,8 +237,13 @@ placeSchema.virtual("display_address_for_other_country").get(function () {
 }
 
   if(this.display_address_available){
-    arrAddress.push(this.display_address.administrative_area);
-    arrAddress.push(this.display_address.locality);
+    if (this.display_address.admin_area_1) {
+      addressArr.push(this.display_address.admin_area_1);
+    }else if (this.display_address.locality) {
+      addressArr.push(this.display_address.locality);
+    } else if (this.display_address.admin_area_2) {
+      addressArr.push(this.display_address.admin_area_2);
+    }
   }else{
     if (
       this.address.administrative_area_level_1 != this.name &&
