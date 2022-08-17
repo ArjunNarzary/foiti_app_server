@@ -1054,19 +1054,21 @@ exports.getPlaceDestinations = async (req, res) => {
       });
     }
 
-    if (place.types[1] != "state" || place.show_destinations == false){
-      return res.status(404).json({
-        success: false,
-        destinations: [],
-      });
+    let destinations = [];
+    if (place.types[1] == "state" && place.show_destinations){
+      //GET DESTINATIONS OF CURRENT PLACE
+      destinations = await Place.find({})
+                .select("_id name types cover_photo display_address destination")
+                .where("display_address.admin_area_1").equals(place.name)
+                .where("display_address.country").equals(place.display_address.country)
+                .where("destination").equals(true);
+    } else if (place.types[1] == "country" && place.show_destinations){
+      //GET DESTINATIONS OF CURRENT PLACE
+      destinations = await Place.find({})
+                  .select("_id name types cover_photo display_address destination")
+                  .where("display_address.country").equals(place.name)
+                  .where("destination").equals(true);
     }
-
-    //GET DESTINATIONS OF CURRENT PLACE
-    const destinations = await Place.find({})
-                        .select("_id name types cover_photo display_address destination")
-                        .where("display_address.admin_area_1").equals(place.name)
-                        .where("display_address.country").equals(place.display_address.country)
-                        .where("destination").equals(true);
 
     return res.status(200).json({
       success: true,
