@@ -8,6 +8,8 @@ const {
   addPlaceLocationClickedDetails,
   placesVisited,
   getPlaceDestinations,
+  showPopularPlaces,
+  explorePlace,
 } = require("../controllers/place");
 const router = express.Router();
 
@@ -35,6 +37,9 @@ router
 
   //GET PLACE DESTINATIONS
 router.route("/destinations").post(isAuthenticated, getPlaceDestinations);
+router.route("/popular-places").post(isAuthenticated, showPopularPlaces);
+
+router.route("/explore-place/:place_id").post(isAuthenticated, explorePlace);
 
 //GET PLACE
 router

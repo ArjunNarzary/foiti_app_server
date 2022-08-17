@@ -53,6 +53,16 @@ const placeSchema = new mongoose.Schema(
     google_types: [String],
     //Custom type to show in type field ["Category-> will be used in filtering", "Display in type field"]
     types: [String],
+    //Search rank for sorting search results
+    search_rank:{
+      type: Number,
+      default: 0,
+    },
+    //Score to sort popular places
+    editor_rating: {
+      type: mongoose.Decimal128,
+      default: 0,
+    },
     cover_photo: {
       large: {
         public_url: String,
