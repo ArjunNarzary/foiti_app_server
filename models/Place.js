@@ -18,21 +18,23 @@ const placeSchema = new mongoose.Schema(
     // Google address formats: {
     //   route: String,
     //   natural_feature: String,
-    //   neighborhood: String,
-    //   sublocality_level_2: String,
-    //   sublocality_level_1: String,
+    //   neighborhood: String, <---
+    //   sublocality_level_2: String, <---
+    //   sublocality_level_1: String, <--- 
     //   locality: String,
+    //   administrative_area_level_3: String,  <---
     //   administrative_area_level_2: String,
     //   administrative_area_level_1: String,
     //   country: String,
     //   short_country: String,
-    //   postal_code: String,
+    //   postal_code: String,  <----
     //   premise: String,
     // },
     address: {},
     //If display_address_availaible true show this address
     display_address: {
       locality: String,
+      sublocality: String,
       admin_area_2: String,  //District name
       admin_area_1: String, //State name
       country: String,
@@ -54,7 +56,7 @@ const placeSchema = new mongoose.Schema(
     //Custom type to show in type field ["Category-> will be used in filtering", "Display in type field"]
     types: [String],
     //Search rank for sorting search results
-    search_rank:{
+    search_rank: {
       type: Number,
       default: 0,
     },
