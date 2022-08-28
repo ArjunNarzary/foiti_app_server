@@ -950,7 +950,7 @@ exports.explorePlace = async (req, res) => {
       .ne(true)
       .sort({ createdAt: -1 })
       .select("_id status createdAt deactivated terminated content")
-      .populate("place", "name address display_address display_address_for_own_country display_address_for_other_country")
+      .populate("place", "name address display_address display_address_for_own_country display_address_for_other_country original_place_id")
       .skip(skip)
       .limit(limit);
 
@@ -1044,14 +1044,14 @@ exports.getPlaceDestinations = async (req, res) => {
     if (place.types[1] == "state" && place.show_destinations){
       //GET DESTINATIONS OF CURRENT PLACE
       destinations = await Place.find({})
-                .select("_id name types destination show_destinations cover_photo display_address destination")
+                .select("_id name types destination show_destinations cover_photo display_address destination original_place_id")
                 .where("display_address.admin_area_1").equals(place.name)
                 .where("display_address.country").equals(place.display_address.country)
                 .where("destination").equals(true);
     } else if (place.types[1] == "country" && place.show_destinations){
       //GET DESTINATIONS OF CURRENT PLACE
       destinations = await Place.find({})
-                  .select("_id name types destination show_destinations cover_photo display_address destination")
+                  .select("_id name types destination show_destinations cover_photo display_address destination original_place_id")
                   .where("display_address.country").equals(place.name)
                   .where("destination").equals(true);
     }
@@ -1105,7 +1105,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is destination
     if (place.types[1] == "village" || place.types[1] == "town" || place.types[1] == "city") {
       popular_places = await Place.find({})
-        .select("_id name types destination show_destinations cover_photo display_address editor_rating")
+        .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
         .where("duplicate").ne(true)
         .where("reviewed_status").equals(true)
         .where("editor_rating").gte(1)
@@ -1122,7 +1122,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is state or union territory
     else if(place.types[1] == "state" || place.types[1] == "union_territory"){
       popular_places = await Place.find({})
-        .select("_id name types destination show_destinations cover_photo display_address editor_rating")
+        .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
                         .where("duplicate").ne(true)
                         .where("reviewed_status").equals(true)
                         .where("editor_rating").gte(1)
@@ -1135,7 +1135,7 @@ exports.showPopularPlaces = async (req, res) => {
     }
     else if(place.types[1] == "country"){
       popular_places = await Place.find({$or:[{types: "state"}, {types: "union_territory"}]})
-                        .select("_id name types destination show_destinations cover_photo display_address")
+                      .select("_id name types destination show_destinations cover_photo display_address original_place_id")
                         .where("display_address.country").equals(place.name);
     }
 

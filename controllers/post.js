@@ -567,7 +567,7 @@ exports.viewPost = async (req, res) => {
     const post = await Post.findById(postId)
       .select("_id content user place caption like like_count viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
-      .populate("place", "_id name address local_address short_address google_place_id coordinates types destination alias display_address display_address_available");
+      .populate("place", "_id name address local_address short_address google_place_id coordinates types destination alias display_address display_address_available original_place_id");
     
       if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
       errors.general = "Post not found";
@@ -988,7 +988,7 @@ exports.randomPosts = async (req, res) => {
           { _id: { $nin: authUser.reported_posts } }
         ]})
         .select("_id content name place createdAt")
-        .populate("place", "name address alias display_address display_address_available")
+        .populate("place", "name address alias display_address display_address_available original_place_id")
         // .or([{ 'status': 'active' }, { 'status': 'silent' }])
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
@@ -1005,7 +1005,7 @@ exports.randomPosts = async (req, res) => {
           { _id: { $nin: authUser.reported_posts } }
         ]})
         .select("_id content name place createdAt")
-        .populate("place", "name address alias display_address display_address_available")
+        .populate("place", "name address alias display_address display_address_available original_place_id")
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
         .where('deactivated').ne(true)
@@ -1098,7 +1098,7 @@ exports.viewFollowersPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like like_count comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available")
+      .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available original_place_id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -1127,7 +1127,7 @@ exports.viewFollowersPosts = async (req, res) => {
           "user",
           "name username total_contribution profileImage foiti_ambassador"
         )
-        .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available")
+        .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available original_place_id")
         .sort({ createdAt: -1 })
         .skip(suggestedSkip)
         .limit(limit);
@@ -1242,7 +1242,7 @@ exports.viewSavedPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available")
+      .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available original_place_id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
