@@ -42,10 +42,26 @@ function generateUniqueUsername(rString) {
   return User.findOne({ username: rString })
     .then(function (account) {
       if (account) {
-        rString = randomString(10, "0123456789abcdefghijklmnopqrstuvwxyz.");
+        rString = randomString(10, "0123456789abcdefghijklmnopqrstuvwxyz");
         return generateUniqueUsername(rString); // <== return statement here
       }
       return rString;
+    })
+    .catch(function (err) {
+      console.error(err);
+      throw err;
+    });
+}
+
+function generateUniqueUsernameByName(name) {
+  const rString = randomString(5, "0123456789abcdefghijklmnopqrstuvwxyz");
+  const generatedName = name+rString;
+  return User.findOne({ username: generatedName })
+    .then(function (account) {
+      if (account) {
+        return generateUniqueUsernameByName(name); // <== return statement here
+      }
+      return generatedName; 
     })
     .catch(function (err) {
       console.error(err);
@@ -212,7 +228,10 @@ exports.enterName = async (req, res) => {
 
     const user = await User.findById(authUser._id);
 
+    const formatName = name.split(" ").join("").toLowerCase();
+    const username = await generateUniqueUsernameByName(formatName);
     user.name = name;
+    user.username = username;
 
     await user.save();
 

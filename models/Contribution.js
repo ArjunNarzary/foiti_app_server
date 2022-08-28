@@ -42,7 +42,7 @@ const contributionSchema = new Schema(
     ratings: [
       {
         type: Schema.Types.ObjectId,
-        ref: "Rating",
+        ref: "Review",
       },
     ],
     reports: [
@@ -68,8 +68,8 @@ contributionSchema.methods.calculateTotalContribution = function () {
   total = total + this.photos_with_coordinates.length;
   total = total + this.added_places.length;
   total = total + this.reviews.length;
-  total = total + this.review_200_characters.length;
-  total = total + this.ratings.length;
+  // total = total + this.review_200_characters.length;
+  // total = total + this.ratings.length;
   total = total + this.reports.length;
   total = total + this.edits.length;
   return total;

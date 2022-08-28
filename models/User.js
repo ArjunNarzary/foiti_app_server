@@ -61,6 +61,10 @@ const userSchema = new mongoose.Schema({
     administrative_area_level_1: String,
     country: String,
     short_country: String,
+    coordinates:{
+      lat: String,
+      lng:String,
+    }
   },
   currently_in: {
     type: mongoose.Schema.Types.ObjectId,

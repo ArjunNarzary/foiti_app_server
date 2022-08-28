@@ -143,6 +143,16 @@ exports.createPost = async (req, res) => {
         },
       });
       newPlaceCreated = true;
+    }else{
+      //PLACE IS DUPLICATE AND NOT ADDRESS OR SUB-PLACE
+      if (place.duplicate && (place.types[0] != "address" && !place.types.includes("sub-place"))){
+        const currentPlaceId = place._id;
+        place = await Place.findById(place.original_place_id);
+
+        if(!place){
+          place = await Place.findById(currentPlaceId);
+        }
+      }
     }
 
     if (!place) {
@@ -264,10 +274,17 @@ exports.createPost = async (req, res) => {
     //SEND NEW POST IN APP NOTIFICATION TO FOLLOWERS
     sendNewPostNotification(user, post);
 
+    let typeAddress = false;
+    const typeArr = ["route", "neighborhood", "sublocality_level_2", "sublocality_level_1", "locality", "administrative_area_level_2", "administrative_area_level_1", "country"];
+    if (place.google_types.length > 0 && typeArr.includes(place.google_types[0])){
+      typeAddress = true;
+    }
+
     return res.status(201).json({
       success: true,
       post,
       uploadedBefore,
+      typeAddress,
     });
   } catch (error) {
     errors.general = error.message;
@@ -391,6 +408,35 @@ exports.editPost = async (req, res) => {
               await deleteFile(place.cover_photo.small.private_id);
             }
 
+            //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
+            const reviews = await Review.find({ place_id: place._id });
+            if(reviews.length > 0){
+              //Remove contributions
+              reviews.forEach(async (reviewData) => {
+                const userContribution = await Contribution.findOne({ userId: reviewData.user_id });
+                if(userContribution.reviews.includes(reviewData._id)){
+                  const index = userContribution.reviews.indexOf(reviewData._id);
+                  userContribution.reviews.splice(index, 1);
+                }
+                if(userContribution.review_200_characters.includes(reviewData._id)){
+                  const index = userContribution.review_200_characters.indexOf(reviewData._id);
+                  userContribution.review_200_characters.splice(index, 1);
+                }
+                if(userContribution.ratings.includes(reviewData._id)){
+                  const index = userContribution.ratings.indexOf(reviewData._id);
+                  userContribution.ratings.splice(index, 1);
+                }
+
+                await userContribution.save();
+                const contributionOwner = await User.findById(userContribution.userId);
+                if(contributionOwner){
+                  contributionOwner.total_contribution = userContribution.calculateTotalContribution();
+                  await contributionOwner.save();
+                }
+
+              })
+            }
+
             //GET ALL REVIEWS OF THE PLACE AND REMOVE
             await Review.deleteMany({ place_id: place._id });
             await place.remove();
@@ -422,6 +468,16 @@ exports.editPost = async (req, res) => {
             cover_photo : post.content[0].image
           });
           newPlaceCreated = true;
+        }else{
+          //PLACE IS DUPLICATE AND NOT ADDRESS OR SUB-PLACE
+          if (place.duplicate && (place.types[0] != "address" && !place.types.includes("sub-place"))) {
+            const currentPlaceId = place._id;
+            place = await Place.findById(place.original_place_id);
+
+            if (!place) {
+              place = await Place.findById(currentPlaceId);
+            }
+          }
         }
       }
     }
@@ -438,10 +494,8 @@ exports.editPost = async (req, res) => {
         place: place._id,
         user: authUser._id,
       });
-      +(
         //ADD to contribution table
         currentUserContribution.added_places.push(place._id)
-      );
     } else {
       //IF PLACE IS SAME AND FIRST POST WITH COORDINATES CREATED
       if (samePlace) {
@@ -513,7 +567,7 @@ exports.viewPost = async (req, res) => {
     const post = await Post.findById(postId)
       .select("_id content user place caption like like_count viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
-      .populate("place", "_id name address local_address short_address google_place_id coordinates types google_types alias display_address display_address_available");
+      .populate("place", "_id name address local_address short_address google_place_id coordinates types destination alias display_address display_address_available");
     
       if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
       errors.general = "Post not found";
@@ -635,6 +689,35 @@ exports.deletePost = async (req, res) => {
           await deleteFile(place.cover_photo.large.private_id);
           await deleteFile(place.cover_photo.thumbnail.private_id);
           await deleteFile(place.cover_photo.small.private_id);
+        }
+
+        //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
+        const reviews = await Review.find({ place_id: place._id });
+        if (reviews.length > 0) {
+          //Remove contributions
+          reviews.forEach(async (reviewData) => {
+            const userContribution = await Contribution.findOne({ userId: reviewData.user_id });
+            if (userContribution.reviews.includes(reviewData._id)) {
+              const index = userContribution.reviews.indexOf(reviewData._id);
+              userContribution.reviews.splice(index, 1);
+            }
+            if (userContribution.review_200_characters.includes(reviewData._id)) {
+              const index = userContribution.review_200_characters.indexOf(reviewData._id);
+              userContribution.review_200_characters.splice(index, 1);
+            }
+            if (userContribution.ratings.includes(reviewData._id)) {
+              const index = userContribution.ratings.indexOf(reviewData._id);
+              userContribution.ratings.splice(index, 1);
+            }
+
+            await userContribution.save();
+            const contributionOwner = await User.findById(userContribution.userId);
+            if (contributionOwner) {
+              contributionOwner.total_contribution = userContribution.calculateTotalContribution();
+              await contributionOwner.save();
+            }
+
+          })
         }
 
         //GET ALL REVIEWS OF THE PLACE AND REMOVE
@@ -1015,7 +1098,7 @@ exports.viewFollowersPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like like_count comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available")
+      .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -1044,7 +1127,7 @@ exports.viewFollowersPosts = async (req, res) => {
           "user",
           "name username total_contribution profileImage foiti_ambassador"
         )
-        .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available")
+        .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available")
         .sort({ createdAt: -1 })
         .skip(suggestedSkip)
         .limit(limit);

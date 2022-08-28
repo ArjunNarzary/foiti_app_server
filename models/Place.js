@@ -60,7 +60,7 @@ const placeSchema = new mongoose.Schema(
     },
     //Score to sort popular places
     editor_rating: {
-      type: mongoose.Decimal128,
+      type: Number,
       default: 0,
     },
     cover_photo: {
@@ -248,11 +248,11 @@ placeSchema.virtual("display_address_for_other_country").get(function () {
 
   if(this.display_address_available){
     if (this.display_address.admin_area_1) {
-      addressArr.push(this.display_address.admin_area_1);
+      arrAddress.push(this.display_address.admin_area_1);
     }else if (this.display_address.locality) {
-      addressArr.push(this.display_address.locality);
+      arrAddress.push(this.display_address.locality);
     } else if (this.display_address.admin_area_2) {
-      addressArr.push(this.display_address.admin_area_2);
+      arrAddress.push(this.display_address.admin_area_2);
     }
   }else{
     if (

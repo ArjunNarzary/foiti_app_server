@@ -78,39 +78,6 @@ exports.autocompletePlace = async (req, res) => {
     const { place, count } = req.query;
     const { ip } = req.headers;
     const trimedPlace = place.trim();
-    // let results = [];
-
-    // //Search country
-    // const resultsCountry = await Place.find({
-    //   $or: [{ name: { $regex: `^${trimedPlace}`, $options: "i" } }, {alias: { $regex: `^${trimedPlace}`, $options: "i" }}]
-    // })
-    //   .where("duplicate")
-    //   .ne(true)
-    //   .where("types").equals("country")
-    //   .select(
-    //     "_id name address cover_photo short_address local_address types google_types alias display_address display_address_available destination"
-    //   )
-    //   .limit(1);
-
-    //   if (resultsCountry.length > 0) {
-    //     results = [...results, ...resultsCountry];
-    //   }
-
-    // //Search detinations
-    // const resultsDestination = await Place.find({
-    //   $or: [{ name: { $regex: `^${trimedPlace}`, $options: "i" } }, { alias: { $regex: `^${trimedPlace}`, $options: "i" } }]
-    // })
-    //   .where("duplicate")
-    //   .ne(true)
-    //   .where("destination").equals(true)
-    //   .select(
-    //     "_id name address cover_photo short_address local_address types google_types alias display_address display_address_available destination"
-    //   )
-    //   .limit(2);
-
-    // if (resultsDestination.length > 0) {
-    //   results = [...results, ...resultsDestination];
-    // }
 
 
     // //Search State and UTs
@@ -151,10 +118,22 @@ exports.autocompletePlace = async (req, res) => {
       .where("duplicate")
       .ne(true)
       .select(
-        "_id name address cover_photo short_address local_address types google_types alias display_address display_address_available destination"
+        "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
       )
       .sort({ search_rank: -1 })
       .limit(12);
+
+    // const users = await User.find({ username: { $regex: `^${trimedPlace}`, $options: "i" } })
+    //   .where("name")
+    //   .ne(undefined)
+    //   .where("account_status")
+    //   .equals("active")
+    //   .where("terminated")
+    //   .ne(true)
+    //   .select(
+    //     "_id name profileImage total_contribution"
+    //   )
+    //   .limit(5);
 
     //FORMAT ADDRESS
     let country = "";
@@ -377,17 +356,17 @@ exports.addEditReview = async (req, res) => {
     }
 
     //Add contribution for rating
-    if (rating != "" && rating != undefined) {
-      if (!contribution.ratings.includes(reviewModel._id)) {
-        contribution.ratings.push(reviewModel._id);
-      }
-    } else {
-      if (contribution.ratings.includes(reviewModel._id)) {
-        contribution.ratings = contribution.ratings.filter(
-          (review) => review.toString() != reviewModel._id.toString()
-        );
-      }
-    }
+    // if (rating != "" && rating != undefined) {
+    //   if (!contribution.ratings.includes(reviewModel._id)) {
+    //     contribution.ratings.push(reviewModel._id);
+    //   }
+    // } else {
+    //   if (contribution.ratings.includes(reviewModel._id)) {
+    //     contribution.ratings = contribution.ratings.filter(
+    //       (review) => review.toString() != reviewModel._id.toString()
+    //     );
+    //   }
+    // }
 
     await contribution.save();
 
@@ -635,6 +614,13 @@ exports.placesVisited = async (req, res) => {
     }
 
     posts.forEach((post) => {
+      if (post.place.types.length > 1) {
+        const typeArray = post.place.types[1].split("_");
+        const capitalizedArray = typeArray.map((item) => {
+          return item.charAt(0).toUpperCase() + item.slice(1);
+        });
+        post.place.types[1] = capitalizedArray.join(" ");
+      }
       if (post.place.address.short_country == country) {
         if (post.place.display_address_for_own_country != "") {
           post.place.local_address =
@@ -1058,14 +1044,14 @@ exports.getPlaceDestinations = async (req, res) => {
     if (place.types[1] == "state" && place.show_destinations){
       //GET DESTINATIONS OF CURRENT PLACE
       destinations = await Place.find({})
-                .select("_id name types cover_photo display_address destination")
+                .select("_id name types destination show_destinations cover_photo display_address destination")
                 .where("display_address.admin_area_1").equals(place.name)
                 .where("display_address.country").equals(place.display_address.country)
                 .where("destination").equals(true);
     } else if (place.types[1] == "country" && place.show_destinations){
       //GET DESTINATIONS OF CURRENT PLACE
       destinations = await Place.find({})
-                  .select("_id name types cover_photo display_address destination")
+                  .select("_id name types destination show_destinations cover_photo display_address destination")
                   .where("display_address.country").equals(place.name)
                   .where("destination").equals(true);
     }
@@ -1119,7 +1105,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is destination
     if (place.types[1] == "village" || place.types[1] == "town" || place.types[1] == "city") {
       popular_places = await Place.find({})
-        .select("_id name types cover_photo display_address editor_rating")
+        .select("_id name types destination show_destinations cover_photo display_address editor_rating")
         .where("duplicate").ne(true)
         .where("reviewed_status").equals(true)
         .where("editor_rating").gte(1)
@@ -1136,7 +1122,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is state or union territory
     else if(place.types[1] == "state" || place.types[1] == "union_territory"){
       popular_places = await Place.find({})
-        .select("_id name types cover_photo display_address editor_rating")
+        .select("_id name types destination show_destinations cover_photo display_address editor_rating")
                         .where("duplicate").ne(true)
                         .where("reviewed_status").equals(true)
                         .where("editor_rating").gte(1)
@@ -1149,7 +1135,7 @@ exports.showPopularPlaces = async (req, res) => {
     }
     else if(place.types[1] == "country"){
       popular_places = await Place.find({$or:[{types: "state"}, {types: "union_territory"}]})
-                        .select("_id name types cover_photo display_address")
+                        .select("_id name types destination show_destinations cover_photo display_address")
                         .where("display_address.country").equals(place.name);
     }
 
