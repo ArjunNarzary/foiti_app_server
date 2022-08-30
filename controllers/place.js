@@ -388,135 +388,135 @@ exports.addEditReview = async (req, res) => {
   }
 };
 
-exports.getPlacePostsOld = async (req, res) => {
-  let errors = {};
-  try {
-    const { place_id } = req.params;
-    // let { skip, limit, extraSkip } = req.body;
-    let { skip, limit } = req.body;
+// exports.getPlacePostsOld = async (req, res) => {
+//   let errors = {};
+//   try {
+//     const { place_id } = req.params;
+//     // let { skip, limit, extraSkip } = req.body;
+//     let { skip, limit } = req.body;
 
-    const place = await Place.findById(place_id);
-    if (!place) {
-      errors.place = "Place not found";
-      return res.status(404).json({
-        success: false,
-        error: errors,
-      });
-    }
+//     const place = await Place.findById(place_id);
+//     if (!place) {
+//       errors.place = "Place not found";
+//       return res.status(404).json({
+//         success: false,
+//         error: errors,
+//       });
+//     }
 
-    let posts = [];
+//     let posts = [];
 
-    if (place.google_types[0] === "country") {
-      const places = await Place.find({})
-        .where("address.country")
-        .equals(place.address.country)
-        .populate("posts")
-        .exec()
-        .then(async (cPlace) => {
-          cPlace.map((p) => {
-            posts = [...posts, ...p.posts];
-          });
-        });
-    } else if (place.google_types[0] === "administrative_area_level_1") {
-      const places = await Place.find({})
-        .where("address.administrative_area_level_1")
-        .equals(place.address.administrative_area_level_1)
-        .where("address.country")
-        .equals(place.address.country)
-        .populate("posts")
-        .exec()
-        .then(async (cPlace) => {
-          cPlace.map((p) => {
-            posts = [...posts, ...p.posts];
-          });
-        });
-    } else if (place.google_types[0] === "administrative_area_level_2") {
-      const places = await Place.find({})
-        .where("address.administrative_area_level_2")
-        .equals(place.address.administrative_area_level_2)
-        .where("address.administrative_area_level_1")
-        .equals(place.address.administrative_area_level_1)
-        .where("address.country")
-        .equals(place.address.country)
-        .populate("posts")
-        .exec()
-        .then(async (cPlace) => {
-          cPlace.map((p) => {
-            posts = [...posts, ...p.posts];
-          });
-        });
-    } else if (place.google_types[0] === "locality") {
-      if (
-        place.address.administrative_area_level_2 != "" ||
-        place.address.administrative_area_level_2 !== undefined
-      ) {
-        const places = await Place.find({})
-          .where("address.locality")
-          .equals(place.address.locality)
-          .where("address.administrative_area_level_2")
-          .equals(place.address.administrative_area_level_2)
-          .where("address.administrative_area_level_1")
-          .equals(place.address.administrative_area_level_1)
-          .where("address.country")
-          .equals(place.address.country)
-          .populate("posts")
-          .exec()
-          .then(async (cPlace) => {
-            cPlace.map((p) => {
-              posts = [...posts, ...p.posts];
-            });
-          });
-      } else {
-        const places = await Place.find({})
-          .where("address.locality")
-          .equals(place.address.locality)
-          .where("address.administrative_area_level_1")
-          .equals(place.address.administrative_area_level_1)
-          .where("address.country")
-          .equals(place.address.country)
-          .populate("posts")
-          .exec()
-          .then((cPlace) => {
-            cPlace.map((p) => {
-              posts = [...posts, ...p.posts];
-            });
-          });
-      }
-    } else {
-      posts = await Post.find({})
-        .where("place")
-        .equals(place_id)
-        .where("status")
-        .equals("active")
-        .where("deactivated")
-        .ne(true)
-        .where("terminated")
-        .ne(true)
-        .sort({ createdAt: -1 });
-    }
+//     if (place.google_types[0] === "country") {
+//       const places = await Place.find({})
+//         .where("address.country")
+//         .equals(place.address.country)
+//         .populate("posts")
+//         .exec()
+//         .then(async (cPlace) => {
+//           cPlace.map((p) => {
+//             posts = [...posts, ...p.posts];
+//           });
+//         });
+//     } else if (place.google_types[0] === "administrative_area_level_1") {
+//       const places = await Place.find({})
+//         .where("address.administrative_area_level_1")
+//         .equals(place.address.administrative_area_level_1)
+//         .where("address.country")
+//         .equals(place.address.country)
+//         .populate("posts")
+//         .exec()
+//         .then(async (cPlace) => {
+//           cPlace.map((p) => {
+//             posts = [...posts, ...p.posts];
+//           });
+//         });
+//     } else if (place.google_types[0] === "administrative_area_level_2") {
+//       const places = await Place.find({})
+//         .where("address.administrative_area_level_2")
+//         .equals(place.address.administrative_area_level_2)
+//         .where("address.administrative_area_level_1")
+//         .equals(place.address.administrative_area_level_1)
+//         .where("address.country")
+//         .equals(place.address.country)
+//         .populate("posts")
+//         .exec()
+//         .then(async (cPlace) => {
+//           cPlace.map((p) => {
+//             posts = [...posts, ...p.posts];
+//           });
+//         });
+//     } else if (place.google_types[0] === "locality") {
+//       if (
+//         place.address.administrative_area_level_2 != "" ||
+//         place.address.administrative_area_level_2 !== undefined
+//       ) {
+//         const places = await Place.find({})
+//           .where("address.locality")
+//           .equals(place.address.locality)
+//           .where("address.administrative_area_level_2")
+//           .equals(place.address.administrative_area_level_2)
+//           .where("address.administrative_area_level_1")
+//           .equals(place.address.administrative_area_level_1)
+//           .where("address.country")
+//           .equals(place.address.country)
+//           .populate("posts")
+//           .exec()
+//           .then(async (cPlace) => {
+//             cPlace.map((p) => {
+//               posts = [...posts, ...p.posts];
+//             });
+//           });
+//       } else {
+//         const places = await Place.find({})
+//           .where("address.locality")
+//           .equals(place.address.locality)
+//           .where("address.administrative_area_level_1")
+//           .equals(place.address.administrative_area_level_1)
+//           .where("address.country")
+//           .equals(place.address.country)
+//           .populate("posts")
+//           .exec()
+//           .then((cPlace) => {
+//             cPlace.map((p) => {
+//               posts = [...posts, ...p.posts];
+//             });
+//           });
+//       }
+//     } else {
+//       posts = await Post.find({})
+//         .where("place")
+//         .equals(place_id)
+//         .where("status")
+//         .equals("active")
+//         .where("deactivated")
+//         .ne(true)
+//         .where("terminated")
+//         .ne(true)
+//         .sort({ createdAt: -1 });
+//     }
 
-    posts = posts.filter(
-      (post) =>
-        post.status === "active" &&
-        post.deactivated !== true &&
-        post.terminated !== true
-    );
+//     posts = posts.filter(
+//       (post) =>
+//         post.status === "active" &&
+//         post.deactivated !== true &&
+//         post.terminated !== true
+//     );
 
-    return res.status(200).json({
-      success: true,
-      posts,
-      skip,
-      // extraSkip,
-    });
-  } catch (error) {
-    console.log(error);
-    errors.general = "Something went wrong";
-    return res.status(500).json({
-      success: false,
-      error: errors,
-    });
-  }
-};
+//     return res.status(200).json({
+//       success: true,
+//       posts,
+//       skip,
+//       // extraSkip,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     errors.general = "Something went wrong";
+//     return res.status(500).json({
+//       success: false,
+//       error: errors,
+//     });
+//   }
+// };
 
 //ADD DIRECTION CLICKED DETAILS
 exports.addPlaceLocationClickedDetails = async (req, res) => {
@@ -653,6 +653,168 @@ exports.placesVisited = async (req, res) => {
   }
 };
 
+// //GET SUGGESTED POSTS FOR PLACE
+// exports.getPlacePosts = async (req, res) => {
+//   let errors = {};
+//   try {
+//     const { place_id } = req.params;
+//     let { skip, limit, placesArr } = req.body;
+
+//     //Validate Object ID
+//     if (!ObjectId.isValid(place_id)) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid place ID",
+//       });
+//     }
+
+//     const place = await Place.findById(place_id);
+//     if (!place) {
+//       errors.place = "Place not found";
+//       return res.status(404).json({
+//         success: false,
+//         error: errors,
+//       });
+//     }
+
+//     let duplicate_places = [];
+//     let foundPlaces = [];
+//     if (placesArr.length == 0) {
+//       if (place.google_types[0] === "country") {
+//         await Place.find({})
+//           .where("address.country")
+//           .equals(place.address.country)
+//           .where("duplicate")
+//           .ne(true)
+//           .exec()
+//           .then(async (cPlace) => {
+//             cPlace.map((p) => {
+//               foundPlaces.push(p._id);
+//               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
+//             });
+//           });
+//       } else if (place.google_types[0] === "administrative_area_level_1") {
+//         await Place.find({})
+//           .where("address.administrative_area_level_1")
+//           .equals(place.address.administrative_area_level_1)
+//           .where("address.country")
+//           .equals(place.address.country)
+//           .where("duplicate")
+//           .ne(true)
+//           .exec()
+//           .then(async (cPlace) => {
+//             cPlace.map((p) => {
+//               foundPlaces.push(p._id);
+//               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
+//             });
+//           });
+//       } else if (place.google_types[0] === "administrative_area_level_2") {
+//         await Place.find({})
+//           .where("address.administrative_area_level_2")
+//           .equals(place.address.administrative_area_level_2)
+//           .where("address.administrative_area_level_1")
+//           .equals(place.address.administrative_area_level_1)
+//           .where("address.country")
+//           .equals(place.address.country)
+//           .where("duplicate")
+//           .ne(true)
+//           .exec()
+//           .then(async (cPlace) => {
+//             cPlace.map((p) => {
+//               foundPlaces.push(p._id);
+//               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
+//             });
+//           });
+//       } else if (place.google_types[0] === "locality") {
+//         if (
+//           place.address.administrative_area_level_2 != "" ||
+//           place.address.administrative_area_level_2 !== undefined
+//         ) {
+//           await Place.find({})
+//             .where("address.locality")
+//             .equals(place.address.locality)
+//             .where("address.administrative_area_level_2")
+//             .equals(place.address.administrative_area_level_2)
+//             .where("address.administrative_area_level_1")
+//             .equals(place.address.administrative_area_level_1)
+//             .where("address.country")
+//             .equals(place.address.country)
+//             .where("duplicate")
+//             .ne(true)
+//             .exec()
+//             .then(async (cPlace) => {
+//               cPlace.map((p) => {
+//                 foundPlaces.push(p._id);
+//                 duplicate_places = [
+//                   ...duplicate_places,
+//                   ...p.duplicate_place_id,
+//                 ];
+//               });
+//             });
+//         } else {
+//           await Place.find({})
+//             .where("address.locality")
+//             .equals(place.address.locality)
+//             .where("address.administrative_area_level_1")
+//             .equals(place.address.administrative_area_level_1)
+//             .where("address.country")
+//             .equals(place.address.country)
+//             .where("duplicate")
+//             .ne(true)
+//             .exec()
+//             .then(async (cPlace) => {
+//               cPlace.map((p) => {
+//                 foundPlaces.push(p._id);
+//                 duplicate_places = [
+//                   ...duplicate_places,
+//                   ...p.duplicate_place_id,
+//                 ];
+//               });
+//             });
+//         }
+//       } else {
+//         foundPlaces.push(place._id);
+//         duplicate_places = [...place.duplicate_place_id];
+//       }
+//       placesArr = [...foundPlaces, ...duplicate_places];
+//     }
+
+//     let posts = await Post.find({ place: { $in: placesArr } })
+//       .where("status")
+//       .equals("active")
+//       .where("deactivated")
+//       .ne(true)
+//       .where("terminated")
+//       .ne(true)
+//       .sort({ createdAt: -1 })
+//       .select("_id status createdAt deactivated terminated content")
+//       .skip(skip)
+//       .limit(limit);
+
+//     //Randomize posts
+//     if (posts.length > 0) {
+//       posts = shuffleArray(posts);
+//     }
+
+//     let newskip = skip + posts.length;
+//     skip = newskip;
+
+//     return res.status(200).json({
+//       success: true,
+//       posts,
+//       skip,
+//       placesArr
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     errors.general = "Something went wrong.Please try again";
+//     return res.status(500).json({
+//       success: false,
+//       message: errors,
+//     });
+//   }
+// };
+
 //GET SUGGESTED POSTS FOR PLACE
 exports.getPlacePosts = async (req, res) => {
   let errors = {};
@@ -680,10 +842,10 @@ exports.getPlacePosts = async (req, res) => {
     let duplicate_places = [];
     let foundPlaces = [];
     if (placesArr.length == 0) {
-      if (place.google_types[0] === "country") {
+      if (place.types[1] === "country") {
         await Place.find({})
-          .where("address.country")
-          .equals(place.address.country)
+          .where("display_address.country")
+          .equals(place.display_address.country)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -693,12 +855,12 @@ exports.getPlacePosts = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.google_types[0] === "administrative_area_level_1") {
+      } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
-          .where("address.administrative_area_level_1")
-          .equals(place.address.administrative_area_level_1)
-          .where("address.country")
-          .equals(place.address.country)
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -708,14 +870,14 @@ exports.getPlacePosts = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.google_types[0] === "administrative_area_level_2") {
+      } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
-          .where("address.administrative_area_level_2")
-          .equals(place.address.administrative_area_level_2)
-          .where("address.administrative_area_level_1")
-          .equals(place.address.administrative_area_level_1)
-          .where("address.country")
-          .equals(place.address.country)
+          .where("display_address.locality")
+          .equals(place.display_address.locality)
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -725,53 +887,23 @@ exports.getPlacePosts = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.google_types[0] === "locality") {
-        if (
-          place.address.administrative_area_level_2 != "" ||
-          place.address.administrative_area_level_2 !== undefined
-        ) {
+      } else if (place.types[1] === "district") {
           await Place.find({})
-            .where("address.locality")
-            .equals(place.address.locality)
-            .where("address.administrative_area_level_2")
-            .equals(place.address.administrative_area_level_2)
-            .where("address.administrative_area_level_1")
-            .equals(place.address.administrative_area_level_1)
-            .where("address.country")
-            .equals(place.address.country)
+            .where("display_address.admin_area_2")
+            .equals(place.display_address.admin_area_2)
+            .where("display_address.admin_area_1")
+            .equals(place.display_address.admin_area_1)
+            .where("display_address.country")
+            .equals(place.display_address.country)
             .where("duplicate")
             .ne(true)
             .exec()
             .then(async (cPlace) => {
               cPlace.map((p) => {
                 foundPlaces.push(p._id);
-                duplicate_places = [
-                  ...duplicate_places,
-                  ...p.duplicate_place_id,
-                ];
+                duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
               });
             });
-        } else {
-          await Place.find({})
-            .where("address.locality")
-            .equals(place.address.locality)
-            .where("address.administrative_area_level_1")
-            .equals(place.address.administrative_area_level_1)
-            .where("address.country")
-            .equals(place.address.country)
-            .where("duplicate")
-            .ne(true)
-            .exec()
-            .then(async (cPlace) => {
-              cPlace.map((p) => {
-                foundPlaces.push(p._id);
-                duplicate_places = [
-                  ...duplicate_places,
-                  ...p.duplicate_place_id,
-                ];
-              });
-            });
-        }
       } else {
         foundPlaces.push(place._id);
         duplicate_places = [...place.duplicate_place_id];
@@ -842,10 +974,10 @@ exports.explorePlace = async (req, res) => {
     let duplicate_places = [];
     let foundPlaces = [];
     if (placesArr.length == 0) {
-      if (place.google_types[0] === "country") {
+      if (place.types[1] === "country") {
         await Place.find({})
-          .where("address.country")
-          .equals(place.address.country)
+          .where("display_address.country")
+          .equals(place.display_address.country)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -855,12 +987,12 @@ exports.explorePlace = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.google_types[0] === "administrative_area_level_1") {
+      } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
-          .where("address.administrative_area_level_1")
-          .equals(place.address.administrative_area_level_1)
-          .where("address.country")
-          .equals(place.address.country)
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -870,14 +1002,14 @@ exports.explorePlace = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.google_types[0] === "administrative_area_level_2") {
+      } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
-          .where("address.administrative_area_level_2")
-          .equals(place.address.administrative_area_level_2)
-          .where("address.administrative_area_level_1")
-          .equals(place.address.administrative_area_level_1)
-          .where("address.country")
-          .equals(place.address.country)
+          .where("display_address.locality")
+          .equals(place.display_address.locality)
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -887,53 +1019,23 @@ exports.explorePlace = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.google_types[0] === "locality") {
-        if (
-          place.address.administrative_area_level_2 != "" ||
-          place.address.administrative_area_level_2 !== undefined
-        ) {
-          await Place.find({})
-            .where("address.locality")
-            .equals(place.address.locality)
-            .where("address.administrative_area_level_2")
-            .equals(place.address.administrative_area_level_2)
-            .where("address.administrative_area_level_1")
-            .equals(place.address.administrative_area_level_1)
-            .where("address.country")
-            .equals(place.address.country)
-            .where("duplicate")
-            .ne(true)
-            .exec()
-            .then(async (cPlace) => {
-              cPlace.map((p) => {
-                foundPlaces.push(p._id);
-                duplicate_places = [
-                  ...duplicate_places,
-                  ...p.duplicate_place_id,
-                ];
-              });
+      } else if (place.types[1] === "district") {
+        await Place.find({})
+          .where("display_address.admin_area_2")
+          .equals(place.display_address.admin_area_2)
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
+          .where("duplicate")
+          .ne(true)
+          .exec()
+          .then(async (cPlace) => {
+            cPlace.map((p) => {
+              foundPlaces.push(p._id);
+              duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
-        } else {
-          await Place.find({})
-            .where("address.locality")
-            .equals(place.address.locality)
-            .where("address.administrative_area_level_1")
-            .equals(place.address.administrative_area_level_1)
-            .where("address.country")
-            .equals(place.address.country)
-            .where("duplicate")
-            .ne(true)
-            .exec()
-            .then(async (cPlace) => {
-              cPlace.map((p) => {
-                foundPlaces.push(p._id);
-                duplicate_places = [
-                  ...duplicate_places,
-                  ...p.duplicate_place_id,
-                ];
-              });
-            });
-        }
+          });
       } else {
         foundPlaces.push(place._id);
         duplicate_places = [...place.duplicate_place_id];
