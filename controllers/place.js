@@ -820,7 +820,7 @@ exports.getPlacePosts = async (req, res) => {
   let errors = {};
   try {
     const { place_id } = req.params;
-    let { skip, limit, placesArr } = req.body;
+    let { skip, limit, placesArr, authUser } = req.body;
 
     //Validate Object ID
     if (!ObjectId.isValid(place_id)) {
@@ -844,8 +844,9 @@ exports.getPlacePosts = async (req, res) => {
     if (placesArr.length == 0) {
       if (place.types[1] === "country") {
         await Place.find({})
-          .where("display_address.country")
-          .equals(place.name)
+          // .where("display_address.country")
+          // .equals(place.name)
+          .or([{ "display_address.country": place.name }, { name: place.name }])
           .where("duplicate")
           .ne(true)
           .exec()
@@ -857,8 +858,9 @@ exports.getPlacePosts = async (req, res) => {
           });
       } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
-          .where("display_address.admin_area_1")
-          .equals(place.name)
+          // .where("display_address.admin_area_1")
+          // .equals(place.name)
+          .or([{ "display_address.admin_area_1": place.name }, { name: place.name }])
           .where("display_address.country")
           .equals(place.display_address.country)
           .where("duplicate")
@@ -872,8 +874,9 @@ exports.getPlacePosts = async (req, res) => {
           });
       } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
-          .where("display_address.locality")
-          .equals(place.name)
+          // .where("display_address.locality")
+          // .equals(place.name)
+          .or([{ "display_address.locality": place.name }, { name: place.name }])
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -889,8 +892,9 @@ exports.getPlacePosts = async (req, res) => {
           });
       } else if (place.types[1] === "district") {
           await Place.find({})
-            .where("display_address.admin_area_2")
-            .equals(place.name)
+            // .where("display_address.admin_area_2")
+            // .equals(place.name)
+            .or([{ "display_address.admin_area_2": place.name }, { name: place.name }])
             .where("display_address.admin_area_1")
             .equals(place.display_address.admin_area_1)
             .where("display_address.country")
@@ -912,8 +916,9 @@ exports.getPlacePosts = async (req, res) => {
     }
 
     let posts = await Post.find({ place: { $in: placesArr } })
-      .where("status")
-      .equals("active")
+      // .where("status")
+      // .equals("active")
+      .or([{ status: "active" }, { user: authUser._id }])
       .where("deactivated")
       .ne(true)
       .where("terminated")
@@ -952,7 +957,7 @@ exports.explorePlace = async (req, res) => {
   let errors = {};
   try {
     const { place_id } = req.params;
-    let { skip, limit, placesArr, showPost = 200, ip } = req.body;
+    let { skip, limit, placesArr, showPost = 200, ip, authUser } = req.body;
 
     //Validate Object ID
     if (!ObjectId.isValid(place_id)) {
@@ -976,8 +981,9 @@ exports.explorePlace = async (req, res) => {
     if (placesArr.length == 0) {
       if (place.types[1] === "country") {
         await Place.find({})
-          .where("display_address.country")
-          .equals(place.name)
+          // .where("display_address.country")
+          // .equals(place.name)
+          .or([{ "display_address.country": place.name }, { name: place.name }])
           .where("duplicate")
           .ne(true)
           .exec()
@@ -989,8 +995,9 @@ exports.explorePlace = async (req, res) => {
           });
       } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
-          .where("display_address.admin_area_1")
-          .equals(place.name)
+          // .where("display_address.admin_area_1")
+          // .equals(place.name)
+          .or([{"display_address.admin_area_1" : place.name}, { name: place.name }])
           .where("display_address.country")
           .equals(place.display_address.country)
           .where("duplicate")
@@ -1004,8 +1011,9 @@ exports.explorePlace = async (req, res) => {
           });
       } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
-          .where("display_address.locality")
-          .equals(place.name)
+          // .where("display_address.locality")
+          // .equals(place.name)
+          .or([{ "display_address.locality": place.name }, { name: place.name }])
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -1021,8 +1029,9 @@ exports.explorePlace = async (req, res) => {
           });
       } else if (place.types[1] === "district") {
         await Place.find({})
-          .where("display_address.admin_area_2")
-          .equals(place.name)
+          // .where("display_address.admin_area_2")
+          // .equals(place.name)
+          .or([{ "display_address.admin_area_2": place.name }, { name: place.name }])
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -1044,8 +1053,9 @@ exports.explorePlace = async (req, res) => {
     }
 
     let posts = await Post.find({ place: { $in: placesArr } })
-      .where("status")
-      .equals("active")
+      // .where("status")
+      // .equals("active")
+      .or([{ status: "active" }, { user: authUser._id }])
       .where("deactivated")
       .ne(true)
       .where("terminated")
@@ -1212,7 +1222,7 @@ exports.showPopularPlaces = async (req, res) => {
         .where("reviewed_status").equals(true)
         .where("editor_rating").gte(1)
         .where("display_address.locality").equals(place.name)
-        .where("display_address.admin_area_2").equals(place.display_address.admin_area_2)
+        // .where("display_address.admin_area_2").equals(place.display_address.admin_area_2)
         .where("display_address.admin_area_1").equals(place.display_address.admin_area_1)
         .where("display_address.country").equals(place.display_address.country)
         .where("types").equals("point_of_interest")
@@ -1238,7 +1248,7 @@ exports.showPopularPlaces = async (req, res) => {
     else if(place.types[1] == "country"){
       popular_places = await Place.find({$or:[{types: "state"}, {types: "union_territory"}]})
                       .select("_id name types destination show_destinations cover_photo display_address original_place_id")
-                        .where("display_address.country").equals(place.name);
+                        .where("display_address.country").equals(place.name).sort({ name: 1 });
     }
 
     skip = skip + popular_places.length;
