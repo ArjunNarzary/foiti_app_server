@@ -1729,6 +1729,92 @@ exports.blockUser = async (req, res) => {
   }
 };
 
+//BLOCK USER
+exports.unBlockUser = async (req, res) => {
+  let errors = {};
+  try {
+    const { authUser, user_id } = req.body;
+
+    //Validate Object ID
+    if (!ObjectId.isValid(user_id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user",
+      });
+    }
+
+    if (user_id.toString() === authUser._id.toString()) {
+      return res.status(401).json({
+        success: fasle,
+        message: "You cannot block or unblock yourself",
+      });
+    }
+
+    const user = await User.findById(user_id);
+    if (!user) {
+      errors.general = "User not found";
+      return res.status(404).json({
+        success: false,
+        message: errors,
+      });
+    }
+
+    const currentUser = await User.findById(authUser._id);
+    //UNBLOCK IF USER EXIST UNDER BLOCKED USER
+    if (currentUser.blocked_users.includes(user._id)) {
+      const index = currentUser.blocked_users.indexOf(user._id);
+      currentUser.blocked_users.splice(index, 1);
+    }
+
+    await currentUser.save();
+
+    const updatedUser = await User.findById(authUser._id).populate("blocked_users", "_id name profileImage total_contribution foiti_ambassador");
+
+    return res.status(200).json({
+      updatedUser,
+      success: true,
+      message: "User has been unblocked",
+    });
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong. Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+};
+
+//VIEW BLCOKED USER LIST
+exports.blockedList = async (req, res) => {
+  let errors = {};
+  try {
+    const { authUser } = req.body;
+
+    const user = await User.findById(authUser._id).populate("blocked_users", "_id name profileImage total_contribution foiti_ambassador");
+
+    if(!user){
+      errors.general = "User not found";
+      return res.status(404).json({
+        success: false,
+        message: errors,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong. Please try again";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+};
+
 //REPORT USER
 exports.reportUser = async (req, res) => {
   let errors = {};

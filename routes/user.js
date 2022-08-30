@@ -32,6 +32,8 @@ const {
   removeCurrentLocation,
   blockUser,
   reportUser,
+  blockedList,
+  unBlockUser,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -108,7 +110,9 @@ router.route("/join").post(validateUser("joinRequest"), joinRequest);
 router.route("/deactivate").post(isAuthenticated, deactivate);
 router.route("/contributions/:userId").get(isAuthenticated, contributions);
 
-router.route("/block").post(isAuthenticated, blockUser);
+router.route("/block").post(isAuthenticated, blockUser)
+                      .get(isAuthenticated, blockedList)
+                      .put(isAuthenticated, unBlockUser);
 router.route("/report").post(isAuthenticated, reportUser);
 
 // ==============ADD ROUTES ABOVE THIS ====================
