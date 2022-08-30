@@ -845,7 +845,7 @@ exports.getPlacePosts = async (req, res) => {
       if (place.types[1] === "country") {
         await Place.find({})
           .where("display_address.country")
-          .equals(place.display_address.country)
+          .equals(place.name)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -858,7 +858,7 @@ exports.getPlacePosts = async (req, res) => {
       } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
           .where("display_address.admin_area_1")
-          .equals(place.display_address.admin_area_1)
+          .equals(place.name)
           .where("display_address.country")
           .equals(place.display_address.country)
           .where("duplicate")
@@ -873,7 +873,7 @@ exports.getPlacePosts = async (req, res) => {
       } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
           .where("display_address.locality")
-          .equals(place.display_address.locality)
+          .equals(place.name)
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -890,7 +890,7 @@ exports.getPlacePosts = async (req, res) => {
       } else if (place.types[1] === "district") {
           await Place.find({})
             .where("display_address.admin_area_2")
-            .equals(place.display_address.admin_area_2)
+            .equals(place.name)
             .where("display_address.admin_area_1")
             .equals(place.display_address.admin_area_1)
             .where("display_address.country")
@@ -977,7 +977,7 @@ exports.explorePlace = async (req, res) => {
       if (place.types[1] === "country") {
         await Place.find({})
           .where("display_address.country")
-          .equals(place.display_address.country)
+          .equals(place.name)
           .where("duplicate")
           .ne(true)
           .exec()
@@ -990,7 +990,7 @@ exports.explorePlace = async (req, res) => {
       } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
           .where("display_address.admin_area_1")
-          .equals(place.display_address.admin_area_1)
+          .equals(place.name)
           .where("display_address.country")
           .equals(place.display_address.country)
           .where("duplicate")
@@ -1005,7 +1005,7 @@ exports.explorePlace = async (req, res) => {
       } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
           .where("display_address.locality")
-          .equals(place.display_address.locality)
+          .equals(place.name)
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -1022,7 +1022,7 @@ exports.explorePlace = async (req, res) => {
       } else if (place.types[1] === "district") {
         await Place.find({})
           .where("display_address.admin_area_2")
-          .equals(place.display_address.admin_area_2)
+          .equals(place.name)
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
