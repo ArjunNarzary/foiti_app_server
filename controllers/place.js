@@ -1062,7 +1062,7 @@ exports.explorePlace = async (req, res) => {
       .ne(true)
       .sort({ createdAt: -1 })
       .select("_id status createdAt deactivated terminated content")
-      .populate("place", "name address display_address display_address_for_own_country display_address_for_other_country original_place_id")
+      .populate("place", "name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
       .skip(skip)
       .limit(limit);
 
