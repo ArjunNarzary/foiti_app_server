@@ -1121,7 +1121,7 @@ exports.viewFollowersPosts = async (req, res) => {
         .where('deactivated').ne(true)
         .where("terminated").ne(true)
         .select(
-          "_id user place createdAt status coordinate_status content caption like comments saved"
+          "_id user place createdAt status coordinate_status content caption like like_count comments saved"
         )
         .populate(
           "user",
