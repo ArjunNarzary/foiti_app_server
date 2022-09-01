@@ -913,8 +913,6 @@ exports.getPlacePosts = async (req, res) => {
     }
 
     let posts = await Post.find({ place: { $in: placesArr } })
-      // .where("status")
-      // .equals("active")
       .or([{ status: "active" }, { user: authUser._id }])
       .where("deactivated")
       .ne(true)
@@ -978,8 +976,6 @@ exports.explorePlace = async (req, res) => {
     if (placesArr.length == 0) {
       if (place.types[1] === "country") {
         await Place.find({})
-          // .where("display_address.country")
-          // .equals(place.name)
           .or([{ "display_address.country": place.name }, { name: place.name }])
           .where("duplicate")
           .ne(true)
@@ -992,8 +988,6 @@ exports.explorePlace = async (req, res) => {
           });
       } else if (place.types[1] === "state" || place.types[1] === "union_territory") {
         await Place.find({})
-          // .where("display_address.admin_area_1")
-          // .equals(place.name)
           .or([{"display_address.admin_area_1" : place.name}, { name: place.name }])
           .where("display_address.country")
           .equals(place.display_address.country)
@@ -1008,8 +1002,6 @@ exports.explorePlace = async (req, res) => {
           });
       } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
         await Place.find({})
-          // .where("display_address.locality")
-          // .equals(place.name)
           .or([{ "display_address.locality": place.name }, { name: place.name }])
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
@@ -1026,8 +1018,6 @@ exports.explorePlace = async (req, res) => {
           });
       } else if (place.types[1] === "district") {
         await Place.find({})
-          // .where("display_address.admin_area_2")
-          // .equals(place.name)
           .or([{ "display_address.admin_area_2": place.name }, { name: place.name }])
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
@@ -1050,8 +1040,6 @@ exports.explorePlace = async (req, res) => {
     }
 
     let posts = await Post.find({ place: { $in: placesArr } })
-      // .where("status")
-      // .equals("active")
       .or([{ status: "active" }, { user: authUser._id }])
       .where("deactivated")
       .ne(true)
