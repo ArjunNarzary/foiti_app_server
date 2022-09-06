@@ -16,7 +16,7 @@ const { getCountry } = require("../utils/getCountry");
 const Review = require("../models/Review");
 const PostViewer = require("../models/PostViewer");
 const PostLocationViewer = require("../models/PostLocationViewer");
-const { deleteNotificationOnUnlike, sendPostLikeNotification, sendNewPostNotification } = require("../utils/sendInAppNotifiation");
+const { deleteNotificationOnUnlike, sendPostLikeNotification, sendNewPostNotification } = require("../utils/sendInAppNotification");
 const ReportPost = require("../models/ReportPost");
 var ObjectId = require('mongoose').Types.ObjectId;
 

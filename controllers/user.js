@@ -20,7 +20,7 @@ const JoinRequest = require("../models/JoinRequest");
 const {
   deleteNotificationOnUnfollow,
   sendFollowNotification,
-} = require("../utils/sendInAppNotifiation");
+} = require("../utils/sendInAppNotification");
 const CurrentAddress = require("../models/CurrentAddress");
 const ReportUser = require("../models/ReportUser");
 var ObjectId = require("mongoose").Types.ObjectId;
