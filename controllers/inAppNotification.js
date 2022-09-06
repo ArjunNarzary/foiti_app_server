@@ -32,7 +32,7 @@ exports.viewInAppNotification = async (req, res) => {
         await InAppNotification.updateMany({ $and: [{ "user": authUser._id }, {"status": "new"}] }, { status: "unread" });
 
         //GET ALL NOTIFICATION
-        const allNotification = await InAppNotification.find({ "user": authUser._id }).populate("post").populate('action_taken_by').sort({ updatedAt: -1 }).skip(skip).limit(limit);
+        const allNotification = await InAppNotification.find({ "user": authUser._id }).populate("post").populate('action_taken_by').sort({ createdAt: -1 }).skip(skip).limit(limit);
         if(!allNotification){
             errors.general = "No notifications found";
             return res.status(404).json({

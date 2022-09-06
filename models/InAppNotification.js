@@ -29,6 +29,7 @@ const inAppNotificationSchema = new Schema({
     createdAt: {
         type: Date,
         default: Date.now(),
+        immutable: true,
         expires: 7776000, // this is the expiry time in seconds for 3 months
     },
     updatedAt: {
