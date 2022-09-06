@@ -1483,7 +1483,7 @@ exports.setExpoToken = async (req, res) => {
   try {
     let { authUser, expoToken } = req.body;
     if (expoToken != "" || expoToken != undefined) {
-      const user = await User.findById(authUser._id);
+      const user = await User.findById(authUser._id).select("+expoToken");
       let hasToken = false;
       if (user.expoToken != undefined && user.expoToken != "") {
         hasToken = true;
@@ -1516,6 +1516,35 @@ exports.setExpoToken = async (req, res) => {
         notification.new_followers = true;
         notification.email_notitications = true;
         await notification.save();
+      }
+    }
+    return res.status(200).json({
+      success: true,
+    });
+  } catch (error) {
+    errors.general = error.message;
+    return res.status(500).json({
+      success: false,
+      messgae: errors,
+    });
+  }
+};
+
+//REMOVE EXPO TOKEN
+exports.removeExpoToken = async (req, res) => {
+  let errors = {};
+  try {
+    let { authUser, expoToken } = req.body;
+    if (expoToken != "" || expoToken != undefined) {
+      const user = await User.findById(authUser._id).select("+expoToken");
+      let hasToken = false;
+      if (user.expoToken != undefined && user.expoToken != "") {
+        hasToken = true;
+      }
+
+      if(hasToken && user.expoToken == expoToken){
+        user.expoToken = undefined;
+        await user.save();
       }
     }
     return res.status(200).json({
@@ -1659,6 +1688,7 @@ exports.deactivate = async (req, res) => {
     }
     // const l_status = user.account_status
     user.last_account_status = user.account_status;
+    user.expoToken = undefined;
     user.account_status = "deactivated";
     await user.save();
     await Post.updateMany({ user: user._id }, { deactivated: true });

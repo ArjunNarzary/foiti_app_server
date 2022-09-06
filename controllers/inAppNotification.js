@@ -32,7 +32,7 @@ exports.viewInAppNotification = async (req, res) => {
         await InAppNotification.updateMany({ $and: [{ "user": authUser._id }, {"status": "new"}] }, { status: "unread" });
 
         //GET ALL NOTIFICATION
-        const allNotification = await InAppNotification.find({ "user": authUser._id }).populate("post").populate('action_taken_by').sort({ createdAt: -1 }).skip(skip).limit(limit);
+        const allNotification = await InAppNotification.find({ "user": authUser._id }).populate("post").populate('action_taken_by').sort({ updatedAt: -1 }).skip(skip).limit(limit);
         if(!allNotification){
             errors.general = "No notifications found";
             return res.status(404).json({
@@ -40,15 +40,6 @@ exports.viewInAppNotification = async (req, res) => {
                 errors: errors
             });
         }
-        // let unreadNotification = [];
-        // let readNotification = [];
-        // allNotification.map(notification => {
-        //     if (notification.status === "unread" || notification.status === "new") {
-        //         unreadNotification.push(notification);
-        //     } else {
-        //         readNotification.push(notification);
-        //     }
-        // });
         const skipData = skip + allNotification.length;
 
         return res.status(200).json({
@@ -145,7 +136,7 @@ exports.deleteInAppNotification = async (req, res) => {
             message: "Notification deleted"
         })
     }catch(error){
-        onsole.log(error);
+        console.log(error);
         res.status(500).json({
             success: false,
             message: error.message

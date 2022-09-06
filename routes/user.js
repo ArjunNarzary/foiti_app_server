@@ -34,6 +34,7 @@ const {
   reportUser,
   blockedList,
   unBlockUser,
+  removeExpoToken,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -100,7 +101,8 @@ router.route("/followDetails/:id")
 router.route("/recommendedTravellers").get(isAuthenticated, viewRecommendedTraveller);
 router.route("/recommended/:id").get(isAuthenticated, recommendedTraveller);
 //SET EXPO TOKEN
-router.route("/setExpoToken").post(isAuthenticated, setExpoToken);
+router.route("/setExpoToken").post(isAuthenticated, setExpoToken)
+                              .delete(isAuthenticated, removeExpoToken);
 //GET NOTIFICATION DETAILS
 router.route("/notification").get(isAuthenticated, getNotificationSettings)
       .post(isAuthenticated, setNotificationSettings);
