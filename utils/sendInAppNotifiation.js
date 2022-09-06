@@ -116,7 +116,8 @@ exports.sendNewPostNotification = async (user, post) => {
 async function sendPushNotification(receiver_id, message) {
     const expo = new Expo();
     const messages = [];
-    const user = await Notification.findOne({ user: receiver_id }).populate('user', 'expoToken');
+    const user = await Notification.findOne({ user: receiver_id }).populate('user', '+expoToken');
+    console.log(user);
     if(!user) return;
     if(!Expo.isExpoPushToken(user.user.expoToken)) return;
 
