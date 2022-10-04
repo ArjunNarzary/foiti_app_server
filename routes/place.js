@@ -10,6 +10,7 @@ const {
   getPlaceDestinations,
   showPopularPlaces,
   explorePlace,
+  attractions,
 } = require("../controllers/place");
 const router = express.Router();
 
@@ -41,7 +42,10 @@ router.route("/popular-places").post(isAuthenticated, showPopularPlaces);
 
 router.route("/explore-place/:place_id").post(isAuthenticated, explorePlace);
 
-//GET PLACE
+//NEARBY POSTS
+router.route("/attractions").post(isAuthenticated, attractions);
+
+//============AT ALL QUERIES BEFORE THIS LINE==========
 router
   .route("/:place_id")
   .get(isAuthenticated, getPlace)

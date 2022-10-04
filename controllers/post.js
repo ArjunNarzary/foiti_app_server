@@ -125,6 +125,9 @@ exports.createPost = async (req, res) => {
         google_place_id: details.place_id,
         address: details.address,
         coordinates: details.coordinates,
+        location : {
+          coordinates: [parseFloat(details.coordinates.lng), parseFloat(details.coordinates.lat)]
+        },
         google_types: details.types,
         created_place: details.created_place,
         cover_photo: {
@@ -255,6 +258,9 @@ exports.createPost = async (req, res) => {
     ) {
       //ADD POST TO CONTRIBUTION TABLE
       contribution.photos_with_coordinates.push(post._id);
+      post.content[0].location =  {
+        coordinates: [parseFloat(post.content[0].coordinate.lng), parseFloat(post.content[0].coordinate.lat)]
+      }
       post.coordinate_status = true;
       await user.save();
     } else {
@@ -1391,6 +1397,125 @@ exports.viewPostLikedUsers = async (req, res) => {
     console.log(error);
     errors.general = "Something went wrong. Please try again";
     return res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+exports.exploreNearby = async (req, res) => {
+  let errors = {};
+  try{
+    let { skip, currentCoordinate, ip } = req.body;
+    let limit = 20;
+    currentCoordinate  = {
+      lat: 26.122439,
+      lng: 91.776734
+    }
+
+
+    const { lat, lng } = currentCoordinate;
+    const maxDistanceInMeter = 50 * 1609;
+
+    let posts = await Post.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [lng, lat],
+          },
+          query: { "status": "active" },
+          key: "content.location",
+          "maxDistance": maxDistanceInMeter,
+          "spherical": true,
+          "distanceField": "distance",
+          "distanceMultiplier": 0.001
+        }
+      },
+      {
+        $lookup:
+        {
+          from: "places",
+          localField: "place",
+          foreignField: "_id",
+          as: "placeData",
+        }
+      },
+      { $project: { 
+        _id: 1, 
+        content: 1, 
+        name: 1,
+        'distance':1,
+        'place': 1,
+        'placeData.name': 1,
+        'placeData.address': 1,
+        'placeData.display_address': 1,
+        'placeData.types': 1,
+        'placeData.google_types': 1,
+        'placeData.local_address': 1,
+        'placeData.short_address': 1,
+        'placeData.display_address_for_own_country': 1,
+        'placeData.display_address_for_other_country': 1,
+      } },
+      {$skip: skip},
+      { $limit: limit }
+    ]);
+    
+    // .exec((err, docs) => {
+    //   docs = docs.map(doc => Post.hydrate(doc));
+    //   return docs;
+    // });
+
+
+    posts = posts.map(doc => {
+      return { ...doc, placeData: new Place(doc.placeData[0]) }
+    });
+
+    if (posts.length > 0){
+      let country = "";
+      const location = await getCountry(ip);
+      if (location != null && location.country !== undefined) {
+        country = location.country;
+      } else {
+        country = "IN";
+      }
+
+      posts.forEach((post) => {
+        if (post.placeData.address.short_country == country) {
+          if (post.placeData.display_address_for_own_country != "") {
+            console.log("data", post.placeData.display_address_for_own_country);
+            post.placeData.local_address = post.placeData.display_address_for_own_country.substr(2);
+          } else {
+            post.placeData.local_address = post.placeData.display_address_for_own_country;
+          }
+        } else {
+          if (post.placeData.display_address_for_other_country != "") {
+            post.placeData.short_address = post.placeData.display_address_for_other_country.substr(2);
+          } else {
+            post.placeData.short_address = post.placeData.display_address_for_other_country
+          }
+        }
+      });
+    }
+
+
+    skip = skip + posts.length;
+
+    let noMorePost = false;
+    if (posts.length < limit){
+      noMorePost = true;
+    }
+
+    res.status(200).json({
+      posts,
+      skip,
+      noMorePost
+    });
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
       success: false,
       message: errors
     })

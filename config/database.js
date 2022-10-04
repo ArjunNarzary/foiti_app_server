@@ -11,7 +11,12 @@ if(process.env.NODE_ENV === "production"){
 exports.connectDatabase = () => {
   mongoose.connect(
     url,
-    { useNewUrlParser: true, useUnifiedTopology: true },
+    { 
+      useNewUrlParser: true, 
+      useUnifiedTopology: true, 
+      // useCreateIndex: true
+      // useFindAndModify: false 
+    },
     () => {
       console.log("Connected to mongoDB");
     }

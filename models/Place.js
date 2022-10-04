@@ -1,5 +1,16 @@
 const mongoose = require("mongoose");
 
+const pointSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    enum: ['Point'],
+    default: "Point",
+  },
+  coordinates: {
+    type: [Number], // Array of arrays of arrays of numbers
+  }
+});
+
 const placeSchema = new mongoose.Schema(
   {
     name: {
@@ -51,6 +62,11 @@ const placeSchema = new mongoose.Schema(
     coordinates: {
       lat: String,
       lng: String,
+    },
+    location: {
+      type: pointSchema,
+      index: '2dsphere', // Create a special 2dsphere index
+      sparse: true
     },
     google_types: [String],
     //Custom type to show in type field ["Category-> will be used in filtering", "Display in type field"]

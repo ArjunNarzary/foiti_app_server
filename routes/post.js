@@ -14,8 +14,8 @@ const {
   addPostLocationClickedDetails,
   viewSavedPosts,
   reportPost,
-  reportPost1,
   viewPostLikedUsers,
+  exploreNearby,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
@@ -49,6 +49,9 @@ router.route("/report").post(isAuthenticated, reportPost);
 
 //POST LIKED USERS
 router.route("/likedUsers/:post_id").post(isAuthenticated, viewPostLikedUsers);
+
+//NEARBY POST
+router.route("/explore-nearby").post(isAuthenticated, exploreNearby);
 
 
 

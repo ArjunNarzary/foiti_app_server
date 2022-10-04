@@ -1263,3 +1263,72 @@ exports.showPopularPlaces = async (req, res) => {
     });
   }
 }
+
+exports.attractions = async (req, res) => {
+  let errors = {};
+  try {
+    let { skip, currentCoordinate } = req.body;
+    let limit = 20;
+    currentCoordinate = {
+      lat: 26.122439,
+      lng: 91.776734
+    }
+
+
+    const { lat, lng } = currentCoordinate;
+    const maxDistanceInMeter = 50 * 1609;
+
+    const attractions = await Place.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [lng, lat],
+          },
+          query: { "duplicate": false },
+          // query: { "duplicate": false, "type[0]": 'point_of_interest' },
+          // key: "location",
+          "maxDistance": maxDistanceInMeter,
+          "spherical": true,
+          "distanceField": "distance",
+          "distanceMultiplier": 0.001
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          distance: 1,
+          cover_photo: 1,
+          address: 1,
+          duplicate: 1,
+          types: 1,
+          google_types: 1,
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
+    skip = skip + attractions.length;
+
+    let noMorePost = false;
+    if (attractions.length < limit) {
+      noMorePost = true;
+    }
+
+    res.status(200).json({
+      attractions,
+      skip,
+      noMorePost
+    });
+
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
