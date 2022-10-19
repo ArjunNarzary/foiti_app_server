@@ -75,6 +75,7 @@ exports.searchPlace = async (req, res) => {
 //Autocomplete places for place search
 exports.autocompletePlace = async (req, res) => {
   try {
+    const { authUser } = req.body;
     const { place, count } = req.query;
     const { ip } = req.headers;
     const trimedPlace = place.trim();
@@ -111,29 +112,41 @@ exports.autocompletePlace = async (req, res) => {
     // if (resultsOthers.length > 0) {
     //   results = [...results, ...resultsOthers];
     // }
+    let results = [];
 
-    const results = await Place.find({
-      $or: [{ name: { $regex: `^${trimedPlace}`, $options: "i" } }, {alias: { $regex: `^${trimedPlace}`, $options: "i" }}]
-    })
-      .where("duplicate")
-      .ne(true)
+    if (trimedPlace.length > 2){
+      
+      results = await Place.find({
+        $or: [{ name: { $regex: `^${trimedPlace}`, $options: "i" } }, {alias: { $regex: `^${trimedPlace}`, $options: "i" }}]
+      })
+        .where("duplicate")
+        .ne(true)
+        .select(
+          "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
+        )
+        .sort({ search_rank: -1 })
+        .limit(12);
+    }else{
+      results = await Place.find({ name: { $regex: `^${trimedPlace}`, $options: "i" } })
+        .where("duplicate")
+        .ne(true)
+        .select(
+          "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
+        )
+        .sort({ search_rank: -1 })
+        .limit(12);
+    }
+
+    const users = await User.find({ name: { $regex: `^${trimedPlace}`, $options: "i" } })
+      .where("blocked_users").ne(authUser._id)
+      .where("_id").ne(authUser._id)
+      .where("terminated").ne(true)
       .select(
-        "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
+        "_id name profileImage total_contribution"
       )
-      .sort({ search_rank: -1 })
-      .limit(12);
+      .limit(5);
 
-    // const users = await User.find({ username: { $regex: `^${trimedPlace}`, $options: "i" } })
-    //   .where("name")
-    //   .ne(undefined)
-    //   .where("account_status")
-    //   .equals("active")
-    //   .where("terminated")
-    //   .ne(true)
-    //   .select(
-    //     "_id name profileImage total_contribution"
-    //   )
-    //   .limit(5);
+
 
     //FORMAT ADDRESS
     let country = "";
@@ -170,9 +183,11 @@ exports.autocompletePlace = async (req, res) => {
       }
     });
 
+
     return res.status(200).json({
       success: true,
       results,
+      users
     });
   } catch (error) {
     console.log(error);
@@ -251,15 +266,15 @@ exports.getPlace = async (req, res) => {
 
     if (place.address.short_country == country) {
       if (place.display_address_for_own_country != "") {
-        place.local_address = place.display_address_for_own_country.substr(2);
+        place.local_address = place.display_address_for_own_country_place.substr(2);
       } else {
-        place.local_address = place.display_address_for_own_country;
+        place.local_address = place.display_address_for_own_country_place;
       }
     } else {
       if (place.display_address_for_other_country != "") {
-        place.short_address = place.display_address_for_other_country.substr(2);
+        place.short_address = place.display_address_for_other_country_place.substr(2);
       } else {
-        place.short_address = place.display_address_for_other_country;
+        place.short_address = place.display_address_for_other_country_place;
       }
     }
 
@@ -577,11 +592,49 @@ exports.placesVisited = async (req, res) => {
       });
     }
     let posts = [];
-    const distPost = await Post.find({ user: userId }).distinct("place");
+    // const distPost = await Post.find({ user: userId }).distinct("place");
+    const allPosts = await Post.find({ user: userId }).populate("place").populate("original_place");
+    let distPost = new Set();
+    let originPlaces = [];
+    let checkPlaceId = [];
+    allPosts.map((p) => {
+      if(p.original_place && p.original_place._id){
+        distPost.add(p.original_place._id.toString());
+      }else{
+        distPost.add(p.place._id.toString());
+      }
+
+      // if(p.place.duplicate){
+      //   if (!originPlaces.includes(p.place.original_place_id.toString()) && 
+      //     !checkPlaceId.includes(p.place.original_place_id.toString())
+      //   ){
+      //     distPost.add(p.place._id.toString());
+      //     originPlaces.push(p.place.original_place_id.toString());
+      //     checkPlaceId.push(p.place._id.toString());
+      //   }
+      //   // distPost.add(p.place.original_place_id.toString());
+      // }else{
+      //   distPost.add(p.place._id.toString());
+      // }
+    })
+
+    distPost = [...distPost];
 
     const promises = distPost.map(async (id) => {
+      let objId = require('mongoose').Types.ObjectId(id);
       return (
-        Post.findOne({ $and: [{ user: userId }, { place: id }] })
+        // Place.findOne({$or:[{_id: objId }, {duplicate_place_id: objId}]}).then(place => {
+        //   console.log(place);
+        //   return Post.findOne({ $and: [{ user: userId }, { place: place._id }] })
+        //     // .where('status').equals('active')
+        //     .where("deactivated")
+        //     .ne(true)
+        //     .where("terminated")
+        //     .ne(true)
+        //     .select("content place status deactivated terminated")
+        //     .populate("place")
+        // })
+        Post.findOne({ $and: [{ user: userId }, { $or: [{ place: objId }, { original_place: objId}]}] })
           // .where('status').equals('active')
           .where("deactivated")
           .ne(true)
@@ -594,6 +647,8 @@ exports.placesVisited = async (req, res) => {
     if (distPost.length > 0) {
       posts = await Promise.all(promises);
     }
+
+    posts = posts.filter(p => p != null);
 
     if (posts.length == 0) {
       errors.general = "No posts found";
@@ -873,9 +928,27 @@ exports.getPlacePosts = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
+      } else if (place.types[1] === "town" || place.types[1] === "city") {
         await Place.find({})
           .or([{ "display_address.locality": place.name }, { name: place.name }])
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
+          .where("duplicate")
+          .ne(true)
+          .exec()
+          .then(async (cPlace) => {
+            cPlace.map((p) => {
+              foundPlaces.push(p._id);
+              duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
+            });
+          });
+      } else if (place.types[1] === "neighbourhood" || place.types[1] === "village") {
+        await Place.find({})
+          .or([{ "display_address.sublocality": place.name }, { name: place.name }])
+          .where("display_address.admin_area_2")
+          .equals(place.display_address.admin_area_2)
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -1000,9 +1073,27 @@ exports.explorePlace = async (req, res) => {
               duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
             });
           });
-      } else if (place.types[1] === "town" || place.types[1] === "city" || place.types[1] === "village") {
+      } else if (place.types[1] === "town" || place.types[1] === "city") {
         await Place.find({})
           .or([{ "display_address.locality": place.name }, { name: place.name }])
+          .where("display_address.admin_area_1")
+          .equals(place.display_address.admin_area_1)
+          .where("display_address.country")
+          .equals(place.display_address.country)
+          .where("duplicate")
+          .ne(true)
+          .exec()
+          .then(async (cPlace) => {
+            cPlace.map((p) => {
+              foundPlaces.push(p._id);
+              duplicate_places = [...duplicate_places, ...p.duplicate_place_id];
+            });
+          });
+      } else if (place.types[1] === "neighbourhood" || place.types[1] === "village") {
+        await Place.find({})
+          .or([{ "display_address.sublocality": place.name }, { name: place.name }])
+          .where("display_address.admin_area_2")
+          .equals(place.display_address.admin_area_2)
           .where("display_address.admin_area_1")
           .equals(place.display_address.admin_area_1)
           .where("display_address.country")
@@ -1200,7 +1291,7 @@ exports.showPopularPlaces = async (req, res) => {
     }
 
     //If place is destination
-    if (place.types[1] == "village" || place.types[1] == "town" || place.types[1] == "city") {
+    if (place.types[1] == "town" || place.types[1] == "city") {
       popular_places = await Place.find({})
         .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
         .where("duplicate").ne(true)
@@ -1208,6 +1299,23 @@ exports.showPopularPlaces = async (req, res) => {
         .where("editor_rating").gte(1)
         .where("display_address.locality").equals(place.name)
         .where("display_address.admin_area_1").equals(place.display_address.admin_area_1)
+        .where("display_address.country").equals(place.display_address.country)
+        .where("types").equals("point_of_interest")
+        .sort({ editor_rating: -1 })
+        .skip(skip)
+        .limit(limit);
+    }
+
+    //If place is destination
+    if (place.types[1] == "village" || place.types[1] == "neighbourhood") {
+      popular_places = await Place.find({})
+        .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
+        .where("duplicate").ne(true)
+        .where("reviewed_status").equals(true)
+        .where("editor_rating").gte(1)
+        .where("display_address.sublocality").equals(place.name)
+        .where("display_address.admin_area_1").equals(place.display_address.admin_area_1)
+        .where("display_address.admin_area_2").equals(place.display_address.admin_area_2)
         .where("display_address.country").equals(place.display_address.country)
         .where("types").equals("point_of_interest")
         .sort({ editor_rating: -1 })
@@ -1269,14 +1377,17 @@ exports.attractions = async (req, res) => {
   try {
     let { skip, currentCoordinate } = req.body;
     let limit = 20;
-    currentCoordinate = {
-      lat: 26.122439,
-      lng: 91.776734
-    }
 
 
     const { lat, lng } = currentCoordinate;
-    const maxDistanceInMeter = 50 * 1609;
+    
+    if(lat === undefined || lng === undefined){
+      return res.status(401).json({
+        success: false
+      })
+    }
+    
+    const maxDistanceInMeter = 50 * 1000;
 
     const attractions = await Place.aggregate([
       {
@@ -1285,7 +1396,7 @@ exports.attractions = async (req, res) => {
             type: "Point",
             coordinates: [lng, lat],
           },
-          query: { "duplicate": false },
+          // query: { "duplicate":{ne: true} },
           // query: { "duplicate": false, "type[0]": 'point_of_interest' },
           // key: "location",
           "maxDistance": maxDistanceInMeter,
@@ -1300,6 +1411,7 @@ exports.attractions = async (req, res) => {
           name: 1,
           distance: 1,
           cover_photo: 1,
+          original_place_id:1,
           address: 1,
           duplicate: 1,
           types: 1,
@@ -1311,7 +1423,7 @@ exports.attractions = async (req, res) => {
     ]);
 
     skip = skip + attractions.length;
-
+    
     let noMorePost = false;
     if (attractions.length < limit) {
       noMorePost = true;
@@ -1329,6 +1441,33 @@ exports.attractions = async (req, res) => {
     res.status(500).json({
       success: false,
       message: errors
+    })
+  }
+}
+
+exports.copyPlaceCoordinates = async(req, res) => {
+  try{
+    const places = await Place.find({});
+    places.forEach(async (place) => {
+      const placeData = await Place.findById(place._id);
+      const newArr = [parseFloat(placeData.coordinates.lng), parseFloat(placeData.coordinates.lat)];
+      const data = {
+        coordinates: newArr
+      }
+      placeData.location = data;
+      await placeData.save();
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Success"
+    })
+
+  }catch(error){
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
     })
   }
 }

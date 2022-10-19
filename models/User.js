@@ -66,6 +66,10 @@ const userSchema = new mongoose.Schema({
       lng:String,
     }
   },
+  place: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Place",
+  },
   currently_in: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "CurrentAddress",

@@ -18,6 +18,7 @@ const PostViewer = require("../models/PostViewer");
 const PostLocationViewer = require("../models/PostLocationViewer");
 const { deleteNotificationOnUnlike, sendPostLikeNotification, sendNewPostNotification } = require("../utils/sendInAppNotification");
 const ReportPost = require("../models/ReportPost");
+const { formatTiming } = require("../utils/handles");
 var ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createContributionPoints = async (req, res) => {
@@ -61,7 +62,7 @@ exports.createPost = async (req, res) => {
 
 
     //Validate PLACE
-    if (!details.place_id || !details.address.short_country) {
+    if (!details.place_id) {
       errors.location = "Please add location";
       await unlinkFile(req.file.path);
       return res.status(400).json({
@@ -115,11 +116,23 @@ exports.createPost = async (req, res) => {
       .toBuffer();
     const resultSmall = await uploadFile(req.file, sharpSmall);
     // const resultThumb = await uploadFile(req.file, fileStream);
-
+    
     //CHECK IF PLACE ID IS ALREADY PRESENT
     let newPlaceCreated = false;
     let place = await Place.findOne({ google_place_id: details.place_id });
     if (!place) {
+      //Format timming if available
+      let timingArr = [];
+      let phone_number = "";
+      if (details.timing) {
+        if (formatTiming(details.timing)) {
+          timingArr = formatTiming(details.timing);
+        }
+      }
+      if(typeof(details.phone_number) === "string"){
+        phone_number = details.phone_number;
+      }
+
       place = await Place.create({
         name: details.name,
         google_place_id: details.place_id,
@@ -144,6 +157,8 @@ exports.createPost = async (req, res) => {
             private_id: resultLarge.Key,
           },
         },
+        open_hours: timingArr,
+        phone_number,
       });
       newPlaceCreated = true;
     }else{
@@ -205,6 +220,11 @@ exports.createPost = async (req, res) => {
           lng: details.images[0].coordinates.lng,
         },
         type: details.images[0].type,
+        Make: details.images[0].Make,
+        Model: details.images[0].Model,
+        ExifVersion: details.images[0].ExifVersion,
+        ISOSpeedRatings: details.images[0].ISOSpeedRatings,
+        createdDate: details.images[0].createdDate,
       },
     ];
     //Create post
@@ -367,7 +387,7 @@ exports.editPost = async (req, res) => {
     }
 
     //IF NEW PLACE IS NOT SAME REMOVE POST FROM PREVIOUS PLACE
-    if (details.name != "" && details.address.short_country != "") {
+    if (details.name != "") {
       if (place.google_place_id.toString() !== details.place_id.toString()) {
         if (place.posts.includes(post._id)) {
           const index = place.posts.indexOf(post._id);
@@ -402,7 +422,7 @@ exports.editPost = async (req, res) => {
             await placeCreated.deleteOne();
           }
 
-          if (place.reviewed_status === false) {
+          if (place.reviewed_status === false && place.users.length === 0) {
             //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
             if (
               place.cover_photo.large.private_id != undefined &&
@@ -465,13 +485,31 @@ exports.editPost = async (req, res) => {
       if (!samePlace) {
         place = await Place.findOne({ google_place_id: details.place_id });
         if (!place) {
+
+          //Format timming if available
+          let timingArr = [];
+          if (details.timing) {
+            if (formatTiming(details.timing)) {
+              timingArr = formatTiming(details.timing);
+            }
+          }
+          let phone_number = "";
+          if (typeof (details.phone_number) === "string") {
+            phone_number = details.phone_number;
+          }
+
           place = await Place.create({
             name: details.name,
             google_place_id: details.place_id,
             address: details.address,
             coordinates: details.coordinates,
             google_types: details.types,
-            cover_photo : post.content[0].image
+            cover_photo : post.content[0].image,
+            location: {
+              coordinates: [parseFloat(details.coordinates.lng), parseFloat(details.coordinates.lat)]
+            },
+            open_hours: timingArr,
+            phone_number
           });
           newPlaceCreated = true;
         }else{
@@ -685,7 +723,7 @@ exports.deletePost = async (req, res) => {
         await placeAddedBy.remove();
       }
 
-      if (place.reviewed_status === false) {
+      if (place.reviewed_status === false && place.users.length === 0) {
         //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
         if (
           place.cover_photo.large.private_id != undefined &&
@@ -1166,9 +1204,9 @@ exports.viewFollowersPosts = async (req, res) => {
 
     posts.forEach((post) => {
       if (post.place.address.short_country == country) {
-        post.place.local_address = post.place.display_address_for_own_country;
+        post.place.local_address = post.place.display_address_for_own_country_home;
       } else {
-        post.place.short_address = post.place.display_address_for_other_country;
+        post.place.short_address = post.place.display_address_for_other_country_home;
       }
     });
 
@@ -1406,65 +1444,116 @@ exports.viewPostLikedUsers = async (req, res) => {
 exports.exploreNearby = async (req, res) => {
   let errors = {};
   try{
-    let { skip, currentCoordinate, ip } = req.body;
+    let { skip, currentCoordinate, ip, sortBy, distance } = req.body;
     let limit = 20;
-    currentCoordinate  = {
-      lat: 26.122439,
-      lng: 91.776734
-    }
+    // currentCoordinate  = {
+    //   lat: 26.122439,
+    //   lng: 91.776734
+    // }
 
 
     const { lat, lng } = currentCoordinate;
-    const maxDistanceInMeter = 50 * 1609;
-
-    let posts = await Post.aggregate([
-      {
-        $geoNear: {
-          near: {
-            type: "Point",
-            coordinates: [lng, lat],
-          },
-          query: { "status": "active" },
-          key: "content.location",
-          "maxDistance": maxDistanceInMeter,
-          "spherical": true,
-          "distanceField": "distance",
-          "distanceMultiplier": 0.001
-        }
-      },
-      {
-        $lookup:
+    // const maxDistanceInMeter = Number(distance) * 1609;
+    const maxDistanceInMeter = Number(distance) * 1000;
+    let posts = [];
+    if (sortBy === "nearest"){
+      posts = await Post.aggregate([
         {
-          from: "places",
-          localField: "place",
-          foreignField: "_id",
-          as: "placeData",
-        }
-      },
-      { $project: { 
-        _id: 1, 
-        content: 1, 
-        name: 1,
-        'distance':1,
-        'place': 1,
-        'placeData.name': 1,
-        'placeData.address': 1,
-        'placeData.display_address': 1,
-        'placeData.types': 1,
-        'placeData.google_types': 1,
-        'placeData.local_address': 1,
-        'placeData.short_address': 1,
-        'placeData.display_address_for_own_country': 1,
-        'placeData.display_address_for_other_country': 1,
-      } },
-      {$skip: skip},
-      { $limit: limit }
-    ]);
-    
-    // .exec((err, docs) => {
-    //   docs = docs.map(doc => Post.hydrate(doc));
-    //   return docs;
-    // });
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [lng, lat],
+            },
+            query: { "status": "active" },
+            key: "content.location",
+            "maxDistance": maxDistanceInMeter,
+            "spherical": true,
+            "distanceField": "distance",
+            "distanceMultiplier": 0.001
+          }
+        },
+        {
+          $lookup:
+          {
+            from: "places",
+            localField: "place",
+            foreignField: "_id",
+            as: "placeData",
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            content: 1,
+            name: 1,
+            like: 1,
+            like_count: 1,
+            'distance': 1,
+            'place': 1,
+            'placeData.name': 1,
+            'placeData.address': 1,
+            'placeData.display_address': 1,
+            'placeData.types': 1,
+            'placeData.google_types': 1,
+            'placeData.local_address': 1,
+            'placeData.short_address': 1,
+            'placeData.display_address_for_own_country': 1,
+            'placeData.display_address_for_other_country': 1,
+          }
+        },
+        { $skip: skip },
+        { $limit: limit }
+      ]);
+    }else{
+      posts = await Post.aggregate([
+        {
+          $geoNear: {
+            near: {
+              type: "Point",
+              coordinates: [lng, lat],
+            },
+            query: { "status": "active" },
+            key: "content.location",
+            "maxDistance": maxDistanceInMeter,
+            "spherical": true,
+            "distanceField": "distance",
+            "distanceMultiplier": 0.001
+          }
+        },
+        {
+          $lookup:
+          {
+            from: "places",
+            localField: "place",
+            foreignField: "_id",
+            as: "placeData",
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            content: 1,
+            name: 1,
+            like: 1,
+            like_count: 1,
+            'distance': 1,
+            'place': 1,
+            'placeData.name': 1,
+            'placeData.address': 1,
+            'placeData.display_address': 1,
+            'placeData.types': 1,
+            'placeData.google_types': 1,
+            'placeData.local_address': 1,
+            'placeData.short_address': 1,
+            'placeData.display_address_for_own_country': 1,
+            'placeData.display_address_for_other_country': 1,
+          }
+        },
+        { $sort: { like_count: -1 } },
+        { $skip: skip },
+        { $limit: limit }
+      ]);
+    }
 
 
     posts = posts.map(doc => {
@@ -1483,7 +1572,6 @@ exports.exploreNearby = async (req, res) => {
       posts.forEach((post) => {
         if (post.placeData.address.short_country == country) {
           if (post.placeData.display_address_for_own_country != "") {
-            console.log("data", post.placeData.display_address_for_own_country);
             post.placeData.local_address = post.placeData.display_address_for_own_country.substr(2);
           } else {
             post.placeData.local_address = post.placeData.display_address_for_own_country;
@@ -1518,6 +1606,36 @@ exports.exploreNearby = async (req, res) => {
     res.status(500).json({
       success: false,
       message: errors
+    })
+  }
+}
+
+exports.copyCoordinates = async (req, res) => {
+  try{
+    const posts = await Post.find({ coordinate_status: true });
+    let count = 0;
+    posts.forEach(async (post) => {
+      const postData = await Post.findById(post._id);
+      if (postData.content[0].coordinate.lat){
+        const newArr = [parseFloat(postData.content[0].coordinate.lng), parseFloat(postData.content[0].coordinate.lat)];
+        const data = {
+          coordinates: newArr
+        }
+        postData.content[0].location = data;
+        await postData.save();
+        count+= 1;
+      }
+    });
+    res.status(200).json({
+      success: true,
+      count
+      
+    })
+  }catch(error){
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: error.message
     })
   }
 }

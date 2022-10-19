@@ -23,6 +23,8 @@ const {
 } = require("../utils/sendInAppNotification");
 const CurrentAddress = require("../models/CurrentAddress");
 const ReportUser = require("../models/ReportUser");
+const Place = require("../models/Place");
+const Review = require("../models/Review");
 var ObjectId = require("mongoose").Types.ObjectId;
 
 function createError(errors, validate) {
@@ -261,9 +263,9 @@ exports.editProfile = async (req, res) => {
       });
     }
 
-    const { name, bio, website, address, currentAddress, authUser } = req.body;
+    const { name, bio, website, address, currentAddress, authUser, place } = req.body;
 
-    const user = await User.findById(authUser._id);
+    const user = await User.findById(authUser._id).populate('place');
 
     user.name = name.replace(/\s\s+/g, " ");
     if (bio != undefined && bio != "") {
@@ -288,6 +290,104 @@ exports.editProfile = async (req, res) => {
       user.current_location.createDate = Date.now();
     }
 
+    if(place.place_id != ""){
+      //Remove previous place if exist and not same
+      let differentPlace = true;
+      if (user.place){
+        if (user.place.google_place_id.toString() !== place.place_id.toString()){
+          const prevPlace = await Place.findById(user.place._id);
+          if(prevPlace){
+            if(prevPlace.users.includes(user._id)){
+              if(prevPlace.users.length === 1){
+                prevPlace.users = [];
+              }else{
+                const index = prevPlace.users.indexOf(user._id);
+                prevPlace.users.splice(index, 1);
+              }
+              await prevPlace.save();
+            }
+          }
+  
+          //DELETE PLACE
+          if (prevPlace.posts.length === 0 && prevPlace.users.length === 0 && !prevPlace.reviewed_status){
+            //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
+            const reviews = await Review.find({ place_id: place._id });
+            if (reviews.length > 0) {
+              //Remove contributions
+              reviews.forEach(async (reviewData) => {
+                const userContribution = await Contribution.findOne({ userId: reviewData.user_id });
+                if (userContribution.reviews.includes(reviewData._id)) {
+                  const index = userContribution.reviews.indexOf(reviewData._id);
+                  userContribution.reviews.splice(index, 1);
+                }
+                if (userContribution.review_200_characters.includes(reviewData._id)) {
+                  const index = userContribution.review_200_characters.indexOf(reviewData._id);
+                  userContribution.review_200_characters.splice(index, 1);
+                }
+                if (userContribution.ratings.includes(reviewData._id)) {
+                  const index = userContribution.ratings.indexOf(reviewData._id);
+                  userContribution.ratings.splice(index, 1);
+                }
+  
+                await userContribution.save();
+                const contributionOwner = await User.findById(userContribution.userId);
+                if (contributionOwner) {
+                  contributionOwner.total_contribution = userContribution.calculateTotalContribution();
+                  await contributionOwner.save();
+                }
+  
+              })
+            }
+  
+            //GET ALL REVIEWS OF THE PLACE AND REMOVE
+            await Review.deleteMany({ place_id: place._id });
+            await prevPlace.remove();
+          }
+  
+        }else{
+          differentPlace = false;
+        }
+      }
+
+      if(differentPlace){
+        let placeData = await Place.findOne({ google_place_id: place.place_id });
+        if (!placeData) {
+          //Format timming if available
+          let timingArr = [];
+          let phone_number = "";
+          if (place.timing) {
+            if (formatTiming(place.timing)) {
+              timingArr = formatTiming(place.timing);
+            }
+          }
+          if (typeof (place.phone_number) === "string") {
+            phone_number = place.phone_number;
+          }
+
+          placeData = await Place.create({
+            name: place.name,
+            google_place_id: place.place_id,
+            address: place.address,
+            coordinates: place.coordinates,
+            location: {
+              coordinates: [parseFloat(place.coordinates.lng), parseFloat(place.coordinates.lat)]
+            },
+            google_types: place.types,
+            created_place: place.created_place,
+            open_hours: timingArr,
+            phone_number,
+          });
+        }
+
+        if (!placeData.users.includes(user._id)) {
+          placeData.users.push(user._id);
+          await placeData.save();
+          user.place = placeData._id;
+        }
+      }
+
+    }
+
     await user.save();
 
     return res.status(200).json({
@@ -296,7 +396,7 @@ exports.editProfile = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.log(error.message);
+    console.log(error);
     errors.general = "Something went wrong while editing your profile";
     res.status(500).json({
       success: false,
@@ -542,7 +642,7 @@ exports.viewOwnProfile = async (req, res) => {
     const { authUser } = req.body;
     const { ip } = req.headers;
     // const user = authUser;
-    const user = await User.findById(authUser._id).populate("currently_in");
+    const user = await User.findById(authUser._id).populate("currently_in").populate("place");
     //FORMAT ADDRESS
     let country = "";
     const location = await getCountry(ip);
@@ -562,6 +662,25 @@ exports.viewOwnProfile = async (req, res) => {
       }
     }
 
+    if (user.place?._id){
+      if (user.place.address.short_country == country){
+        if (user.place.display_address_for_own_country_home != "") {
+        user.place.local_address =
+          user.place.display_address_for_own_country_home;
+        } else {
+          user.place.local_address = user.place.display_address_for_own_country_home;
+        }
+      }else{
+        if (user.place.display_address_for_other_country_home != "") {
+        user.place.short_address =
+          user.place.display_address_for_other_country_home;
+      } else {
+        user.place.short_address =
+          user.place.display_address_for_other_country_home;
+      }
+      }
+    }
+
     // console.log(user);
 
     //COUNT TOTAL POST UPLOADS
@@ -575,13 +694,25 @@ exports.viewOwnProfile = async (req, res) => {
       if (post.location_viewers_count != undefined) {
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
-      return post.place._id;
+      if (post.place.duplicate && post.place.original_place_id){
+        return post.place.original_place_id
+      }else{
+        return post.place._id;
+      }
     });
 
     //COUNT HELPED NAVIGATE
 
-    const uniquePlacesVisited = [...new Set(totalPlaces)];
+    const uniquePlacesVisitedIds = new Set();
+    totalPlaces.map((ele) => {
+      uniquePlacesVisitedIds.add(ele.toString());
+    })
+
+
+    // const uniquePlacesVisited = [...new Set(totalPlaces.toString())];
+    const uniquePlacesVisited = [...uniquePlacesVisitedIds];
     const placesVisited = uniquePlacesVisited.length;
+
 
     //Country Visited
     let countryVisited = 0;
@@ -680,6 +811,26 @@ exports.viewOthersProfile = async (req, res) => {
       }
     }
 
+    //FORMAT ADDRESS
+    if (profileUser.place?._id) {
+      if (profileUser.place.address.short_country == country) {
+        if (profileUser.place.display_address_for_own_country_home != "") {
+          profileUser.place.local_address =
+            profileUser.place.display_address_for_own_country_home;
+        } else {
+          profileUser.place.local_address = profileUser.place.display_address_for_own_country_home;
+        }
+      } else {
+        if (profileUser.place.display_address_for_other_country_home != "") {
+          profileUser.place.short_address =
+            profileUser.place.display_address_for_other_country_home;
+        } else {
+          profileUser.place.short_address =
+            profileUser.place.display_address_for_other_country_home;
+        }
+      }
+    }
+
     // console.log(profileUser);
 
     //CHECK WHEATHER FOLLOWED CURRENT USER
@@ -705,9 +856,21 @@ exports.viewOthersProfile = async (req, res) => {
       if (post.location_viewers_count != undefined) {
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
-      return post.place._id;
+      if (post.place.duplicate && post.place.original_place_id) {
+        return post.place.original_place_id
+      } else {
+        return post.place._id;
+      }
     });
-    const uniquePlacesVisited = [...new Set(totalPlaces)];
+
+    const uniquePlacesVisitedIds = new Set();
+    totalPlaces.map((ele) => {
+      uniquePlacesVisitedIds.add(ele.toString());
+    })
+
+
+    // const uniquePlacesVisited = [...new Set(totalPlaces.toString())];
+    const uniquePlacesVisited = [...uniquePlacesVisitedIds];
     const placesVisited = uniquePlacesVisited.length;
 
     //Country Visited

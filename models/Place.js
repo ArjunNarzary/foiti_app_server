@@ -26,26 +26,11 @@ const placeSchema = new mongoose.Schema(
       index: true,
       unique: true,
     },
-    // Google address formats: {
-    //   route: String,
-    //   natural_feature: String,
-    //   neighborhood: String, <---
-    //   sublocality_level_2: String, <---
-    //   sublocality_level_1: String, <--- 
-    //   locality: String,
-    //   administrative_area_level_3: String,  <---
-    //   administrative_area_level_2: String,
-    //   administrative_area_level_1: String,
-    //   country: String,
-    //   short_country: String,
-    //   postal_code: String,  <----
-    //   premise: String,
-    // },
     address: {},
     //If display_address_availaible true show this address
     display_address: {
-      locality: String,
       sublocality: String,
+      locality: String,
       admin_area_2: String,  //District name
       admin_area_1: String, //State name
       country: String,
@@ -95,6 +80,7 @@ const placeSchema = new mongoose.Schema(
         private_id: String,
       },
     },
+    open_hours: [],
     saved: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -134,6 +120,12 @@ const placeSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post",
       },
+    ],
+    users: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      }
     ],
     //This will be used to check if place is duplicate or not
     duplicate: {
@@ -199,7 +191,9 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
     if (this.display_address.admin_area_1){
       addressArr.push(this.display_address.admin_area_1);
     }
-    if (this.display_address.locality){
+    if (this.display_address.sublocality){
+      addressArr.push(this.display_address.sublocality);
+    }else if (this.display_address.locality){
       addressArr.push(this.display_address.locality);
     }else if(this.display_address.admin_area_2){
       addressArr.push(this.display_address.admin_area_2);
@@ -252,6 +246,104 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
   return address;
 });
 
+//SET VIRTUAL FOR DISPLAYING ADDRESS FOR OWN COUNTRY
+placeSchema.virtual("display_address_for_own_country_home").get(function () {
+  let addressArr = [];
+
+  if (this.display_address_available) {
+    if (this.display_address.admin_area_1) {
+      addressArr.push(this.display_address.admin_area_1);
+    }
+  } else {
+    if (
+      this.address.administrative_area_level_1 != this.name &&
+      this.address.administrative_area_level_1 != undefined
+    ) {
+      addressArr.push(this.address.administrative_area_level_1);
+    }
+    
+  }
+
+  let reverseArr = [];
+  if (addressArr.length != 0) {
+    reverseArr = addressArr.reverse();
+  }
+
+  let address = "";
+  if (reverseArr.length != 0) {
+    address = ", " + reverseArr.join(", ");
+  }
+
+  return address;
+});
+
+//SET VIRTUAL FOR DISPLAYING ADDRESS FOR OWN COUNTRY
+placeSchema.virtual("display_address_for_own_country_place").get(function () {
+  let addressArr = [];
+
+  if (this.display_address_available) {
+    if (this.display_address.admin_area_1) {
+      addressArr.push(this.display_address.admin_area_1);
+    }
+    if (this.display_address.admin_area_2) {
+      addressArr.push(this.display_address.admin_area_2);
+    }
+    if (this.display_address.sublocality) {
+      addressArr.push(this.display_address.sublocality);
+    } else if (this.display_address.locality) {
+      addressArr.push(this.display_address.locality);
+    }
+    
+    
+  } else {
+    if (
+      this.address.administrative_area_level_1 != this.name &&
+      this.address.administrative_area_level_1 != undefined
+    ) {
+      addressArr.push(this.address.administrative_area_level_1);
+    }
+    if (
+      this.address.administrative_area_level_2 != undefined &&
+      this.address.administrative_area_level_2 != this.name
+    ) {
+      addressArr.push(this.address.administrative_area_level_2);
+    } else if (
+      this.address.natural_feature != undefined &&
+      this.address.natural_feature != this.name
+    ) {
+      addressArr.push(this.address.natural_feature);
+    } else if (
+      this.address.sublocality_level_1 != undefined &&
+      this.address.sublocality_level_1 != this.name
+    ) {
+      addressArr.push(this.address.sublocality_level_1);
+    } else if (
+      this.address.sublocality_level_2 != undefined &&
+      this.address.sublocality_level_2 != this.name
+    ) {
+      addressArr.push(this.address.sublocality_level_2);
+    } else if (
+      this.address.locality != undefined &&
+      this.address.locality != this.name
+    ) {
+      addressArr.push(this.address.locality);
+    }
+  }
+  // console.log("arr", addressArr);
+
+  let reverseArr = [];
+  if (addressArr.length != 0) {
+    reverseArr = addressArr.reverse();
+  }
+
+  let address = "";
+  if (reverseArr.length != 0) {
+    address = ", " + reverseArr.join(", ");
+  }
+
+  return address;
+});
+
 //SET VIRTUAL FOR DISPLAYING ADDRESS FOR OTHER COUNTRY
 placeSchema.virtual("display_address_for_other_country").get(function () {
   let arrAddress = [];
@@ -273,6 +365,115 @@ placeSchema.virtual("display_address_for_other_country").get(function () {
       arrAddress.push(this.display_address.admin_area_2);
     }
   }else{
+    if (
+      this.address.administrative_area_level_1 != this.name &&
+      this.address.administrative_area_level_1 != undefined
+    ) {
+      arrAddress.push(this.address.administrative_area_level_1);
+    } else if (
+      this.address.administrative_area_level_2 != undefined &&
+      this.address.administrative_area_level_2 != this.name
+    ) {
+      arrAddress.push(this.address.administrative_area_level_2);
+    } else if (
+      this.address.natural_feature != undefined &&
+      this.address.natural_feature != this.name
+    ) {
+      arrAddress.push(this.address.natural_feature);
+    } else if (
+      this.address.sublocality_level_1 != undefined &&
+      this.address.sublocality_level_1 != this.name
+    ) {
+      arrAddress.push(this.address.sublocality_level_1);
+    } else if (
+      this.address.sublocality_level_2 != undefined &&
+      this.address.sublocality_level_2 != this.name
+    ) {
+      arrAddress.push(this.address.sublocality_level_2);
+    } else if (
+      this.address.locality != undefined &&
+      this.address.locality != this.name
+    ) {
+      arrAddress.push(this.address.locality);
+    }
+  }
+
+  let reverseArr = [];
+  if (arrAddress.length != 0) {
+    reverseArr = arrAddress.reverse();
+  }
+
+  let address = "";
+  if (reverseArr.length != 0) {
+    address = ", " + reverseArr.join(", ");
+  }
+
+  return address;
+});
+
+//SET VIRTUAL FOR DISPLAYING ADDRESS FOR OTHER COUNTRY
+placeSchema.virtual("display_address_for_other_country_home").get(function () {
+  let arrAddress = [];
+
+  if (this.display_address_available && this.display_address.country) {
+    arrAddress.push(this.display_address.country);
+  } else {
+    if (this.address.country != undefined && this.address.country != this.name) {
+      arrAddress.push(this.address.country);
+    }
+  }
+
+  if (this.display_address_available) {
+    if (this.display_address.admin_area_1) {
+      arrAddress.push(this.display_address.admin_area_1);
+    } 
+  } else {
+    if (
+      this.address.administrative_area_level_1 != this.name &&
+      this.address.administrative_area_level_1 != undefined
+    ) {
+      arrAddress.push(this.address.administrative_area_level_1);
+    } 
+  }
+
+  let reverseArr = [];
+  if (arrAddress.length != 0) {
+    reverseArr = arrAddress.reverse();
+  }
+
+  let address = "";
+  if (reverseArr.length != 0) {
+    address = ", " + reverseArr.join(", ");
+  }
+
+  return address;
+});
+
+//SET VIRTUAL FOR DISPLAYING ADDRESS FOR OTHER COUNTRY
+placeSchema.virtual("display_address_for_other_country_place").get(function () {
+  let arrAddress = [];
+
+  if (this.display_address_available && this.display_address.country) {
+    arrAddress.push(this.display_address.country);
+  } else {
+    if (this.address.country != undefined && this.address.country != this.name) {
+      arrAddress.push(this.address.country);
+    }
+  }
+
+  if (this.display_address_available) {
+    if (this.display_address.admin_area_1) {
+      arrAddress.push(this.display_address.admin_area_1);
+    }
+    if (this.display_address.admin_area_2) {
+      arrAddress.push(this.display_address.admin_area_2);
+    }
+    if (this.display_address.sublocality) {
+      arrAddress.push(this.display_address.sublocality);
+    } else if (this.display_address.locality) {
+      arrAddress.push(this.display_address.locality);
+    }
+  } else {
     if (
       this.address.administrative_area_level_1 != this.name &&
       this.address.administrative_area_level_1 != undefined

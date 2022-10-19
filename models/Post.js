@@ -22,6 +22,10 @@ const postSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
     },
+    original_place: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Place",
+    },
     content: [
       {
         image: {
@@ -37,6 +41,15 @@ const postSchema = new mongoose.Schema(
             public_url: String,
             private_id: String,
           },
+        },
+        Make: String,
+        Model: String,
+        ExifVersion: String,
+        ISOSpeedRatings:String,
+        createdDate: {
+          year: Number,
+          month: Number,
+          day: Number
         },
         coordinate: {
           lat: String,
