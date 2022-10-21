@@ -1394,7 +1394,7 @@ exports.attractions = async (req, res) => {
             type: "Point",
             coordinates: [lng, lat],
           },
-          query: { "duplicate": false, "types.0": 'point_of_interest' },
+          query: { "duplicate": false, "types": 'point_of_interest' },
           // key: "location",
           "maxDistance": maxDistanceInMeter,
           "spherical": true,
