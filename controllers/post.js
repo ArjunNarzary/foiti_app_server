@@ -611,7 +611,7 @@ exports.viewPost = async (req, res) => {
     const post = await Post.findById(postId)
       .select("_id content user place caption like like_count viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
-      .populate("place", "_id name address local_address short_address google_place_id coordinates types destination alias display_address display_address_available original_place_id");
+      .populate("place", "_id name display_name address local_address short_address google_place_id coordinates types destination alias display_address display_address_available original_place_id");
     
       if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
       errors.general = "Post not found";
@@ -650,6 +650,10 @@ exports.viewPost = async (req, res) => {
       country = location.country;
     } else {
       country = "IN";
+    }
+
+    if (post.place.display_name) {
+      post.place.name = post.place.display_name;
     }
 
     if (post.place.address.short_country == country) {
@@ -1032,7 +1036,7 @@ exports.randomPosts = async (req, res) => {
           { _id: { $nin: authUser.reported_posts } }
         ]})
         .select("_id content name place createdAt")
-        .populate("place", "name address alias display_address display_address_available original_place_id")
+        .populate("place", "name display_name address alias display_address display_address_available original_place_id")
         // .or([{ 'status': 'active' }, { 'status': 'silent' }])
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
@@ -1049,7 +1053,7 @@ exports.randomPosts = async (req, res) => {
           { _id: { $nin: authUser.reported_posts } }
         ]})
         .select("_id content name place createdAt")
-        .populate("place", "name address alias display_address display_address_available original_place_id")
+        .populate("place", "name display_name address alias display_address display_address_available original_place_id")
         .where("status").equals("active")
         .where("coordinate_status").ne(false)
         .where('deactivated').ne(true)
@@ -1094,6 +1098,9 @@ exports.randomPosts = async (req, res) => {
     }
 
     randomPosts.forEach((post) => {
+      if(post.place.display_name){
+        post.place.name = post.place.display_name
+      }
       if (post.place.address.short_country == country) {
         if (post.place.display_address_for_own_country != ""){
           post.place.local_address = post.place.display_address_for_own_country.substr(2);
@@ -1142,7 +1149,7 @@ exports.viewFollowersPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like like_count comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available original_place_id")
+      .populate("place", "name display_name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available original_place_id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -1171,7 +1178,7 @@ exports.viewFollowersPosts = async (req, res) => {
           "user",
           "name username total_contribution profileImage foiti_ambassador"
         )
-        .populate("place", "name address short_address local_address types destination google_types display_address_for_own_country alias display_address display_address_available original_place_id")
+        .populate("place")
         .sort({ createdAt: -1 })
         .skip(suggestedSkip)
         .limit(limit);
@@ -1203,6 +1210,9 @@ exports.viewFollowersPosts = async (req, res) => {
     }
 
     posts.forEach((post) => {
+      if (post.place.display_name) {
+        post.place.name = post.place.display_name;
+      }
       if (post.place.address.short_country == country) {
         post.place.local_address = post.place.display_address_for_own_country_home;
       } else {
@@ -1286,7 +1296,7 @@ exports.viewSavedPosts = async (req, res) => {
         "_id user place createdAt status coordinate_status content caption like comments saved"
       )
       .populate("user", "name username total_contribution profileImage foiti_ambassador")
-      .populate("place", "name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available original_place_id")
+      .populate("place", "name display_name address short_address local_address types google_types display_address_for_own_country alias display_address display_address_available original_place_id")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -1303,6 +1313,9 @@ exports.viewSavedPosts = async (req, res) => {
     }
 
     posts.forEach((post) => {
+      if(post.place.display_name){
+        post.place.name = post.place.display_name;
+      }
       if (post.place.address.short_country == country) {
         if (post.place.display_address_for_own_country != "") {
           post.place.local_address = post.place.display_address_for_own_country.substr(2);
@@ -1487,6 +1500,7 @@ exports.exploreNearby = async (req, res) => {
             'distance': 1,
             'place': 1,
             'placeData.name': 1,
+            'placeData.display_name': 1,
             'placeData.address': 1,
             'placeData.display_address': 1,
             'placeData.types': 1,
@@ -1537,6 +1551,7 @@ exports.exploreNearby = async (req, res) => {
             'distance': 1,
             'place': 1,
             'placeData.name': 1,
+            'placeData.display_name': 1,
             'placeData.address': 1,
             'placeData.display_address': 1,
             'placeData.types': 1,
@@ -1568,6 +1583,9 @@ exports.exploreNearby = async (req, res) => {
       }
 
       posts.forEach((post) => {
+        if (post.placeData.display_name) {
+          post.placeData.name = post.placeData.display_name;
+        }
         if (post.placeData.address.short_country == country) {
           if (post.placeData.display_address_for_own_country != "") {
             post.placeData.local_address = post.placeData.display_address_for_own_country.substr(2);

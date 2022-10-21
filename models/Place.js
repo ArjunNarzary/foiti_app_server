@@ -18,6 +18,8 @@ const placeSchema = new mongoose.Schema(
       require: [true, "Name of place is required"],
       index: true,
     },
+    //This will be the copy of original place name to show in app
+    display_name: String, 
     //This array will be used to search for the place, will be manually added by team
     alias: [String],
     google_place_id: {

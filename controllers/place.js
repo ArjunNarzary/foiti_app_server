@@ -264,6 +264,10 @@ exports.getPlace = async (req, res) => {
       country = "IN";
     }
 
+    if (place.display_name) {
+      place.name = place.display_name;
+    }
+
     if (place.address.short_country == country) {
       if (place.display_address_for_own_country != "") {
         place.local_address = place.display_address_for_own_country_place.substr(2);
@@ -667,6 +671,9 @@ exports.placesVisited = async (req, res) => {
     }
 
     posts.forEach((post) => {
+      if(post.place.display_name){
+        post.place.name = post.place.display_name;
+      }
       if (post.place.types.length > 1) {
         const typeArray = post.place.types[1].split("_");
         const capitalizedArray = typeArray.map((item) => {
@@ -1136,7 +1143,7 @@ exports.explorePlace = async (req, res) => {
       .ne(true)
       .sort({ createdAt: -1 })
       .select("_id status createdAt deactivated terminated content")
-      .populate("place", "name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
+      .populate("place", "name display_name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
       .skip(skip)
       .limit(limit);
 
@@ -1159,6 +1166,9 @@ exports.explorePlace = async (req, res) => {
     }
 
     posts.forEach((post) => {
+      if(post.place.display_name){
+        post.place.name = post.place.display_name;
+      }
       if (post.place.address.short_country == country) {
         if (post.place.display_address_for_own_country != "") {
           post.place.local_address =
@@ -1291,7 +1301,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is destination
     if (place.types[1] == "town" || place.types[1] == "city") {
       popular_places = await Place.find({})
-        .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
+        .select("_id name display_name types destination show_destinations cover_photo display_address editor_rating original_place_id")
         .where("duplicate").ne(true)
         .where("reviewed_status").equals(true)
         .where("editor_rating").gte(1)
@@ -1307,7 +1317,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is destination
     if (place.types[1] == "village" || place.types[1] == "neighbourhood") {
       popular_places = await Place.find({})
-        .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
+        .select("_id name display_name types destination show_destinations cover_photo display_address editor_rating original_place_id")
         .where("duplicate").ne(true)
         .where("reviewed_status").equals(true)
         .where("editor_rating").gte(1)
@@ -1324,7 +1334,7 @@ exports.showPopularPlaces = async (req, res) => {
     //If place is state or union territory
     else if(place.types[1] == "state" || place.types[1] == "union_territory"){
       popular_places = await Place.find({})
-        .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
+        .select("_id name display_name types destination show_destinations cover_photo display_address editor_rating original_place_id")
                         .where("duplicate").ne(true)
                         .where("reviewed_status").equals(true)
                         .where("editor_rating").gte(1)
@@ -1337,7 +1347,7 @@ exports.showPopularPlaces = async (req, res) => {
     }
     else if(place.types[1] == "country"){
       popular_places = await Place.find({$or:[{types: "state"}, {types: "union_territory"}]})
-                      .select("_id name types destination show_destinations cover_photo display_address original_place_id")
+                      .select("_id name display_name types destination show_destinations cover_photo display_address original_place_id")
                       .where("display_address.country").equals(place.name)
                       .sort({ name: 1, _id: 1 });
     }

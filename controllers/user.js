@@ -992,7 +992,7 @@ exports.viewAllPost = async (req, res) => {
           .ne(true)
           .where("terminated")
           .ne(true)
-          .populate("place", "name address alias display_address display_address_available original_place_id")
+          .populate("place")
           .sort({ createdAt: -1 })
           .skip(parseInt(skip))
           .limit(parseInt(limit));
@@ -1025,6 +1025,9 @@ exports.viewAllPost = async (req, res) => {
     }
 
     posts.forEach((post) => {
+      if (post.place.display_name) {
+        post.place.name = post.place.display_name;
+      }
       if (post.place.address.short_country == country) {
         if (post.place.display_address_for_own_country != "") {
           post.place.local_address =
