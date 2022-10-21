@@ -1446,10 +1446,6 @@ exports.exploreNearby = async (req, res) => {
   try{
     let { skip, currentCoordinate, ip, sortBy, distance } = req.body;
     let limit = 20;
-    // currentCoordinate  = {
-    //   lat: 26.122439,
-    //   lng: 91.776734
-    // }
 
 
     const { lat, lng } = currentCoordinate;
@@ -1549,7 +1545,7 @@ exports.exploreNearby = async (req, res) => {
             'placeData.display_address_for_other_country': 1,
           }
         },
-        { $sort: { like_count: -1 } },
+        { $sort: { like_count: -1, _id:1 } },
         { $skip: skip },
         { $limit: limit }
       ]);
@@ -1611,9 +1607,9 @@ exports.exploreNearby = async (req, res) => {
 }
 
 exports.copyCoordinates = async (req, res) => {
+  return;
   try{
     const posts = await Post.find({ coordinate_status: true });
-    let count = 0;
     posts.forEach(async (post) => {
       const postData = await Post.findById(post._id);
       if (postData.content[0].coordinate.lat){
@@ -1623,13 +1619,10 @@ exports.copyCoordinates = async (req, res) => {
         }
         postData.content[0].location = data;
         await postData.save();
-        count+= 1;
       }
     });
     res.status(200).json({
       success: true,
-      count
-      
     })
   }catch(error){
     console.log(error);

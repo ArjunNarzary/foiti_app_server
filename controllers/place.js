@@ -595,8 +595,6 @@ exports.placesVisited = async (req, res) => {
     // const distPost = await Post.find({ user: userId }).distinct("place");
     const allPosts = await Post.find({ user: userId }).populate("place").populate("original_place");
     let distPost = new Set();
-    let originPlaces = [];
-    let checkPlaceId = [];
     allPosts.map((p) => {
       if(p.original_place && p.original_place._id){
         distPost.add(p.original_place._id.toString());
@@ -1301,7 +1299,7 @@ exports.showPopularPlaces = async (req, res) => {
         .where("display_address.admin_area_1").equals(place.display_address.admin_area_1)
         .where("display_address.country").equals(place.display_address.country)
         .where("types").equals("point_of_interest")
-        .sort({ editor_rating: -1 })
+        .sort({ editor_rating: -1, _id: 1 })
         .skip(skip)
         .limit(limit);
     }
@@ -1318,14 +1316,13 @@ exports.showPopularPlaces = async (req, res) => {
         .where("display_address.admin_area_2").equals(place.display_address.admin_area_2)
         .where("display_address.country").equals(place.display_address.country)
         .where("types").equals("point_of_interest")
-        .sort({ editor_rating: -1 })
+        .sort({ editor_rating: -1, _id: 1 })
         .skip(skip)
         .limit(limit);
     }
 
     //If place is state or union territory
     else if(place.types[1] == "state" || place.types[1] == "union_territory"){
-      console.log("Here");
       popular_places = await Place.find({})
         .select("_id name types destination show_destinations cover_photo display_address editor_rating original_place_id")
                         .where("duplicate").ne(true)
@@ -1334,14 +1331,15 @@ exports.showPopularPlaces = async (req, res) => {
                         .where("display_address.admin_area_1").equals(place.name)
                         .where("display_address.country").equals(place.display_address.country)
                         .where("types").equals("point_of_interest") 
-                        .sort({ editor_rating: -1 }) 
+                        .sort({ editor_rating: -1, _id: 1 }) 
                         .skip(skip)           
                         .limit(limit);
     }
     else if(place.types[1] == "country"){
       popular_places = await Place.find({$or:[{types: "state"}, {types: "union_territory"}]})
                       .select("_id name types destination show_destinations cover_photo display_address original_place_id")
-                      .where("display_address.country").equals(place.name).sort({ name: 1 });
+                      .where("display_address.country").equals(place.name)
+                      .sort({ name: 1, _id: 1 });
     }
 
     skip = skip + popular_places.length;
@@ -1396,8 +1394,7 @@ exports.attractions = async (req, res) => {
             type: "Point",
             coordinates: [lng, lat],
           },
-          // query: { "duplicate":{ne: true} },
-          // query: { "duplicate": false, "type[0]": 'point_of_interest' },
+          query: { "duplicate": false, "types.0": 'point_of_interest' },
           // key: "location",
           "maxDistance": maxDistanceInMeter,
           "spherical": true,
@@ -1446,6 +1443,7 @@ exports.attractions = async (req, res) => {
 }
 
 exports.copyPlaceCoordinates = async(req, res) => {
+  return;
   try{
     const places = await Place.find({});
     places.forEach(async (place) => {

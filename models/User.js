@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
     unique: [true, "Email already exist"],
     lowercase: true,
   },
-  email_varified: {
+  email_verified: {
     type: Boolean,
     default: false,
   },

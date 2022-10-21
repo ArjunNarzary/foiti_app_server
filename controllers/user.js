@@ -290,7 +290,7 @@ exports.editProfile = async (req, res) => {
       user.current_location.createDate = Date.now();
     }
 
-    if(place.place_id != ""){
+    if(place && place.place_id != ""){
       //Remove previous place if exist and not same
       let differentPlace = true;
       if (user.place){

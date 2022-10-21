@@ -45,7 +45,7 @@ router.route("/explore-place/:place_id").post(isAuthenticated, explorePlace);
 
 //NEARBY POSTS
 router.route("/attractions").post(isAuthenticated, attractions);
-router.route("/copy-coordinates").get(isAuthenticated, copyPlaceCoordinates);
+// router.route("/copy-coordinates").get(isAuthenticated, copyPlaceCoordinates);
 
 //============AT ALL QUERIES BEFORE THIS LINE==========
 router
