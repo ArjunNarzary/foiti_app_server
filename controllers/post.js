@@ -1532,6 +1532,8 @@ exports.exploreNearby = async (req, res) => {
             name: 1,
             like: 1,
             like_count: 1,
+            viewers: 1,
+            viewers_count: 1,
             'distance': 1,
             'place': 1,
             'placeData.name': 1,
@@ -1545,7 +1547,7 @@ exports.exploreNearby = async (req, res) => {
             'placeData.display_address_for_other_country': 1,
           }
         },
-        { $sort: { like_count: -1, _id:1 } },
+        { $sort: { viewers_count: -1, _id:1 } },
         { $skip: skip },
         { $limit: limit }
       ]);
