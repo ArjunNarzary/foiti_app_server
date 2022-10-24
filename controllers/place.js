@@ -1462,6 +1462,7 @@ exports.copyPlaceCoordinates = async(req, res) => {
       const data = {
         coordinates: newArr
       }
+      console.log(data);
       placeData.location = data;
       await placeData.save();
     });

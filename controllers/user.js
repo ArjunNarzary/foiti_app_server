@@ -950,7 +950,7 @@ exports.viewAllPost = async (req, res) => {
       //IF OWN PROFILE
       posts = await Post.find({})
         .select(
-          "_id name user place content coordinate_status display_address_for_own_country updatedAt"
+          "_id name user place content coordinate_status updatedAt"
         )
         .populate("place")
         .where("user")
@@ -965,7 +965,7 @@ exports.viewAllPost = async (req, res) => {
       if (!showGeoPost) {
         posts = await Post.find({})
           .select(
-            "_id name user place content  display_address_for_own_country updatedAt"
+            "_id name user place content updatedAt"
           )
           .where("user")
           .equals(profileId)
@@ -981,7 +981,7 @@ exports.viewAllPost = async (req, res) => {
       } else {
         posts = await Post.find({})
           .select(
-            "_id name user place content  display_address_for_own_country updatedAt"
+            "_id name user place content updatedAt"
           )
           .where("user")
           .equals(profileId)
@@ -1024,11 +1024,12 @@ exports.viewAllPost = async (req, res) => {
       country = "IN";
     }
 
+
     posts.forEach((post) => {
-      if (post.place.display_name) {
+      if (post?.place?.display_name) {
         post.place.name = post.place.display_name;
       }
-      if (post.place.address.short_country == country) {
+      if (post?.place?.address?.short_country == country) {
         if (post.place.display_address_for_own_country != "") {
           post.place.local_address =
             post.place.display_address_for_own_country.substr(2);
@@ -1045,6 +1046,7 @@ exports.viewAllPost = async (req, res) => {
         }
       }
     });
+
 
     const totalCount = posts.length;
     const newSkip = skip + totalCount;

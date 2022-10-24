@@ -120,6 +120,9 @@ exports.createPost = async (req, res) => {
     //CHECK IF PLACE ID IS ALREADY PRESENT
     let newPlaceCreated = false;
     let place = await Place.findOne({ google_place_id: details.place_id });
+    if (details.created_place){
+      place = null;
+    }
     if (!place) {
       //Format timming if available
       let timingArr = [];
@@ -133,9 +136,15 @@ exports.createPost = async (req, res) => {
         phone_number = details.phone_number;
       }
 
+      let uniqueId = "";
+      if (details.created_place){
+        const currentDate = new Date();
+        uniqueId = `created_${user.username}_${currentDate.getTime()}`;
+      }
+
       place = await Place.create({
         name: details.name,
-        google_place_id: details.place_id,
+        google_place_id: details.created_place ? uniqueId : details.place_id,
         address: details.address,
         coordinates: details.coordinates,
         location : {
@@ -484,6 +493,9 @@ exports.editPost = async (req, res) => {
 
       if (!samePlace) {
         place = await Place.findOne({ google_place_id: details.place_id });
+        if (details.created_place) {
+          place = null;
+        }
         if (!place) {
 
           //Format timming if available
@@ -498,9 +510,15 @@ exports.editPost = async (req, res) => {
             phone_number = details.phone_number;
           }
 
+          let uniqueId = "";
+          if (details.created_place) {
+            const currentDate = new Date();
+            uniqueId = `created_${authUser.username}_${currentDate.getTime()}`;
+          }
+
           place = await Place.create({
             name: details.name,
-            google_place_id: details.place_id,
+            google_place_id: details.created_place ? uniqueId : details.place_id,
             address: details.address,
             coordinates: details.coordinates,
             google_types: details.types,
@@ -508,6 +526,7 @@ exports.editPost = async (req, res) => {
             location: {
               coordinates: [parseFloat(details.coordinates.lng), parseFloat(details.coordinates.lat)]
             },
+            created_place: details.created_place,
             open_hours: timingArr,
             phone_number
           });
@@ -585,6 +604,7 @@ exports.editPost = async (req, res) => {
       newPlaceCreated,
     });
   } catch (error) {
+    console.log(error);
     errors.general = error.message;
     res.status(500).json({
       success: false,
@@ -652,7 +672,7 @@ exports.viewPost = async (req, res) => {
       country = "IN";
     }
 
-    if (post.place.display_name) {
+    if (post?.place?.display_name) {
       post.place.name = post.place.display_name;
     }
 
@@ -1637,6 +1657,7 @@ exports.copyCoordinates = async (req, res) => {
         const data = {
           coordinates: newArr
         }
+        console.log(data);
         postData.content[0].location = data;
         await postData.save();
       }
