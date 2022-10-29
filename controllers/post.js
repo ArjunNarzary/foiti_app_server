@@ -1379,6 +1379,14 @@ exports.reportPost = async (req, res) => {
       });
     }
 
+    if(message.length > 5000){
+      errors.message = "Please write message within 5000 characters.";
+      return res.status(400).json({
+        success: false,
+        message: errors
+      });
+    }
+
     const post = await Post.findById(post_id);
     //CHECK IF POST EXIST
     if(!post){

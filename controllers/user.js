@@ -2027,6 +2027,14 @@ exports.reportUser = async (req, res) => {
       });
     }
 
+    if (message.length > 5000) {
+      errors.message = "Please write message within 5000 characters.";
+      return res.status(400).json({
+        success: false,
+        message: errors
+      });
+    }
+
     if (user_id.toString() === authUser._id.toString()) {
       return res.status(401).json({
         success: fasle,
