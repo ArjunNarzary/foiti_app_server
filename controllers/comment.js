@@ -60,15 +60,12 @@ exports.createComment = async (req, res) => {
             body,
         });
 
-        // if (comment){
-        //     post.comments.push(comment._id);
-        //     await post.save();
-        // }
+        const newComment = await Comment.findById(comment._id).populate("author", "_id name total_contribution profileImage foiti_ambassador");
 
         return res.status(200).json({
             success:true,
             message: "Comment has been successfully posted.",
-            comment,
+            comment: newComment,
         })
 
 
@@ -154,10 +151,12 @@ exports.replayComment = async (req, res) => {
         parentComment.has_reply = true;
         await parentComment.save();
 
+        const newComment = await Comment.findById(comment._id).populate("author", "_id name total_contribution profileImage foiti_ambassador");
+
         return res.status(200).json({
             success: true,
             message: "Comment has been successfully posted.",
-            comment,
+            comment: newComment,
         })
 
 
@@ -329,11 +328,13 @@ exports.editComment = async (req, res) => {
 
         comment.body = body;
         await comment.save();
+        const newComment = await Comment.findById(comment._id).populate("author", "_id name total_contribution profileImage foiti_ambassador");
+
 
         return res.status(200).json({
             success: true,
             message: "Comment has been successfully updated",
-            comment,
+            comment: newComment,
         })
 
 
@@ -405,13 +406,6 @@ exports.getAllComments = async(req, res) => {
             })
         }
 
-        if(noMoreComment){
-            return res.status(400).json({
-                success: false,
-                message: "No more comments to show."
-            })
-        }
-
         let comments = [];
 
         if (myComment) {
@@ -419,7 +413,7 @@ exports.getAllComments = async(req, res) => {
                                     .where("post_id").equals(post_id)
                                     .where("author").equals(authUser._id)
                                     .where("parent_id").equals(undefined)
-                                    .populate("author", "_id name total_contribution profileImage")
+                                    .populate("author", "_id name total_contribution profileImage foiti_ambassador")
                                     .sort({ createdAt: -1 })
                                     .limit(limit)
                                     .skip(skip);
@@ -429,7 +423,7 @@ exports.getAllComments = async(req, res) => {
                                 .where("post_id").equals(post_id)
                                 .where("author").ne(authUser._id)
                                 .where("parent_id").equals(undefined)
-                                .populate("author", "_id name total_contribution profileImage")
+                                .populate("author", "_id name total_contribution profileImage foiti_ambassador")
                                 .sort({ createdAt: -1 })
                                 .limit(limit)
                                 .skip(skip);
@@ -444,11 +438,12 @@ exports.getAllComments = async(req, res) => {
                             .where("post_id").equals(post_id)
                             .where("author").ne(authUser._id)
                             .where("parent_id").equals(undefined)
-                            .populate("author", "_id name total_contribution profileImage")
+                            .populate("author", "_id name total_contribution profileImage foiti_ambassador")
                             .sort({ createdAt: -1 })
                             .limit(newLimit);
             if (restComment.length > 0){
-                comments.push(restComment);
+                const addComment = [...comments, ...restComment];
+                comments = addComment;
                 skip = restComment.length;
             }
 
@@ -504,13 +499,13 @@ exports.getReplies = async(req, res) =>{
             })
         }
 
-        if(!parentComment.has_reply){
-            errors.general = "Comment does not contain replies";
-            return res.status(404).json({
-                success: false,
-                message: errors
-            })
-        }
+        // if(!parentComment.has_reply){
+        //     errors.general = "Comment does not contain replies";
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: errors
+        //     })
+        // }
 
         //Count total replies
         const totalComment = await Comment.find({})
@@ -518,6 +513,7 @@ exports.getReplies = async(req, res) =>{
 
         const replies = await Comment.find({})
                         .where("parent_id").equals(parentComment._id)
+                        .populate("author", "_id name total_contribution profileImage foiti_ambassador")
                         .skip(skip)
                         .limit(limit)
                         .sort({"createdAt" : 1});

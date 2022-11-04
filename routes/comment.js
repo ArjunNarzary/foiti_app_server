@@ -16,10 +16,10 @@ router.route("/total-comment/:post_id").get(isAuthenticated, currentUserCommentA
 //GET ALL COMMENTS
 router.route("/all-comments/:post_id").post(isAuthenticated, getAllComments);
 //SHOW REPLIES
-router.route("/replies/:parent_id").post(isAuthenticated, getReplies);
+router.route("/replies").post(isAuthenticated, getReplies);
 
 //REPLAY TO COMMENT
-router.route("/replay/:post_id/:comment_id").post(isAuthenticated, validateComment("validateBody"), replayComment);
+router.route("/reply/:post_id/:comment_id").post(isAuthenticated, validateComment("validateBody"), replayComment);
 
 //REPORT COMMENT
 router.route("/report").post(isAuthenticated, reportComment);
