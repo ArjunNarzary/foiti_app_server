@@ -769,7 +769,7 @@ exports.viewOthersProfile = async (req, res) => {
       });
     }
 
-    const profileUser = await User.findById(profileId).populate("currently_in");
+    const profileUser = await User.findById(profileId).populate("currently_in").populate("place");
     if (!profileUser) {
       errors.general = "User not found";
       return res.status(404).json({
@@ -1398,7 +1398,6 @@ exports.resetPassword = async (req, res) => {
     if (otp) {
       await otp.deleteOne();
     }
-
     const newOtp = user.generateOtp();
     const message = `One time password for resetting your passward is ${newOtp}. This OTP is valid for 15 minutes.`;
     const html = `<div style="padding: 1.5rem; margin:1.5rem; background-color:#E5E5E5;">

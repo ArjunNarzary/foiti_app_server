@@ -19,7 +19,7 @@ const inAppNotificationSchema = new Schema({
     message:String,
     type:{
         type: String,
-        enum: ["like", "new_post", "follow"],
+        enum: ["like", "new_post", "follow", "comment", "reply_comment", "like_comment"],
     },
     status: {
         type: String,

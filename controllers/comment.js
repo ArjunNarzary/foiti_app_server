@@ -3,6 +3,7 @@ const { deleteMany } = require("../models/Comment");
 const Comment = require('../models/Comment');
 const Post = require('../models/Post');
 const ReportComment = require("../models/ReportComment");
+const { sendPostCommentNotification, sendCommentReplyNotification, sendCommentLikeNotification } = require("../utils/sendInAppNotification");
 
 var ObjectId = require('mongoose').Types.ObjectId;
 
@@ -61,7 +62,12 @@ exports.createComment = async (req, res) => {
         });
 
         const newComment = await Comment.findById(comment._id).populate("author", "_id name total_contribution profileImage foiti_ambassador");
-
+        
+        //Send notification
+        if (post.user.toString() !== authUser._id.toString()) {
+            sendPostCommentNotification(authUser, post);
+        }
+        
         return res.status(200).json({
             success:true,
             message: "Comment has been successfully posted.",
@@ -153,6 +159,11 @@ exports.replayComment = async (req, res) => {
 
         const newComment = await Comment.findById(comment._id).populate("author", "_id name total_contribution profileImage foiti_ambassador");
 
+        //Send notification
+        if (parentComment.author.toString() !== authUser._id.toString()) {
+            sendCommentReplyNotification(authUser, parentComment.author, post)
+        }
+
         return res.status(200).json({
             success: true,
             message: "Comment has been successfully posted.",
@@ -185,6 +196,7 @@ exports.likeUnlike = async (req, res) => {
             })
         }
 
+        
         const comment = await Comment.findById(comment_id);
         if(!comment){
             errors.general = "Comment not found";
@@ -193,15 +205,32 @@ exports.likeUnlike = async (req, res) => {
                 message: errors
             })
         }
+        const post = await Post.findById(comment.post_id);
+        if(!post){
+            errors.general = "Post not found";
+            return res.status(500).json({
+                success: false,
+                message: errors
+            })
+        }
 
+        let hasLiked = false;
         //Check if already liked
         if (comment.likes.includes(authUser._id)){
             const index = comment.likes.indexOf(authUser._id);
             comment.likes.splice(index, 1);
         }else{
+            hasLiked = true;
             comment.likes.push(authUser._id);
         }
         await comment.save();
+
+        //Send notification 
+        if(hasLiked){
+            if (comment.author.toString() !== authUser._id.toString()) {
+                sendCommentLikeNotification(authUser, comment.author, post);
+            }
+        }
 
         return res.status(200).json({
             success: true,

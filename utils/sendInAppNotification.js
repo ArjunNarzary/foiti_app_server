@@ -61,6 +61,78 @@ exports.sendPostLikeNotification = async (authUser, post) => {
     }
 }
 
+//POST COMMENT NOTIFICATION
+exports.sendPostCommentNotification = async (authUser, post) => {
+    try {
+        const inAppNotification = new InAppNotification({
+            user: post.user,
+            post: post._id,
+            action_taken_by: authUser._id,
+            message: `commented on your post.`,
+            type: "comment",
+            status: "new",
+        });
+        await inAppNotification.save();
+
+        const message = {
+            type: "comment",
+            id: post._id,
+            body: `${authUser.name} has commented on your post`,
+        }
+        sendPushNotification(post.user, message);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+//COMMENT REPLY NOTIFICATION
+exports.sendCommentReplyNotification = async (authUser, notifyTo, post) => {
+    try {
+        const inAppNotification = new InAppNotification({
+            user: notifyTo,
+            post: post._id,
+            action_taken_by: authUser._id,
+            message: `replied to your comment.`,
+            type: "reply_comment",
+            status: "new",
+        });
+        await inAppNotification.save();
+
+        const message = {
+            type: "reply_comment",
+            id: post._id,
+            body: `${authUser.name} has replied to your comment.`,
+        }
+        sendPushNotification(notifyTo, message);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+//LIKE COMMENT NOTIFICATION
+exports.sendCommentLikeNotification = async (authUser, notifyTo, post) => {
+    try {
+        const inAppNotification = new InAppNotification({
+            user: notifyTo,
+            post: post._id,
+            action_taken_by: authUser._id,
+            message: `liked to your comment.`,
+            type: "like_comment",
+            status: "new",
+        });
+        await inAppNotification.save();
+
+        const message = {
+            type: "like_comment",
+            id: post._id,
+            body: `${authUser.name} has liked your comment.`,
+        }
+        sendPushNotification(notifyTo, message);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 //DELETE IF LIKED POST EXIST ON UNLIKED POST
 exports.deleteNotificationOnUnlike = async (authUser, post) => {
     try{
