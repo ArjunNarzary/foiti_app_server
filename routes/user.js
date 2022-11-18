@@ -35,6 +35,7 @@ const {
   blockedList,
   unBlockUser,
   removeExpoToken,
+  googleLogin,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -47,6 +48,9 @@ const router = express.Router();
 router.route("/register").post(validateUser("createUser"), registerUser);
 //LOGIN USER
 router.route("/login").post(validateUser("loginUser"), loginUser);
+//SOCILA LOGIN
+router.route("/login/google").post(googleLogin);
+
 // Edit name
 router
   .route("/welcome")

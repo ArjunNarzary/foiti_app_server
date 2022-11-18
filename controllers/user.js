@@ -3,6 +3,8 @@ const fs = require("fs");
 const util = require("util");
 const unlinkFile = util.promisify(fs.unlink);
 const { validationResult } = require("express-validator");
+const axios = require('axios');
+
 const User = require("../models/User");
 const FollowDetail = require("../models/FollowDetail");
 const { uploadFile, deleteFile } = require("../utils/s3");
@@ -53,6 +55,10 @@ function generateUniqueUsername(rString) {
       console.error(err);
       throw err;
     });
+}
+
+function generatePassword() {
+  return randomString(8, "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ@!.");
 }
 
 function generateUniqueUsernameByName(name) {
@@ -213,6 +219,104 @@ exports.loginUser = async (req, res) => {
     });
   }
 };
+
+//Goole Login
+exports.googleLogin = async (req, res) =>{
+  let  errors = {};
+  try{
+    const { access_token } = req.headers;
+
+    if(!access_token){
+      errors.general = "Something went wrong while logging in";
+      return res.status(500).json({
+        success: false,
+        message: errors,
+      });
+    }
+
+    const url = "https://www.googleapis.com/userinfo/v2/me";
+    const userData = await axios(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    console.log(userData.data);
+    if(!userData.data){
+      errors.general = "Something went wrong while logging in. Please try again";
+      return res.status(500).json({
+        success: false,
+        message: errors,
+      });
+    }
+
+    const nativeUserData = userData.data;
+    if (!nativeUserData.email){
+      errors.general = "Something went wrong while logging in. Please try again";
+      return res.status(500).json({
+        success: false,
+        message: errors,
+      });
+    }
+
+    //Search email in USER model
+    let user = await User.findOne({ email: nativeUserData.email });
+    if(user){
+      if (user.terminated) {
+        errors.general = "Your account has been terminated.";
+        return res.status(403).json({
+          success: false,
+          message: errors,
+        });
+      }
+
+      //Active user if deactivated
+      if (user.account_status == "deactivated") {
+        user.account_status = user.last_account_status || "silent";
+        await user.save();
+        await Post.updateMany({ user: user._id }, { deactivated: false });
+      }
+    }else{
+      //Create new User
+      let rString = randomString(10, "0123456789abcdefghijklmnopqrstuvwxyz");
+      const username = await generateUniqueUsername(rString);
+      const password = generatePassword();
+
+      user = await User.create({
+        email: nativeUserData.email,
+        name: nativeUserData.name,
+        socialProvider: 'Google',
+        socialLogin: true,
+        email_verified: nativeUserData.verified_email,
+        username,
+        password,
+        upload_status: true,
+        account_status: "silent",
+        last_account_status: "silent"
+      })
+    }
+
+    const token = await user.generateToken();
+
+    user.password = "";
+
+    return res.status(200).json({
+      success: true,
+      user,
+      token,
+    });
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong while logging in";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+}
 
 //Enter name
 exports.enterName = async (req, res) => {

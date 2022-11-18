@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  socialProvider: String,
   profileImage: {
     thumbnail: {
       public_url: String,
