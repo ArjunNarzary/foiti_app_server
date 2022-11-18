@@ -243,7 +243,6 @@ exports.googleLogin = async (req, res) =>{
       }
     });
 
-    console.log(userData.data);
     if(!userData.data){
       errors.general = "Something went wrong while logging in. Please try again";
       return res.status(500).json({
