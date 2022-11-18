@@ -225,6 +225,7 @@ exports.googleLogin = async (req, res) =>{
   let  errors = {};
   try{
     const { access_token } = req.headers;
+    console.log("token",access_token);
 
     if(!access_token){
       errors.general = "Something went wrong while logging in";
