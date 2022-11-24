@@ -223,8 +223,7 @@ exports.loginUser = async (req, res) => {
 exports.googleLogin = async (req, res) =>{
   let  errors = {};
   try{
-    console.log("body", req.body);
-    const { access_token } = req.headers;
+    const { access_token } = req.body;
 
     if(!access_token){
       errors.general = "Something went wrong while logging in";
@@ -321,8 +320,7 @@ exports.googleLogin = async (req, res) =>{
 exports.facebookLogin = async (req, res) =>{
   let  errors = {};
   try{
-    console.log("body", req.body);
-    const { access_token } = req.headers;
+    const { access_token } = req.body;
 
     if(!access_token){
       errors.general = "Something went wrong while logging in";
