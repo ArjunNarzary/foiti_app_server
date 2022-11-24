@@ -36,6 +36,7 @@ const {
   unBlockUser,
   removeExpoToken,
   googleLogin,
+  facebookLogin,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -50,6 +51,7 @@ router.route("/register").post(validateUser("createUser"), registerUser);
 router.route("/login").post(validateUser("loginUser"), loginUser);
 //SOCILA LOGIN
 router.route("/login/google").post(googleLogin);
+router.route("/login/facebook").post(facebookLogin);
 
 // Edit name
 router
