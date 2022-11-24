@@ -223,6 +223,7 @@ exports.loginUser = async (req, res) => {
 exports.googleLogin = async (req, res) =>{
   let  errors = {};
   try{
+    console.log("body", req.body);
     const { access_token } = req.headers;
 
     if(!access_token){
@@ -320,6 +321,7 @@ exports.googleLogin = async (req, res) =>{
 exports.facebookLogin = async (req, res) =>{
   let  errors = {};
   try{
+    console.log("body", req.body);
     const { access_token } = req.headers;
 
     if(!access_token){
