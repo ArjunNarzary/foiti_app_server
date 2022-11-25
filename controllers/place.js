@@ -1395,7 +1395,7 @@ exports.attractions = async (req, res) => {
       })
     }
     
-    const maxDistanceInMeter = 50 * 1000;
+    const maxDistanceInMeter = 99 * 1000;
 
     const attractions = await Place.aggregate([
       {
