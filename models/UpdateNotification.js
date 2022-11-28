@@ -9,6 +9,7 @@ const updateNotificationSchema = new Schema(
         },
         appVersion: String,
         redirectLink: String,
+        //if force true not modal will not close, make sure redirectLink is provided
         forced: Boolean,
         showButton: Boolean,
         buttonText: String,

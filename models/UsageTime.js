@@ -20,7 +20,6 @@ const usageTimeSchema = new Schema(
         createdAt: {
             type: Date,
             default: Date.now(),
-            expires: 15552000, // this is the expiry time in seconds for 6 months
         },
         updatedAt:{
             type: Date,
