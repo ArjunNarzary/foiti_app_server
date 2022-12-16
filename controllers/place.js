@@ -1480,3 +1480,119 @@ exports.copyPlaceCoordinates = async(req, res) => {
     })
   }
 }
+
+exports.exploreMapPlace = async (req, res) => {
+  let errors = {};
+  try {
+    let { latitude, longitude, lngDelta, ip } = req.body;
+
+
+    if (latitude === undefined || longitude === undefined || lngDelta === undefined) {
+      return res.status(401).json({
+        success: false
+      })
+    }
+
+    const distInKm = parseFloat(lngDelta)/0.02
+
+    const maxDistanceInMeter = parseFloat(distInKm) * 1000;
+
+    let places = await Place.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+          },
+          query: { "duplicate": false, "types": 'point_of_interest' },
+          // key: "location",
+          "maxDistance": maxDistanceInMeter,
+          "spherical": true,
+          "distanceField": "distance",
+          "distanceMultiplier": 0.001
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          display_name:1,
+          distance: 1,
+          location: 1,
+          cover_photo: 1,
+          original_place_id: 1,
+          address: 1,
+          display_address:1,
+          duplicate: 1,
+          types: 1,
+          google_types: 1,
+          destination:1,
+          display_address_available:1,
+          short_address:1,
+          local_address:1,
+          display_address_for_own_country:1,
+          display_address_for_other_country:1
+        }
+      },
+      { $sort: { editor_rating: -1, _id: 1 } },
+      { $limit: 12 }
+    ]);
+
+    places = places.map(doc => {
+      return new Place(doc)
+    });
+
+    //FORMAT ADDRESS
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    places.forEach((place) => {
+      if (place.display_name) {
+        place.name = place.display_name;
+      }
+
+      if (place.types.length > 1) {
+        const typeArray = place.types[1].split("_");
+        const capitalizedArray = typeArray.map((item) => {
+          return item.charAt(0).toUpperCase() + item.slice(1);
+        });
+        place.types[1] = capitalizedArray.join(" ");
+      }
+
+      if (place.address.short_country == country) {
+        if (place.display_address_for_own_country != "") {
+          place.local_address =
+            place.display_address_for_own_country.substr(2);
+        } else {
+          place.local_address = place.display_address_for_own_country;
+        }
+      } else {
+        if (place.display_address_for_other_country != "") {
+          place.short_address =
+            place.display_address_for_other_country.substr(2);
+        } else {
+          place.short_address =
+            place.display_address_for_other_country;
+        }
+      }
+    });
+
+
+    res.status(200).json({
+      places,
+    });
+
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
