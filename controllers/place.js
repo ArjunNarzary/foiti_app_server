@@ -1481,57 +1481,67 @@ exports.copyPlaceCoordinates = async(req, res) => {
   }
 }
 
+//MAP VIEW
 exports.exploreMapPlace = async (req, res) => {
   let errors = {};
   try {
-    let { latitude, longitude, lngDelta, ip } = req.body;
+    let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, ip } = req.body;
 
 
-    if (latitude === undefined || longitude === undefined || lngDelta === undefined) {
+    if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined || 
+        bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
+        topLeftCoords.latitude === undefined || topLeftCoords.longitude === undefined ||
+        bottomRightCoords.latitude === undefined || bottomRightCoords.longitude === undefined
+      ) {
       return res.status(401).json({
         success: false
       })
     }
 
-    const distInKm = parseFloat(lngDelta)/0.02
-
-    const maxDistanceInMeter = parseFloat(distInKm) * 1000;
+    const upperLeftArr = [parseFloat(topLeftCoords.longitude), parseFloat(topLeftCoords.latitude)]
+    const upperRightArr = [parseFloat(topRightCoords.longitude), parseFloat(topRightCoords.latitude)]
+    const bottomRightArr = [parseFloat(bottomRightCoords.longitude), parseFloat(bottomRightCoords.latitude)]
+    const bottomLeftArr = [parseFloat(bottomLeftCoords.longitude), parseFloat(bottomLeftCoords.latitude)]
 
     let places = await Place.aggregate([
       {
-        $geoNear: {
-          near: {
-            type: "Point",
-            coordinates: [longitude, latitude],
-          },
-          query: { "duplicate": false, "types": 'point_of_interest' },
-          // key: "location",
-          "maxDistance": maxDistanceInMeter,
-          "spherical": true,
-          "distanceField": "distance",
-          "distanceMultiplier": 0.001
+        $match: {
+          $and: [
+            {'location': {
+              $geoWithin: {
+                $geometry: {
+                  type: "Polygon",
+                  coordinates: [
+                    [upperLeftArr, bottomLeftArr, bottomRightArr, upperRightArr, upperLeftArr]
+                  ]
+                }
+              }
+            }},
+            { "duplicate": false },
+            { "types": 'point_of_interest' }
+        ]
         }
       },
       {
         $project: {
           _id: 1,
           name: 1,
-          display_name:1,
+          display_name: 1,
           distance: 1,
           location: 1,
           cover_photo: 1,
           original_place_id: 1,
           address: 1,
-          display_address:1,
+          display_address: 1,
           duplicate: 1,
           types: 1,
           google_types: 1,
-          destination:1,
-          display_address_available:1,
-          short_address:1,
-          local_address:1,
-          display_address_for_own_country:1,
-          display_address_for_other_country:1
+          destination: 1,
+          display_address_available: 1,
+          short_address: 1,
+          local_address: 1,
+          display_address_for_own_country: 1,
+          display_address_for_other_country: 1
         }
       },
       { $sort: { editor_rating: -1, _id: 1 } },
