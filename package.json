@@ -1,5 +1,5 @@
 {
-  "name": "FoitiServer",
+  "name": "foitiserver",
   "version": "1.0.0",
   "main": "index.js",
   "author": "Arjun Narzary",
@@ -19,6 +19,7 @@
     "express": "^4.17.3",
     "express-validator": "^6.14.0",
     "geoip-country": "^4.0.114",
+    "geolib": "^3.3.3",
     "helmet": "^5.0.2",
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^6.2.6",

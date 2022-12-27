@@ -7,6 +7,8 @@ const Review = require("../models/Review");
 const User = require("../models/User");
 const { getCountry } = require("../utils/getCountry");
 const PlaceLocationViewer = require("../models/PlaceLocationViewer");
+const { getDistance, isPointInPolygon } = require('geolib');
+const { ListReceiptRuleSetsResponse } = require("@aws-sdk/client-ses");
 var ObjectId = require("mongoose").Types.ObjectId;
 
 function createError(errors, validate) {
@@ -1485,8 +1487,8 @@ exports.copyPlaceCoordinates = async(req, res) => {
 exports.exploreMapPlace = async (req, res) => {
   let errors = {};
   try {
-    let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, ip } = req.body;
-
+    let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, lngDelta, latDelta, ip } = req.body;
+    const distInMeter = parseFloat(lngDelta) / 0.00004;
 
     if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined || 
         bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
@@ -1531,6 +1533,7 @@ exports.exploreMapPlace = async (req, res) => {
           location: 1,
           cover_photo: 1,
           original_place_id: 1,
+          location:1,
           address: 1,
           display_address: 1,
           duplicate: 1,
@@ -1545,7 +1548,7 @@ exports.exploreMapPlace = async (req, res) => {
         }
       },
       { $sort: { editor_rating: -1, _id: 1 } },
-      { $limit: 12 }
+      { $limit: 30 }
     ]);
 
     places = places.map(doc => {
@@ -1592,9 +1595,61 @@ exports.exploreMapPlace = async (req, res) => {
       }
     });
 
+    const displayLabel = [];
+
+    // if (lngDelta < 0.13){
+    //   places.map(place => {
+    //     let isNear = false;
+    //     places.map(p => {
+    //       if (p._id !== place._id && !displayLabel.includes(p._id)){
+    //         const distance = getDistance(
+    //           { latitude: parseFloat(place.location.coordinates[1]), longitude: parseFloat(place.location.coordinates[0]) },
+    //           { latitude: parseFloat(p.location.coordinates[1]), longitude: parseFloat(p.location.coordinates[0]) },
+    //         )
+  
+    //         if (distance <= distInMeter) {
+    //           isNear = true
+    //           return;
+    //         }
+    //       }
+    //     })
+  
+    //     if(!isNear){
+    //       displayLabel.push(place._id);
+    //     }
+    //   })
+    // }
+
+    if (lngDelta <= 0.5){
+      places.map(place => {
+        let isNear = false;
+        places.map(p => {
+          const coods = {
+            latitude: parseFloat(p.location.coordinates[1]),
+            longitude: parseFloat(p.location.coordinates[0])
+          }
+
+          const currentCoods = {
+            latitude: parseFloat(place.location.coordinates[1]),
+            longitude: parseFloat(place.location.coordinates[0])
+          }
+          if (checkCoordsIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)){
+            isNear = true;
+            return
+          }
+
+        })
+  
+        if(!isNear){
+          displayLabel.push(place._id);
+        }
+      });
+    }
+
 
     res.status(200).json({
       places,
+      displayLabel
     });
 
   } catch (error) {
@@ -1605,4 +1660,38 @@ exports.exploreMapPlace = async (req, res) => {
       message: errors
     })
   }
+}
+
+
+
+function checkCoordsIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsToCheck){
+  const topLeftCoords = {
+    latitude: currentCoords.latitude,
+    longitude: currentCoords.longitude - (lngDelta / 4)
+  }
+
+  const topRightCoords = {
+    latitude: currentCoords.latitude,
+    longitude: currentCoords.longitude + (lngDelta / 4)
+  }
+
+  const bottomRightCoords = {
+    latitude: currentCoords.latitude - (latDelta / 16),
+    longitude: currentCoords.longitude + (lngDelta / 4)
+  }
+
+  const bottomLeftCoords = {
+    latitude: currentCoords.latitude - (latDelta / 16),
+    longitude: currentCoords.longitude - (lngDelta / 4)
+  }
+
+  return  isPointInPolygon(coordsToCheck, [
+    topLeftCoords,
+    topRightCoords,
+    bottomRightCoords,
+    bottomLeftCoords,
+    topLeftCoords
+  ]);
+
+
 }
