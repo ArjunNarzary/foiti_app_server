@@ -1520,7 +1520,8 @@ exports.exploreMapPlace = async (req, res) => {
               }
             }},
             { "duplicate": false },
-            { "types": 'point_of_interest' }
+            { "types": 'point_of_interest' },
+            {"types": {$ne: 'river'}}
         ]
         }
       },
@@ -1544,7 +1545,8 @@ exports.exploreMapPlace = async (req, res) => {
           short_address: 1,
           local_address: 1,
           display_address_for_own_country: 1,
-          display_address_for_other_country: 1
+          display_address_for_other_country: 1,
+          editor_rating:1
         }
       },
       { $sort: { editor_rating: -1, _id: 1 } },
@@ -1622,6 +1624,7 @@ exports.exploreMapPlace = async (req, res) => {
 
     if (lngDelta <= 0.5){
       places.map(place => {
+        if (displayLabel.length >= 12) return;
         let isNear = false;
         places.map(p => {
           const coods = {
