@@ -293,15 +293,14 @@ exports.googleLogin = async (req, res) =>{
         upload_status: true,
         account_status: "silent",
         last_account_status: "silent"
-      })
+      });
+
+      //Create notification table
+      await Notification.create({ user: user._id });
     }
 
     const token = await user.generateToken();
-
     user.password = "";
-
-    //Create notification table
-    await Notification.create({ user: user._id });
 
     return res.status(200).json({
       success: true,
@@ -392,15 +391,13 @@ exports.facebookLogin = async (req, res) =>{
         upload_status: true,
         account_status: "silent",
         last_account_status: "silent"
-      })
+      });
+      //Create notification table
+      await Notification.create({ user: user._id });
     }
 
     const token = await user.generateToken();
-
     user.password = "";
-
-    //Create notification table
-    await Notification.create({ user: user._id });
 
     return res.status(200).json({
       success: true,
