@@ -28,6 +28,8 @@ const helpSupport = require("./routes/helpSupport");
 const updateNotification = require("./routes/updateNotification");
 const inAppNotification = require("./routes/inAppNotification");
 const usageTime = require("./routes/usageTime");
+const chatRoute = require('./routes/chat');
+const messageRoute = require('./routes/message');
 const versionUrl = "/api/v1";
 
 //Use Routes
@@ -41,5 +43,7 @@ app.use(`${versionUrl}/place`, place);
 app.use(`${versionUrl}/updateNotification`, updateNotification);
 app.use(`${versionUrl}/usageTime`, usageTime);
 app.use(`${versionUrl}/inAppNotification`, inAppNotification);
+app.use(`${versionUrl}/chat`, chatRoute)
+app.use(`${versionUrl}/message`, messageRoute)
 
 module.exports = app;

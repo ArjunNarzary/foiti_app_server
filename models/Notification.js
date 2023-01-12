@@ -16,6 +16,10 @@ const notificationSchema = new Schema({
         type: Boolean,
         default: false,
     },
+    chat_message:{
+        type: Boolean,
+        default: false,
+    },
     new_followers:{
         type: Boolean,
         default: false,

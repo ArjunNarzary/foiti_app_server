@@ -300,6 +300,9 @@ exports.googleLogin = async (req, res) =>{
 
     user.password = "";
 
+    //Create notification table
+    await Notification.create({ user: user._id });
+
     return res.status(200).json({
       success: true,
       user,
@@ -395,6 +398,9 @@ exports.facebookLogin = async (req, res) =>{
     const token = await user.generateToken();
 
     user.password = "";
+
+    //Create notification table
+    await Notification.create({ user: user._id });
 
     return res.status(200).json({
       success: true,
@@ -1856,18 +1862,6 @@ exports.setExpoToken = async (req, res) => {
       user.expoToken = expoToken;
       await user.save();
 
-      // let notification = await Notification.findOne({ user: authUser._id });
-      // if (!notification) {
-      //   notification = await Notification.create({
-      //     user: authUser._id,
-      //   });
-      // }
-      // notification.new_post = true;
-      // notification.post_likes = true;
-      // notification.new_followers = true;
-      // notification.email_notitications = true;
-      // await notification.save();
-
       //IF no token existed before
       if (!hasToken) {
         let notification = await Notification.findOne({ user: authUser._id });
@@ -1879,6 +1873,7 @@ exports.setExpoToken = async (req, res) => {
         notification.new_post = true;
         notification.post_likes = true;
         notification.new_followers = true;
+        notification.chat_message = true;
         notification.email_notitications = true;
         await notification.save();
       }
@@ -1971,10 +1966,13 @@ exports.setNotificationSettings = async (req, res) => {
       notificationTable.new_followers = status;
     } else if (notification == "email_notitications") {
       notificationTable.email_notitications = status;
+    } else if (notification == "chat_message") {
+      notificationTable.chat_message = status;
     } else {
       notificationTable.new_post = status;
       notificationTable.post_likes = status;
       notificationTable.new_followers = status;
+      notificationTable.chat_message = status;
     }
 
     await notificationTable.save();

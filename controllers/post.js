@@ -433,15 +433,15 @@ exports.editPost = async (req, res) => {
 
           if (place.reviewed_status === false && place.users.length === 0) {
             //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
-            if (
-              place.cover_photo.large.private_id != undefined &&
-              place.cover_photo.large.private_id !=
-              post.content[0].image.large.private_id
-            ) {
-              await deleteFile(place.cover_photo.large.private_id);
-              await deleteFile(place.cover_photo.thumbnail.private_id);
-              await deleteFile(place.cover_photo.small.private_id);
-            }
+            // if (
+            //   place.cover_photo.large.private_id != undefined &&
+            //   place.cover_photo.large.private_id !=
+            //   post.content[0].image.large.private_id
+            // ) {
+            //   await deleteFile(place.cover_photo.large.private_id);
+            //   await deleteFile(place.cover_photo.thumbnail.private_id);
+            //   await deleteFile(place.cover_photo.small.private_id);
+            // }
 
             //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
             const reviews = await Review.find({ place_id: place._id });
@@ -485,6 +485,38 @@ exports.editPost = async (req, res) => {
               place.cover_photo = {};
             }
             place.posts = [];
+            await place.save();
+          }
+        }else{
+          //REPLACE PLACE COVER PHOTO IF DELETED POST IS COVER PHOTO`
+          if (
+            place.cover_photo.large.private_id != undefined &&
+            place.cover_photo.large.private_id ==
+            post.content[0].image.large.private_id
+          ) {
+              //GET MOST LIKE ARRAY COUNT
+              const HighestLikedPost = await Post.aggregate([
+                {
+                  $match: Post.where("_id")
+                    .ne(post._id)
+                    .where("place")
+                    .equals(place._id)
+                    .where("coordinate_status")
+                    .equals(true)
+                    .cast(Post),
+                },
+                {
+                  $addFields: {
+                    TotalLike: { $size: "$like" },
+                  },
+                },
+                { $sort: { TotalLike: -1 } },
+              ]).limit(1);
+              if (HighestLikedPost.length > 0) {
+                place.cover_photo = HighestLikedPost[0].content[0].image;
+              } else {
+                place.cover_photo = {};
+              }
             await place.save();
           }
         }
@@ -749,15 +781,15 @@ exports.deletePost = async (req, res) => {
 
       if (place.reviewed_status === false && place.users.length === 0) {
         //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
-        if (
-          place.cover_photo.large.private_id != undefined &&
-          place.cover_photo.large.private_id !=
-          post.content[0].image.large.private_id
-        ) {
-          await deleteFile(place.cover_photo.large.private_id);
-          await deleteFile(place.cover_photo.thumbnail.private_id);
-          await deleteFile(place.cover_photo.small.private_id);
-        }
+        // if (
+        //   place.cover_photo.large.private_id != undefined &&
+        //   place.cover_photo.large.private_id !=
+        //   post.content[0].image.large.private_id
+        // ) {
+        //   await deleteFile(place.cover_photo.large.private_id);
+        //   await deleteFile(place.cover_photo.thumbnail.private_id);
+        //   await deleteFile(place.cover_photo.small.private_id);
+        // }
 
         //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
         const reviews = await Review.find({ place_id: place._id });
@@ -1154,7 +1186,8 @@ exports.randomPosts = async (req, res) => {
 exports.viewFollowersPosts = async (req, res) => {
   let errors = {};
   try {
-    const { authUser, skip, limit, hasFollowing, ip, suggestedSkip } = req.body;
+    const { authUser, skip, hasFollowing, ip, suggestedSkip } = req.body;
+    const limit = 5000;
     let posts = [];
     let following = true;
     let skipCount = skip;
@@ -1218,6 +1251,7 @@ exports.viewFollowersPosts = async (req, res) => {
         suggestedSkip: suggestedSkipCount,
         skip: skipCount,
         hasFollowing: following,
+        limit
       });
     }
 

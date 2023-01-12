@@ -126,7 +126,7 @@ exports.autocompletePlace = async (req, res) => {
         .select(
           "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
         )
-        .sort({ search_rank: -1 })
+        .sort({ search_rank: -1, _id: 1 })
         .limit(12);
     }else{
       results = await Place.find({ name: { $regex: `^${trimedPlace}`, $options: "i" } })
@@ -135,7 +135,7 @@ exports.autocompletePlace = async (req, res) => {
         .select(
           "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
         )
-        .sort({ search_rank: -1 })
+        .sort({ search_rank: -1, _id: 1 })
         .limit(12);
     }
 
@@ -146,6 +146,7 @@ exports.autocompletePlace = async (req, res) => {
       .select(
         "_id name profileImage total_contribution"
       )
+      .sort({ total_contribution: -1, _id: 1 })
       .limit(5);
 
 
