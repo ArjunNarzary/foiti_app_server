@@ -25,9 +25,9 @@ const sentMessage = asyncExpressHandler(
             let receiver_id = null;
 
             if (chatdata.chatUsers.length > 0) {
-                sender = chatdata.chatUsers.filter((item) => item._id.toString() === req.body.authUser._id.toString())
+                sender = chatdata.chatUsers.filter((item) => item._id.toString() === authUser._id.toString())
 
-                let reciept = chatdata.chatUsers.filter((item) => item._id.toString() !== req.body.authUser._id.toString())
+                let reciept = chatdata.chatUsers.filter((item) => item._id.toString() !== authUser._id.toString())
                 receiver_id = reciept[0]._id
 
                 if (reciept[0].blocked_users.length > 0) {
@@ -49,14 +49,14 @@ const sentMessage = asyncExpressHandler(
             });
 
             if (!isBlocked) {
-                await Chat.findByIdAndUpdate(req.body.chatId, {
+                await Chat.findByIdAndUpdate(chatId, {
                     lastMessage: message
                 })
+                if (receiver_id){
+                    sendNewChatNotification(authUser, receiver_id, chatId);
+                }
             }
 
-            if (receiver_id){
-                sendNewChatNotification(authUser, receiver_id, chatId);
-            }
 
             res.status(200).json(message);
         } catch (error) {
@@ -84,10 +84,10 @@ const updateMessageStatus = asyncExpressHandler(async (req, res) => {
 
 const allMessage = asyncExpressHandler(
     async (req, res) => {
-        const { skip } = req.params;
+        const { skip, chatId } = req.params;
         const limit = 20;
         try {
-            const messages = await Message.find({ chat: req.params.chatId })
+            const messages = await Message.find({ chat: chatId })
                 .populate("sender", "name email")
                 .populate("chat").sort({ createdAt: -1 }).skip(skip).limit(limit);
 
@@ -95,7 +95,6 @@ const allMessage = asyncExpressHandler(
                 if(messages.length < limit){
                     noMoreData = true;
                 }
-
 
             // res.status(201).send(message);
             res.status(200).json({
@@ -108,4 +107,30 @@ const allMessage = asyncExpressHandler(
         }
     }
 )
-module.exports = { sentMessage, allMessage, updateMessageStatus }
+
+const unreadMessages = asyncExpressHandler(
+    async(req, res) => {
+        const { authUser } = req.body;
+        try{
+            const allChats = await Chat.find({ chatUsers: { $elemMatch: { $eq: authUser._id } } })
+                            .populate('lastMessage')
+                            .sort({ updatedAt: -1 });
+    
+            let hasUnreadMsg = false;
+    
+            for(let i=0; i < allChats.length; i++){
+                if (allChats[i].lastMessage && allChats[i].lastMessage.sender.toString() !== authUser._id.toString() && !allChats[i].lastMessage.is_read) {
+                    hasUnreadMsg = true;
+                    break;
+                }
+            }
+
+            res.status(200).json(hasUnreadMsg);
+        }catch(error){
+            res.status(400)
+            throw new Error(error.message);
+        }
+    }
+)
+
+module.exports = { sentMessage, allMessage, updateMessageStatus, unreadMessages }

@@ -464,7 +464,9 @@ exports.editProfile = async (req, res) => {
       });
     }
 
-    const { name, bio, website, address, currentAddress, authUser, place } = req.body;
+    const { name, bio, website, address, currentAddress, authUser, place,
+            about_me, gender, dob, meetup_reason, interests, education, occupation,
+            languages, movies_books_music, } = req.body;
 
     const user = await User.findById(authUser._id).populate('place');
 
@@ -484,6 +486,73 @@ exports.editProfile = async (req, res) => {
     } else {
       user.website = website;
     }
+
+    if (about_me != undefined && about_me != "") {
+      user.about_me =
+        about_me
+          .trim()
+          .replace(/(\r\n|\r|\n){2}/g, "$1")
+          .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+          .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    } else {
+      user.about_me = about_me;
+    }
+
+    if (meetup_reason != undefined && meetup_reason != "") {
+      user.meetup_reason =
+        meetup_reason
+          .trim()
+          .replace(/(\r\n|\r|\n){2}/g, "$1")
+          .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+          .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    } else {
+      user.meetup_reason = meetup_reason;
+    }
+    
+    user.gender = gender;
+
+    if (dob != "" && dob != undefined) {
+      user.dob = new Date(dob);
+    } else {
+      user.dob = new Date(dob);
+    }
+
+    if (interests != "" && interests != undefined) {
+      user.interests = interests
+                      .trim()
+                      .replace(/(\r\n|\r|\n){2}/g, "$1")
+                      .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+                      .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    } else {
+      user.interests = interests;
+    }
+
+    if (education != "" && education != undefined) {
+      user.education = education.trim() || "";
+    } else {
+      user.education = education;
+    }
+    if (occupation != "" && occupation != undefined) {
+      user.occupation = occupation.trim() || "";
+    } else {
+      user.occupation = occupation;
+    }
+
+    if(languages.length > 0){
+      user.languages = languages;
+    }
+
+    if (movies_books_music != "" && movies_books_music != undefined) {
+      user.movies_books_music = movies_books_music
+        .trim()
+        .replace(/(\r\n|\r|\n){2}/g, "$1")
+        .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+        .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    } else {
+      user.movies_books_music = movies_books_music;
+    }
+
+
     user.address = address;
 
     if (currentAddress != null) {

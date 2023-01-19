@@ -136,15 +136,15 @@ exports.sendCommentLikeNotification = async (authUser, notifyTo, post) => {
 //SEND NEW CHAT NOTIFCATION TO FOLLOWERS
 exports.sendNewChatNotification = async (authUser, userId, chatId) => {
     try {
-        const inAppNotification = new InAppNotification({
-            user: userId,
-            action_taken_by: authUser._id,
-            chat: chatId,
-            message: `sent you a message.`,
-            type: "chat",
-            status: "new",
-        });
-        await inAppNotification.save();
+        // const inAppNotification = new InAppNotification({
+        //     user: userId,
+        //     action_taken_by: authUser._id,
+        //     chat: chatId,
+        //     message: `sent you a message.`,
+        //     type: "chat",
+        //     status: "new",
+        // });
+        // await inAppNotification.save();
 
         const message = {
             type: "chat",

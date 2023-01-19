@@ -120,15 +120,6 @@ exports.validateUser = (method) => {
           .isLength({ max: 30 })
           .withMessage("Name must be less than 30 characters")
           .bail(),
-        // body("username")
-        //   .trim()
-        //   .exists({ checkFalsy: true })
-        //   .withMessage("Please enter your username")
-        //   .isLength({ min: 5 })
-        //   .withMessage("Username must contain atlest 5 character")
-        //   .custom((value) => !/\s/.test(value))
-        //   .withMessage("No spaces are allowed in the username")
-        //   .bail(),
         body("bio")
           .isLength({ max: 200 })
           .withMessage("Please enter your bio within 200 characters")
@@ -142,6 +133,52 @@ exports.validateUser = (method) => {
           .withMessage("Please enter valid url")
           .isLength({ max: 50 })
           .withMessage("Please enter your website within 50 characters")
+          .bail(),
+        body("about_me")
+          .isLength({ max: 1000 })
+          .withMessage("Please enter about you within 1000 characters")
+          .optional({ nullable: true })
+          .bail(),
+        body("meetup_reason")
+          .isLength({ max: 1000 })
+          .withMessage("Please enter meetup reason within 1000 characters")
+          .optional({ nullable: true })
+          .bail(),
+        body("interests")
+          .trim()
+          .optional({ nullable: true })
+          .isLength({ max: 500 })
+          .withMessage("Please enter your interest within 500 characters")
+          .bail(),
+        // body("dob")
+        //   .trim()
+        //   .optional({ nullable: true })
+        //   // .isDate()
+        //   .custom((value) => !!value && validator.isISO8601(value.toISOString()))
+        //   .withMessage("Please enter valid date")
+        //   .bail(),
+        body("education")
+          .trim()
+          .optional({ nullable: true })
+          .isLength({ max: 500 })
+          .withMessage("Please enter your education within 500 characters")
+          .bail(),
+        body("occupation")
+          .trim()
+          .optional({ nullable: true })
+          .isLength({ max: 500 })
+          .withMessage("Please enter your occupation within 500 characters")
+          .bail(),
+        body("languages")
+          .optional({ nullable: true })
+          .custom((value) => Array.isArray(value))
+          .withMessage("Please select valid languages")
+          .bail(),
+        body("movies_books_music")
+          .trim()
+          .optional({ nullable: true })
+          .isLength({ max: 500 })
+          .withMessage("Please provide movies, books and musics within 500 characters")
           .bail(),
       ];
     }

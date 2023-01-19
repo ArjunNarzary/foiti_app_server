@@ -30,6 +30,7 @@ const inAppNotification = require("./routes/inAppNotification");
 const usageTime = require("./routes/usageTime");
 const chatRoute = require('./routes/chat');
 const messageRoute = require('./routes/message');
+const trip = require('./routes/trip');
 const versionUrl = "/api/v1";
 
 //Use Routes
@@ -45,5 +46,6 @@ app.use(`${versionUrl}/usageTime`, usageTime);
 app.use(`${versionUrl}/inAppNotification`, inAppNotification);
 app.use(`${versionUrl}/chat`, chatRoute)
 app.use(`${versionUrl}/message`, messageRoute)
+app.use(`${versionUrl}/trip`, trip)
 
 module.exports = app;

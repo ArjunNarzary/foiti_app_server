@@ -88,16 +88,11 @@ const allUsers = expressAsyncHandler(async (req, res) => {
   const { authUser } = req.body;
 
   const searchTerm = req.query.search ? {
-                    $or: [
-                      { name: { $regex: req.query.search, $options: "i" } },
-                      { email: { $regex: req.query.search, $options: "i" } }
-                    ]
+                        name: { $regex: req.query.search, $options: "i" }
                   } : {}
 
-  // const users = await User.find(searchTerm).find({ _id: { $ne: _id } });
   const users = await User.find(searchTerm).where('_id').in([...authUser.follower, ...authUser.following]);
   res.status(200).json(users);
-  // console.log(users);
 })
 
 module.exports = { accessChat, fetchChat, allUsers };

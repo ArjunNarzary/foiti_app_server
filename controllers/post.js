@@ -1077,7 +1077,8 @@ function shuffleArray(array) {
 exports.randomPosts = async (req, res) => {
   let errors = {};
   try {
-    const { ip, authUser, skip, limit } = req.body;
+    const { ip, authUser, skip } = req.body;
+    const limit = 5000;
     // console.log(skip);
     let posts;
     if (skip === undefined || skip === null) {
