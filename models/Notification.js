@@ -10,19 +10,19 @@ const notificationSchema = new Schema({
     },
     new_post:{
         type: Boolean,
-        default: false,
+        default: true,
     },
     post_likes:{
         type: Boolean,
-        default: false,
+        default: true,
     },
     chat_message:{
         type: Boolean,
-        default: false,
+        default: true,
     },
     new_followers:{
         type: Boolean,
-        default: false,
+        default: true,
     },
     email_notitications:{
         type: Boolean,

@@ -37,6 +37,7 @@ const {
   removeExpoToken,
   googleLogin,
   facebookLogin,
+  getHomeTown,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -64,6 +65,9 @@ router
   .get(isAuthenticated, viewOwnProfile)
   .post(isAuthenticated, addCurrentLocation)
   .delete(isAuthenticated, removeCurrentLocation);
+
+//GET USER HOME TOWN
+router.route('/hometown').get(isAuthenticated, getHomeTown);
 
 //View posts of perticular user
 router.route("/posts/:id").post(isAuthenticated, viewAllPost);

@@ -1,6 +1,17 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+const pointSchema = new mongoose.Schema({
+    type: {
+        type: String,
+        enum: ['Point'],
+        default: "Point",
+    },
+    coordinates: {
+        type: [Number], // Array of arrays of arrays of numbers
+    }
+});
+
 const currentAddressSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
@@ -9,6 +20,11 @@ const currentAddressSchema = new Schema({
     },
     name: String,
     address: {},
+    location: {
+        type: pointSchema,
+        index: '2dsphere', // Create a special 2dsphere index
+        sparse: true
+    },
     google_types:[String],
     formattedAddress:String,
     createdAt: {

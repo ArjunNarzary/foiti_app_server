@@ -19,19 +19,26 @@ const TripPlanSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "User",
         },
-        destination:{},
-        location:{
+        address:{},
+        address_location:{
             type: pointSchema,
             index: '2dsphere', // Create a special 2dsphere index
             sparse: true
         },
-        start_data: {
+        destination:{},
+        destination_location:{
+            type: pointSchema,
+            index: '2dsphere', // Create a special 2dsphere index
+            sparse: true
+        },
+        start_date: {
             type:Date,
             required: [true, "Please provide travelling date"],
         },
         end_date: {
             type: Date,
             required: [true, "Please provide travelling date"],
+            expires: 0
         },
         details:{
             type: String,
@@ -42,10 +49,14 @@ const TripPlanSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "User",
         }],
-        meet_up: [{
-            type: Schema.Types.ObjectId,
-            ref: "User",
-        }]
+        meetup_status: {
+            type: Boolean,
+            default: false,
+        },
+        status: {
+            type: String,
+            enum: ["silent", "active", "terminated"],
+        }
     },
     { timestamps: true }
 );

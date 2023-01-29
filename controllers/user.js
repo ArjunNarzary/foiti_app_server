@@ -27,6 +27,7 @@ const CurrentAddress = require("../models/CurrentAddress");
 const ReportUser = require("../models/ReportUser");
 const Place = require("../models/Place");
 const Review = require("../models/Review");
+const TripPlan = require("../models/TripPlan");
 var ObjectId = require("mongoose").Types.ObjectId;
 
 function createError(errors, validate) {
@@ -478,13 +479,14 @@ exports.editProfile = async (req, res) => {
           .replace(/(\r\n|\r|\n){2}/g, "$1")
           .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
           .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    } else {
-      user.bio = bio;
+    }else{
+      user.bio = "";
     }
+
     if (website != "" && website != undefined) {
       user.website = website.toLowerCase().trim() || "";
-    } else {
-      user.website = website;
+    }else{
+      user.website = ""
     }
 
     if (about_me != undefined && about_me != "") {
@@ -494,8 +496,8 @@ exports.editProfile = async (req, res) => {
           .replace(/(\r\n|\r|\n){2}/g, "$1")
           .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
           .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    } else {
-      user.about_me = about_me;
+    }else{
+      user.about_me = "";
     }
 
     if (meetup_reason != undefined && meetup_reason != "") {
@@ -505,16 +507,21 @@ exports.editProfile = async (req, res) => {
           .replace(/(\r\n|\r|\n){2}/g, "$1")
           .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
           .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    } else {
-      user.meetup_reason = meetup_reason;
+    }else{
+      user.meetup_reason = "";
     }
     
-    user.gender = gender;
+    const genderEnum = ['male', 'female', 'other'];
+    if(gender && genderEnum.includes(gender)){
+      user.gender = gender;
+    }else{
+      user.gender = undefined;
+    }
 
-    if (dob != "" && dob != undefined) {
+    if (dob != "" && dob != undefined ) {
       user.dob = new Date(dob);
-    } else {
-      user.dob = new Date(dob);
+    } else{
+      user.dob = undefined;
     }
 
     if (interests != "" && interests != undefined) {
@@ -523,23 +530,26 @@ exports.editProfile = async (req, res) => {
                       .replace(/(\r\n|\r|\n){2}/g, "$1")
                       .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
                       .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    } else {
-      user.interests = interests;
+    }else{
+      user.interests = "";
     }
 
     if (education != "" && education != undefined) {
       user.education = education.trim() || "";
-    } else {
-      user.education = education;
+    }else{
+      user.education = "";
     }
+
     if (occupation != "" && occupation != undefined) {
       user.occupation = occupation.trim() || "";
-    } else {
-      user.occupation = occupation;
+    }else{
+      user.occupation = "";
     }
 
     if(languages.length > 0){
       user.languages = languages;
+    }else{
+      user.languages = [];
     }
 
     if (movies_books_music != "" && movies_books_music != undefined) {
@@ -548,8 +558,8 @@ exports.editProfile = async (req, res) => {
         .replace(/(\r\n|\r|\n){2}/g, "$1")
         .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
         .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    } else {
-      user.movies_books_music = movies_books_music;
+    }else{
+      user.movies_books_music = "";
     }
 
 
@@ -655,10 +665,14 @@ exports.editProfile = async (req, res) => {
           user.place = placeData._id;
         }
       }
-
     }
 
     await user.save();
+
+    //SET MEETUP STATUS TO TRUE
+    if(user.place._id && user.gender && user.dob){
+      await TripPlan.updateMany({$and: [{ "user_id": authUser._id}, {"meetup_status": false }]}, { "$set": { "meetup_status": true } });
+    }
 
     return res.status(200).json({
       success: true,
@@ -677,11 +691,11 @@ exports.editProfile = async (req, res) => {
 
 exports.addCurrentLocation = async (req, res) => {
   try {
-    const { address, authUser, types, name } = req.body;
+    const { address, authUser, types, name, coordinates } = req.body;
 
     const user = await User.findById(authUser._id);
 
-    if (name != null) {
+    if (name != null && coordinates.lng && coordinates.lat) {
       let currentAddress = await CurrentAddress.findOne({ userId: user._id });
       if (!currentAddress) {
         currentAddress = await CurrentAddress.create({ userId: user._id });
@@ -690,6 +704,9 @@ exports.addCurrentLocation = async (req, res) => {
       currentAddress.name = name;
       currentAddress.address = address;
       currentAddress.google_types = types;
+      currentAddress.location = {
+        coordinates: [parseFloat(coordinates.lng), parseFloat(coordinates.lat)]
+      },
       await currentAddress.save();
       user.currently_in = currentAddress._id;
     }
@@ -1004,6 +1021,11 @@ exports.viewOwnProfile = async (req, res) => {
       countryVisited = 0;
     }
 
+    //GET ALL ACTIVE TRIP PLANS
+    const activeTrips = await TripPlan.find({})
+                        .where('user_id').equals(authUser._id)
+                        .where('status').equals('active');
+
     return res.status(200).json({
       success: true,
       user,
@@ -1013,6 +1035,7 @@ exports.viewOwnProfile = async (req, res) => {
       placesVisited,
       countryVisited,
       helpNavigate,
+      tripPlans: activeTrips
     });
   } catch (error) {
     console.log(error.message);
@@ -1163,13 +1186,10 @@ exports.viewOthersProfile = async (req, res) => {
       countryVisited = 0;
     }
 
-    // Make name first letter capital
-    // const name = profileUser.name;
-    // const nameArray = name.split(" ");
-    // const capitalizedName = nameArray.map((name) => {
-    //   return name.charAt(0).toUpperCase() + name.slice(1);
-    // })
-    // profileUser.name = capitalizedName.join(" ");
+    //GET ALL ACTIVE TRIP PLANS
+    const activeTrips = await TripPlan.find({})
+      .where('user_id').equals(profileId)
+      .where('status').equals('active');
 
     return res.status(200).json({
       success: true,
@@ -1181,6 +1201,7 @@ exports.viewOthersProfile = async (req, res) => {
       placesVisited,
       countryVisited,
       helpNavigate,
+      tripPlans: activeTrips
     });
   } catch (error) {
     console.log(error);
@@ -2338,3 +2359,35 @@ exports.reportUser = async (req, res) => {
     });
   }
 };
+
+exports.getHomeTown = async (req, res) => {
+  const  errors = {};
+  try{
+      const { authUser } = req.body;
+      let  address = "";
+      if(authUser.place){
+        const place = await Place.findById(authUser.place);
+        if(place){
+          const add = place.display_address_for_own_country_home;
+          if(add){
+            address = `${place.name}${add}`;
+          }else{
+            address = place.name;
+          }
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        address
+      })
+
+  }catch(error){
+    errors.general = "Something went wrong. Please try again.";
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+}
