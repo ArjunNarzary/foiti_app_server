@@ -5,6 +5,11 @@ const Contribution = require("../models/Contribution");
 const { validationResult } = require("express-validator");
 const TripPlan = require("../models/TripPlan");
 const { getCountry } = require("../utils/getCountry");
+const MeetUpRequest = require("../models/MeetUpRequest");
+const MeetupChat = require("../models/MeetupChat");
+const MetTraveller = require("../models/MetTraveller");
+const { sendMeetupRequestNotification } = require("../utils/sendInAppNotification");
+var ObjectId = require('mongoose').Types.ObjectId;
 
 function createError(errors, validate) {
     const arrError = validate.array();
@@ -327,6 +332,7 @@ exports.getTravellers = async (req, res) => {
                     'user.dob': 1,
                 }
             },
+            { $sort: { start_date: 1, _id: 1 } },
             { $skip: skip },
             { $limit: limit }
         ]);
@@ -404,7 +410,7 @@ exports.getLocals = async (req, res) => {
             placesArr = [...foundPlaces, ...duplicate_places];
         }
 
-        const locals = await User.find({  place: { $in: placesArr } })
+        const locals = await User.find({ place: { $in: placesArr } })
             .where("deactivated")
             .ne(true)
             .where("terminated")
@@ -452,9 +458,9 @@ exports.getLocals = async (req, res) => {
 
 exports.getTravellerDetails = async (req, res) => {
     const errors = {};
-    try{
+    try {
         const { trip_id } = req.params;
-        if(!trip_id){
+        if (!trip_id) {
             errors.genral = "Invalid request";
             return res.status(400).json({
                 success: false,
@@ -463,7 +469,7 @@ exports.getTravellerDetails = async (req, res) => {
         }
 
         const tripPlan = await TripPlan.findById(trip_id);
-        if(!tripPlan){
+        if (!tripPlan) {
             errors.genral = "Trip plan not found";
             return res.status(400).json({
                 success: false,
@@ -474,8 +480,8 @@ exports.getTravellerDetails = async (req, res) => {
         const user = await User.findById(tripPlan.user_id)
             .select("_id name profileImage gender dob about_me meetup_reason interests education occupation languages movies_books_music")
             .populate("place", "name display_name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
-        
-        if(!user){
+
+        if (!user) {
             errors.genral = "User not found";
             return res.status(400).json({
                 success: false,
@@ -500,7 +506,7 @@ exports.getTravellerDetails = async (req, res) => {
 
 
 
-    }catch(error){
+    } catch (error) {
         console.log(error);
         errors.general = "Something went wrong while fecthing traveller details";
         res.status(500).json({
@@ -508,9 +514,168 @@ exports.getTravellerDetails = async (req, res) => {
             message: errors,
         });
     }
+}
+
+exports.requestMeetup = async (req, res) => {
+    const errors = {};
+    try {
+        let { user_id, authUser } = req.body;
+        if (!user_id) {
+            errors.general = "User does not exist"
+            return res.status(400).json({
+                success: false,
+                message: errors
+            })
+        }
+
+        //Validate Object ID
+        if (!ObjectId.isValid(user_id)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid user"
+            });
+        }
+
+        const user = await User.findById(user_id);
+        if (!user) {
+            errors.general = "User not found"
+            return res.status(400).json({
+                success: false,
+                message: errors
+            })
+        }
+
+        //Check if meetup request exist
+        let meetupRequest = await MeetUpRequest.findOne({})
+            .where('user_id').equals(authUser._id)
+            .where('receiver').equals(user._id)
+
+        //Create meetup if no previous request exist
+        if (!meetupRequest){
+            await MeetUpRequest.create({
+                user_id: authUser._id,
+                receiver: user._id
+            });
+        }
+
+        //Create meetup chat
+        let meetupChat = await MeetupChat.findOne({
+            isGroup: false,
+            $and: [
+                { chatUsers: { $elemMatch: { $eq: authUser._id } } },
+                { chatUsers: { $elemMatch: { $eq: user._id } } }
+            ]
+        }).populate("chatUsers", "name email profileImage blocked_users")
+            .populate("lastMessage");
+
+        if (meetupChat) {
+            meetupChat = await User.populate(meetupChat, {
+                path: "lastMessage.sender",
+                select: "name email profileImage blocked_users"
+            });
+
+            sendMeetupRequestNotification(authUser, user._id);
+
+            res.status(200).json({
+                success: true,
+                meetupChat
+            });
+        } else {
+
+            let chatData = {
+                chatName: 'sender',
+                isGroup: false,
+                chatUsers: [authUser._id, user._id]
+            }
+
+            const createdChat = await MeetupChat.create(chatData);
+            const newChat = await MeetupChat.findOne({ _id: createdChat._id }).populate("chatUsers", "name email profileImage blocked_users");
+            
+            sendMeetupRequestNotification(authUser, user._id);
+
+            res.status(200).json({
+                success: true,
+                meetupChat: newChat
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        errors.general = "Something went wrong while requesting meetup";
+        res.status(500).json({
+            success: false,
+            message: errors,
+        });
+    }
+}
 
 
+exports.meetupResquestResponse = async(req, res) => {
+    const errors = {};
+    try{
+        const { meetupResponse, sender, authUser } = req.body;
+        if (!sender) {
+            errors.general = "User does not exist"
+            return res.status(400).json({
+                success: false,
+                message: errors
+            })
+        }
+        
+        const meetupRequest = await MeetUpRequest.findOne({})
+                            .where('user_id').equals(sender)
+                            .where('receiver').equals(authUser._id);
 
+        if(!meetupRequest){
+            errors.general = "No request found"
+            return res.status(404).json({
+                success: false,
+                message: errors
+            })
+        }
 
+        if (meetupResponse === 'accept'){
+            //Insert to current user's met traveller
+            let curretUserMetTraveller = await MetTraveller.findOne({})
+                                            .where('user').equals(authUser);
+            if(!curretUserMetTraveller){
+                curretUserMetTraveller = await MetTraveller.create({
+                                            user: authUser._id
+                                        })
+            }
 
+            if (!curretUserMetTraveller.travellers.includes(sender)){
+                curretUserMetTraveller.travellers.push(sender);
+                await curretUserMetTraveller.save();
+            }
+
+            //Insert to current sender's met traveller
+            let senderUserMetTraveller = await MetTraveller.findOne({})
+                                .where('user').equals(sender);
+
+            if(!senderUserMetTraveller){
+                senderUserMetTraveller = await MetTraveller.create({
+                                            user: sender
+                                        });
+            }
+            if (!senderUserMetTraveller.travellers.includes(authUser._id)){
+                senderUserMetTraveller.travellers.push(authUser._id);
+                await senderUserMetTraveller.save();
+            }
+        }
+
+        await meetupRequest.remove();
+
+        return res.status(200).json({
+            success: false,
+            message: "Your response has been updated successfully"
+        })
+
+    }catch(error){
+        console.log(error);
+        errors.general = "Something went wrong while responding to meetup request";
+        res.status(500).json({
+            success: false,
+            message: errors,
+        });
+    }
 }

@@ -6,7 +6,6 @@ const accessChat = expressAsyncHandler(
   async (req, res) => {
     const { userId, authUser: { _id } } = req.body
     if (!userId) {
-      console.log("no user found to chat");
       return res.sendStatus(400);
     }
 
@@ -22,9 +21,9 @@ const accessChat = expressAsyncHandler(
     isChat = await User.populate(isChat, {
       path: "lastMessage.sender",
       select: "name email profileImage blocked_users"
-    })
+    });
 
-
+    
     if (isChat.length) {
       res.status(200).send(isChat[0]);
     } else {
@@ -50,9 +49,8 @@ const accessChat = expressAsyncHandler(
 )
 
 const fetchChat = expressAsyncHandler(async (req, res) => {
-  const { skip } = req.params;
-  const { authUser: { _id } } = req.body;
-  const limit = 15;
+  let { skip, authUser: { _id } } = req.body;
+  const limit = 20;
   let noMoreData = false;
 
   try {
@@ -72,10 +70,12 @@ const fetchChat = expressAsyncHandler(async (req, res) => {
       noMoreData = true;
     }
 
+    skip = skip + chatlist.length;
     
     res.status(200).json({
       chats: chatlist,
-      noMoreData
+      noMoreData,
+      skip
     });
   } catch (error) {
     res.status(400)

@@ -8,15 +8,15 @@ const MeetUpRequestSchema = new Schema(
             type: Schema.Types.ObjectId,
             ref: "User",
         },
-        sender_trip: {
-            required: true,
-            type: Schema.Types.ObjectId,
-            ref: "TripPlan",
-        },
-        receiver_trip: {
-            type: Schema.Types.ObjectId,
-            ref: "TripPlan",
-        },
+        // sender_trip: {
+        //     required: true,
+        //     type: Schema.Types.ObjectId,
+        //     ref: "TripPlan",
+        // },
+        // receiver_trip: {
+        //     type: Schema.Types.ObjectId,
+        //     ref: "TripPlan",
+        // },
         receiver:{
             type: Schema.Types.ObjectId,
             ref: "User",
@@ -24,14 +24,14 @@ const MeetUpRequestSchema = new Schema(
         createdAt: {
             type: Date,
             default: Date.now,
-            // immutable: true,
+            immutable: true,
+            expires: 2592000000, // this is the expiry time in seconds for 30 days
         },
         updatedAt: {
             type: Date,
             default: Date.now,
         },
-    },
-);
+    });
 
 
 //HASH PASSWORD

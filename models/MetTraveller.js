@@ -6,7 +6,8 @@ const metTravellerSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         },
-        travellers: [{
+        travellers: [
+            {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
         }],

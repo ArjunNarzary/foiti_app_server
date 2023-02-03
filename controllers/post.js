@@ -1187,12 +1187,11 @@ exports.randomPosts = async (req, res) => {
 exports.viewFollowersPosts = async (req, res) => {
   let errors = {};
   try {
-    const { authUser, skip, hasFollowing, ip, suggestedSkip } = req.body;
+    const { authUser, skip, ip } = req.body;
     const limit = 5000;
     let posts = [];
-    let following = true;
     let skipCount = skip;
-    let suggestedSkipCount = suggestedSkip;
+    let noMorePosts = false;
 
     posts = await Post.find({ user: { $in: authUser.following } })
       // .where("status").equals("active")
@@ -1210,51 +1209,51 @@ exports.viewFollowersPosts = async (req, res) => {
 
     skipCount = skip + posts.length;
 
-    if (posts.length === 0) {
-      following = false;
-      posts = await Post.find({
-        $and: [
-          { user: { $nin: authUser.following } },
-          { user: { $ne: authUser._id } },
-          { user: { $nin: authUser.blocked_users } },
-          { user: { $nin: authUser.reported_users } },
-          { _id: { $nin: authUser.reported_posts } }
-        ],
-      })
-        .where("status").equals("active")
-        .where("coordinate_status").equals(true)
-        .where('deactivated').ne(true)
-        .where("terminated").ne(true)
-        .select(
-          "_id user place createdAt status coordinate_status content caption like like_count comments saved"
-        )
-        .populate(
-          "user",
-          "name username total_contribution profileImage foiti_ambassador"
-        )
-        .populate("place")
-        .sort({ createdAt: -1 })
-        .skip(suggestedSkip)
-        .limit(limit);
-      if (posts.length > 0) {
-        posts = shuffleArray(posts);
-      }
-      let count = suggestedSkip;
-      suggestedSkipCount = count + posts.length;
-    } else {
-      following = true;
-    }
+    // if (posts.length === 0) {
+    //   following = false;
+    //   posts = await Post.find({
+    //     $and: [
+    //       { user: { $nin: authUser.following } },
+    //       { user: { $ne: authUser._id } },
+    //       { user: { $nin: authUser.blocked_users } },
+    //       { user: { $nin: authUser.reported_users } },
+    //       { _id: { $nin: authUser.reported_posts } }
+    //     ],
+    //   })
+    //     .where("status").equals("active")
+    //     .where("coordinate_status").equals(true)
+    //     .where('deactivated').ne(true)
+    //     .where("terminated").ne(true)
+    //     .select(
+    //       "_id user place createdAt status coordinate_status content caption like like_count comments saved"
+    //     )
+    //     .populate(
+    //       "user",
+    //       "name username total_contribution profileImage foiti_ambassador"
+    //     )
+    //     .populate("place")
+    //     .sort({ createdAt: -1 })
+    //     .skip(suggestedSkip)
+    // //     .limit(limit);
+    //   if (posts.length > 0) {
+    //     posts = shuffleArray(posts);
+    //   }
+    //   let count = suggestedSkip;
+    //   suggestedSkipCount = count + posts.length;
+    // } else {
+    //   following = true;
+    // }
 
-    if (!posts) {
-      return res.status(200).json({
-        success: true,
-        posts,
-        suggestedSkip: suggestedSkipCount,
-        skip: skipCount,
-        hasFollowing: following,
-        limit
-      });
-    }
+    // if (!posts) {
+    //   return res.status(200).json({
+    //     success: true,
+    //     posts,
+    //     suggestedSkip: suggestedSkipCount,
+    //     skip: skipCount,
+    //     hasFollowing: following,
+    //     limit
+    //   });
+    // }
 
     let country = "";
     const location = await getCountry(ip);
@@ -1264,23 +1263,28 @@ exports.viewFollowersPosts = async (req, res) => {
       country = "IN";
     }
 
-    posts.forEach((post) => {
-      if (post.place.display_name) {
-        post.place.name = post.place.display_name;
-      }
-      if (post.place.address.short_country == country) {
-        post.place.local_address = post.place.display_address_for_own_country_home;
-      } else {
-        post.place.short_address = post.place.display_address_for_other_country_home;
-      }
-    });
+    if(posts.length > 0){
+      posts.forEach((post) => {
+        if (post.place.display_name) {
+          post.place.name = post.place.display_name;
+        }
+        if (post.place.address.short_country == country) {
+          post.place.local_address = post.place.display_address_for_own_country_home;
+        } else {
+          post.place.short_address = post.place.display_address_for_other_country_home;
+        }
+      });
+    }
+
+    if (posts.length < limit){
+      noMorePosts = true;
+    }
 
     return res.status(200).json({
       success: true,
       posts,
-      suggestedSkip: suggestedSkipCount,
-      skip: skipCount,
-      hasFollowing: following,
+      noMorePosts,
+      skip: skipCount
     });
   } catch (error) {
     errors.general = "Something went wrong. Please try again";

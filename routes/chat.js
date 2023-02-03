@@ -11,6 +11,6 @@ router.route("/").post(isAuthenticated, accessChat)
 //get all chats 
 router.route("/users").get(isAuthenticated, allUsers)
 
-router.route("/:skip").get(isAuthenticated, fetchChat)
+router.route("/all-chats").post(isAuthenticated, fetchChat)
 
 module.exports = router

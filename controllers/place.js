@@ -608,19 +608,6 @@ exports.placesVisited = async (req, res) => {
       }else{
         distPost.add(p.place._id.toString());
       }
-
-      // if(p.place.duplicate){
-      //   if (!originPlaces.includes(p.place.original_place_id.toString()) && 
-      //     !checkPlaceId.includes(p.place.original_place_id.toString())
-      //   ){
-      //     distPost.add(p.place._id.toString());
-      //     originPlaces.push(p.place.original_place_id.toString());
-      //     checkPlaceId.push(p.place._id.toString());
-      //   }
-      //   // distPost.add(p.place.original_place_id.toString());
-      // }else{
-      //   distPost.add(p.place._id.toString());
-      // }
     })
 
     distPost = [...distPost];
@@ -628,17 +615,6 @@ exports.placesVisited = async (req, res) => {
     const promises = distPost.map(async (id) => {
       let objId = require('mongoose').Types.ObjectId(id);
       return (
-        // Place.findOne({$or:[{_id: objId }, {duplicate_place_id: objId}]}).then(place => {
-        //   console.log(place);
-        //   return Post.findOne({ $and: [{ user: userId }, { place: place._id }] })
-        //     // .where('status').equals('active')
-        //     .where("deactivated")
-        //     .ne(true)
-        //     .where("terminated")
-        //     .ne(true)
-        //     .select("content place status deactivated terminated")
-        //     .populate("place")
-        // })
         Post.findOne({ $and: [{ user: userId }, { $or: [{ place: objId }, { original_place: objId}]}] })
           // .where('status').equals('active')
           .where("deactivated")

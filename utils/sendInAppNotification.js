@@ -136,19 +136,21 @@ exports.sendCommentLikeNotification = async (authUser, notifyTo, post) => {
 //SEND NEW CHAT NOTIFCATION TO FOLLOWERS
 exports.sendNewChatNotification = async (authUser, userId, chatId) => {
     try {
-        // const inAppNotification = new InAppNotification({
-        //     user: userId,
-        //     action_taken_by: authUser._id,
-        //     chat: chatId,
-        //     message: `sent you a message.`,
-        //     type: "chat",
-        //     status: "new",
-        // });
-        // await inAppNotification.save();
-
         const message = {
             type: "chat",
             body: `${authUser.name} sent you a message.`,
+        }
+        sendPushNotification(userId, message);
+    } catch (error) {
+        console.log(error);
+    }
+}
+//SEND NEW CHAT NOTIFCATION TO FOLLOWERS
+exports.sendMeetupRequestNotification = async (authUser, userId, chatId) => {
+    try {
+        const message = {
+            type: "chat",
+            body: `${authUser.name} sent you a meetup request.`,
         }
         sendPushNotification(userId, message);
     } catch (error) {
