@@ -1,5 +1,4 @@
 const { validationResult } = require("express-validator");
-const CurrentAddress = require("../models/CurrentAddress");
 const Place = require("../models/Place");
 const TripPlan = require("../models/TripPlan");
 

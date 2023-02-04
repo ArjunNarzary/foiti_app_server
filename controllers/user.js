@@ -466,7 +466,7 @@ exports.editProfile = async (req, res) => {
     }
 
     const { name, bio, website, address, currentAddress, authUser, place,
-            about_me, gender, dob, meetup_reason, interests, education, occupation,
+            gender, dob, meetup_reason, interests, education, occupation,
             languages, movies_books_music, } = req.body;
 
     const user = await User.findById(authUser._id).populate('place');
@@ -489,16 +489,16 @@ exports.editProfile = async (req, res) => {
       user.website = ""
     }
 
-    if (about_me != undefined && about_me != "") {
-      user.about_me =
-        about_me
-          .trim()
-          .replace(/(\r\n|\r|\n){2}/g, "$1")
-          .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
-          .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    }else{
-      user.about_me = "";
-    }
+    // if (about_me != undefined && about_me != "") {
+    //   user.about_me =
+    //     about_me
+    //       .trim()
+    //       .replace(/(\r\n|\r|\n){2}/g, "$1")
+    //       .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+    //       .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    // }else{
+    //   user.about_me = "";
+    // }
 
     if (meetup_reason != undefined && meetup_reason != "") {
       user.meetup_reason =

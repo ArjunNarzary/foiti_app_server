@@ -45,14 +45,14 @@ exports.updateProfile = async (req, res) => {
 
 
         if (about_me != undefined && about_me != "") {
-            user.about_me =
+            user.bio =
                 about_me
                     .trim()
                     .replace(/(\r\n|\r|\n){2}/g, "$1")
                     .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
                     .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
         } else {
-            user.about_me = "";
+            user.bio = "";
         }
 
         if (meetup_reason != undefined && meetup_reason != "") {
@@ -478,7 +478,7 @@ exports.getTravellerDetails = async (req, res) => {
         }
 
         const user = await User.findById(tripPlan.user_id)
-            .select("_id name profileImage gender dob about_me meetup_reason interests education occupation languages movies_books_music")
+            .select("_id name profileImage gender dob bio meetup_reason interests education occupation languages movies_books_music")
             .populate("place", "name display_name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
 
         if (!user) {

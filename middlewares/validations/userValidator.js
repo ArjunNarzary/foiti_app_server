@@ -121,8 +121,8 @@ exports.validateUser = (method) => {
           .withMessage("Name must be less than 30 characters")
           .bail(),
         body("bio")
-          .isLength({ max: 200 })
-          .withMessage("Please enter your bio within 200 characters")
+          .isLength({ max: 1000 })
+          .withMessage("Please enter your bio within 1000 characters")
           .optional({ nullable: true })
           .bail(),
         body("website")
@@ -134,11 +134,11 @@ exports.validateUser = (method) => {
           .isLength({ max: 50 })
           .withMessage("Please enter your website within 50 characters")
           .bail(),
-        body("about_me")
-          .isLength({ max: 1000 })
-          .withMessage("Please enter about you within 1000 characters")
-          .optional({ nullable: true })
-          .bail(),
+        // body("about_me")
+        //   .isLength({ max: 1000 })
+        //   .withMessage("Please enter about you within 1000 characters")
+        //   .optional({ nullable: true })
+        //   .bail(),
         body("meetup_reason")
           .isLength({ max: 1000 })
           .withMessage("Please enter meetup reason within 1000 characters")
