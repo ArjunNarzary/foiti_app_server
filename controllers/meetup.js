@@ -416,7 +416,7 @@ exports.getLocals = async (req, res) => {
             .where("terminated")
             .ne(true)
             .sort({ total_contribution: -1, _id: -1 })
-            .select("_id name profileImage gender dob about_me meetup_reason interests education occupation languages movies_books_music")
+            .select("_id name profileImage gender dob bio meetup_reason interests education occupation languages movies_books_music")
             .populate("place", "name display_name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
             .skip(skip)
             .limit(limit);
