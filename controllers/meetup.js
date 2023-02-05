@@ -680,24 +680,24 @@ exports.meetupResquestResponse = async(req, res) => {
     }
 }
 
-exports.getMeetupRequest = async( req, res ) =>{
-    let errors = {};
-    try{
-        const { authUser } = req.body;
-        const meetupRequest = await MeetUpRequest.findOne({})
-                                .where('receiver').equals(authUser._id);
+// exports.getMeetupRequest = async( req, res ) =>{
+//     let errors = {};
+//     try{
+//         const { authUser } = req.body;
+//         const meetupRequest = await MeetUpRequest.findOne({})
+//                                 .where('receiver').equals(authUser._id);
         
-        return res.status(200).json({
-            success: true,
-            meetupRequest
-        })
+//         return res.status(200).json({
+//             success: true,
+//             meetupRequest
+//         })
 
-    }catch(error){
-        console.log(error);
-        errors.general = "Something went wrong while responding to meetup request";
-        res.status(500).json({
-            success: false,
-            message: errors,
-        });
-    }
-}
+//     }catch(error){
+//         console.log(error);
+//         errors.general = "Something went wrong while responding to meetup request";
+//         res.status(500).json({
+//             success: false,
+//             message: errors,
+//         });
+//     }
+// }

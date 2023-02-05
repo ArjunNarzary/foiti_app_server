@@ -1,5 +1,5 @@
 const express = require("express");
-const { fetchMeetupChat } = require("../controllers/chat/meetupChat");
+const { fetchMeetupChat, checkMeetupUnread } = require("../controllers/chat/meetupChat");
 const { updateProfile,
     getTravellers,
     getLocals,
@@ -18,9 +18,9 @@ router.route("/trip-travellers").post(isAuthenticated, getTravellers);
 router.route("/locals").post(isAuthenticated, getLocals);
 router.route("/traveller-details/:trip_id").get(isAuthenticated, getTravellerDetails);
 router.route("/meetup-chats/:skip").get(isAuthenticated, fetchMeetupChat);
-router.route("/meetup-request").post(isAuthenticated, requestMeetup)
-    .get(isAuthenticated, getMeetupRequest);
+router.route("/meetup-request").post(isAuthenticated, requestMeetup);
 router.route("/meetup-request-response").post(isAuthenticated, meetupResquestResponse);
+router.route("/meetup-unread").get(isAuthenticated, checkMeetupUnread);
 
 
 

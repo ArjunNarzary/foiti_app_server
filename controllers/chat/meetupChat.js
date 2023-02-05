@@ -35,10 +35,10 @@ exports.fetchMeetupChat = expressAsyncHandler(async (req, res) => {
                 .where('receiver').equals(requestSenderId)
                 .where('user_id').equals(_id);
 
-            if (meetupRequest){
+            if (meetupRequest) {
                 request_receiver = meetupRequest.receiver;
             }
-            if (meetupRequestSend){
+            if (meetupRequestSend) {
                 request_receiver = meetupRequestSend.receiver;
             }
 
@@ -64,3 +64,34 @@ exports.fetchMeetupChat = expressAsyncHandler(async (req, res) => {
         throw new Error(error.message);
     }
 })
+
+exports.checkMeetupUnread = async (req, res) => {
+    try {
+        const { authUser } = req.body;
+        let hasUnreadMsg = false;
+
+        const allMeetupChats = await MeetupChat.find({ chatUsers: { $elemMatch: { $eq: authUser._id } } })
+            .populate('lastMessage')
+            .sort({ updatedAt: -1 });
+
+
+        for (let i = 0; i < allMeetupChats.length; i++) {
+            if (allMeetupChats[i].lastMessage && allMeetupChats[i].lastMessage.sender.toString() !== authUser._id.toString() && !allMeetupChats[i].lastMessage.is_read) {
+                hasUnreadMsg = true;
+                break;
+            }
+        }
+
+        if (!hasUnreadMsg) {
+            const meetupRequest = await MeetUpRequest.findOne({ receiver: authUser._id });
+            if (meetupRequest) {
+                hasUnreadMsg = true;
+            }
+        }
+
+        res.status(200).json(hasUnreadMsg);
+    } catch (error) {
+        res.status(400)
+        throw new Error(error.message);
+    }
+}
