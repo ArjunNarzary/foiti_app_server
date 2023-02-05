@@ -1,5 +1,5 @@
 const express = require('express');
-const { addTrip, getTotalTrip, updateTripPlan, deleteTrip } = require('../controllers/trip');
+const { addTrip, updateTripPlan, deleteTrip, getActiveTrips } = require('../controllers/trip');
 const { isAuthenticated } = require("../middlewares/auth");
 const { validateTrip } = require('../middlewares/validations/tripValidator');
 const router = express.Router();
@@ -10,6 +10,6 @@ const router = express.Router();
 router.route("/add").post(isAuthenticated, validateTrip("addTrip"), addTrip)
 router.route("/update").patch(isAuthenticated, validateTrip("addTrip"), updateTripPlan)
                         .delete(isAuthenticated, deleteTrip)
-router.route("/active-trips").get(isAuthenticated, getTotalTrip);
+router.route("/active-trips/:user_id").get(isAuthenticated, getActiveTrips);
 
 module.exports = router

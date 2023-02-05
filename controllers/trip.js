@@ -97,7 +97,7 @@ exports.addTrip = async (req, res) => {
         }
 
         let meetup_status = false;
-        if (authUser.place && authUser.gender && authUser.dob) {
+        if (authUser.place && authUser.gender && authUser.dob && authUser.bio) {
             meetup_status = true;
         }
 
@@ -313,14 +313,14 @@ exports.deleteTrip = async (req, res) => {
     }
 }
 
-exports.getTotalTrip = async (req, res) => {
+exports.getActiveTrips = async (req, res) => {
     const errors = {};
     try {
-        const { authUser } = req.body;
+        const { user_id } = req.params;
         const activeTrips = await TripPlan.find({})
-            .where('user_id').equals(authUser._id)
-            .where('status').equals('active')
-            .countDocuments();
+            .where('user_id').equals(user_id)
+            .where('status').equals('active');
+
         return res.status(200).json({
             success: true,
             activeTrips

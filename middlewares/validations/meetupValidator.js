@@ -7,6 +7,13 @@ exports.validateMeetup = (method) => {
         //ADD TRIP
         case "updateProfile": {
             return [
+                body("about_me")
+                    .trim()
+                    .exists({ checkFalsy: true })
+                    .withMessage("Please write little about yourself")
+                    .isLength({ max: 1000 })
+                    .withMessage("\"About Me\" must be within 1000 characters.")
+                    .bail(),
                 body("gender")
                     .trim()
                     .exists({ checkFalsy: true })
