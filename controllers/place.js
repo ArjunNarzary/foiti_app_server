@@ -1460,17 +1460,227 @@ exports.copyPlaceCoordinates = async(req, res) => {
 }
 
 //MAP VIEW
+// exports.exploreMapPlace = async (req, res) => {
+//   let errors = {};
+//   try {
+//     let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, lngDelta, latDelta, ip } = req.body;
+//     // const distInMeter = parseFloat(lngDelta) / 0.00004;
+
+//     if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined || 
+//         bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
+//         topLeftCoords.latitude === undefined || topLeftCoords.longitude === undefined ||
+//         bottomRightCoords.latitude === undefined || bottomRightCoords.longitude === undefined
+//       ) {
+//       return res.status(401).json({
+//         success: false
+//       })
+//     }
+
+//     const upperLeftArr = [parseFloat(topLeftCoords.longitude), parseFloat(topLeftCoords.latitude)]
+//     const upperRightArr = [parseFloat(topRightCoords.longitude), parseFloat(topRightCoords.latitude)]
+//     const bottomRightArr = [parseFloat(bottomRightCoords.longitude), parseFloat(bottomRightCoords.latitude)]
+//     const bottomLeftArr = [parseFloat(bottomLeftCoords.longitude), parseFloat(bottomLeftCoords.latitude)]
+
+//     let places = await Place.aggregate([
+//       {
+//         $match: {
+//           $and: [
+//             {'location': {
+//               $geoWithin: {
+//                 $geometry: {
+//                   type: "Polygon",
+//                   coordinates: [
+//                     [upperLeftArr, bottomLeftArr, bottomRightArr, upperRightArr, upperLeftArr]
+//                   ]
+//                 }
+//               }
+//             }},
+//             { "duplicate": false },
+//             { "types": 'point_of_interest' },
+//             {"types": {$ne: 'river'}}
+//         ]
+//         }
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           name: 1,
+//           display_name: 1,
+//           distance: 1,
+//           location: 1,
+//           cover_photo: 1,
+//           original_place_id: 1,
+//           location:1,
+//           address: 1,
+//           display_address: 1,
+//           duplicate: 1,
+//           types: 1,
+//           google_types: 1,
+//           destination: 1,
+//           display_address_available: 1,
+//           short_address: 1,
+//           local_address: 1,
+//           display_address_for_own_country: 1,
+//           display_address_for_other_country: 1,
+//           editor_rating:1
+//         }
+//       },
+//       { $sort: { editor_rating: -1, _id: 1 } },
+//       { $limit: 100 }
+//     ]);
+
+//     const selectedPlaces = [];
+
+
+//     places.map(place => {
+//       if (selectedPlaces.length >= 15) return;
+//       let isNear = false;
+//       places.map(p => {
+//         const coods = {
+//           latitude: parseFloat(p.location.coordinates[1]),
+//           longitude: parseFloat(p.location.coordinates[0])
+//         }
+
+//         const currentCoods = {
+//           latitude: parseFloat(place.location.coordinates[1]),
+//           longitude: parseFloat(place.location.coordinates[0])
+//         }
+//         if (checkCoordsIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)) {
+//           isNear = true;
+//           return
+//         }
+
+//       })
+
+//       if (!isNear) {
+//         selectedPlaces.push(place._id);
+//       }
+//     });
+
+//     places = places.map(doc => {
+//       return new Place(doc)
+//     });
+
+//     //FORMAT ADDRESS
+//     // let country = "";
+//     // const location = await getCountry(ip);
+//     // if (location != null && location.country !== undefined) {
+//     //   country = location.country;
+//     // } else {
+//     //   country = "IN";
+//     // }
+
+//     // places.forEach((place) => {
+//     //   if (place.display_name) {
+//     //     place.name = place.display_name;
+//     //   }
+
+//     //   if (place.types.length > 1) {
+//     //     const typeArray = place.types[1].split("_");
+//     //     const capitalizedArray = typeArray.map((item) => {
+//     //       return item.charAt(0).toUpperCase() + item.slice(1);
+//     //     });
+//     //     place.types[1] = capitalizedArray.join(" ");
+//     //   }
+
+//     //   if (place.address.short_country == country) {
+//     //     if (place.display_address_for_own_country != "") {
+//     //       place.local_address =
+//     //         place.display_address_for_own_country.substr(2);
+//     //     } else {
+//     //       place.local_address = place.display_address_for_own_country;
+//     //     }
+//     //   } else {
+//     //     if (place.display_address_for_other_country != "") {
+//     //       place.short_address =
+//     //         place.display_address_for_other_country.substr(2);
+//     //     } else {
+//     //       place.short_address =
+//     //         place.display_address_for_other_country;
+//     //     }
+//     //   }
+//     // });
+
+//     // const displayLabel = [];
+
+//     // if (lngDelta < 0.13){
+//     //   places.map(place => {
+//     //     let isNear = false;
+//     //     places.map(p => {
+//     //       if (p._id !== place._id && !displayLabel.includes(p._id)){
+//     //         const distance = getDistance(
+//     //           { latitude: parseFloat(place.location.coordinates[1]), longitude: parseFloat(place.location.coordinates[0]) },
+//     //           { latitude: parseFloat(p.location.coordinates[1]), longitude: parseFloat(p.location.coordinates[0]) },
+//     //         )
+  
+//     //         if (distance <= distInMeter) {
+//     //           isNear = true
+//     //           return;
+//     //         }
+//     //       }
+//     //     })
+  
+//     //     if(!isNear){
+//     //       displayLabel.push(place._id);
+//     //     }
+//     //   })
+//     // }
+
+//     if (lngDelta <= 0.5){
+//       places.map(place => {
+//         if (displayLabel.length >= 12) return;
+//         let isNear = false;
+//         places.map(p => {
+//           const coods = {
+//             latitude: parseFloat(p.location.coordinates[1]),
+//             longitude: parseFloat(p.location.coordinates[0])
+//           }
+
+//           const currentCoods = {
+//             latitude: parseFloat(place.location.coordinates[1]),
+//             longitude: parseFloat(place.location.coordinates[0])
+//           }
+//           if (checkCoordsIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)){
+//             isNear = true;
+//             return
+//           }
+
+//         })
+  
+//         if(!isNear){
+//           displayLabel.push(place._id);
+//         }
+//       });
+//     }
+
+
+//     res.status(200).json({
+//       places,
+//       displayLabel
+//     });
+
+//   } catch (error) {
+//     console.log(error);
+//     errors.general = "Something went wrong, please try again.";
+//     res.status(500).json({
+//       success: false,
+//       message: errors
+//     })
+//   }
+// }
+
+
 exports.exploreMapPlace = async (req, res) => {
   let errors = {};
   try {
     let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, lngDelta, latDelta, ip } = req.body;
     // const distInMeter = parseFloat(lngDelta) / 0.00004;
 
-    if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined || 
-        bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
-        topLeftCoords.latitude === undefined || topLeftCoords.longitude === undefined ||
-        bottomRightCoords.latitude === undefined || bottomRightCoords.longitude === undefined
-      ) {
+    if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined ||
+      bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
+      topLeftCoords.latitude === undefined || topLeftCoords.longitude === undefined ||
+      bottomRightCoords.latitude === undefined || bottomRightCoords.longitude === undefined
+    ) {
       return res.status(401).json({
         success: false
       })
@@ -1485,20 +1695,22 @@ exports.exploreMapPlace = async (req, res) => {
       {
         $match: {
           $and: [
-            {'location': {
-              $geoWithin: {
-                $geometry: {
-                  type: "Polygon",
-                  coordinates: [
-                    [upperLeftArr, bottomLeftArr, bottomRightArr, upperRightArr, upperLeftArr]
-                  ]
+            {
+              'location': {
+                $geoWithin: {
+                  $geometry: {
+                    type: "Polygon",
+                    coordinates: [
+                      [upperLeftArr, bottomLeftArr, bottomRightArr, upperRightArr, upperLeftArr]
+                    ]
+                  }
                 }
               }
-            }},
+            },
             { "duplicate": false },
             { "types": 'point_of_interest' },
-            {"types": {$ne: 'river'}}
-        ]
+            { "types": { $ne: 'river' } }
+          ]
         }
       },
       {
@@ -1510,7 +1722,7 @@ exports.exploreMapPlace = async (req, res) => {
           location: 1,
           cover_photo: 1,
           original_place_id: 1,
-          location:1,
+          location: 1,
           address: 1,
           display_address: 1,
           duplicate: 1,
@@ -1522,56 +1734,82 @@ exports.exploreMapPlace = async (req, res) => {
           local_address: 1,
           display_address_for_own_country: 1,
           display_address_for_other_country: 1,
-          editor_rating:1
+          editor_rating: 1
         }
       },
       { $sort: { editor_rating: -1, _id: 1 } },
       { $limit: 100 }
     ]);
 
-    places = places.map(doc => {
-      return new Place(doc)
-    });
+
+    const selectedPlaces = [];
+    const skipArr = [];
+
+    for(let i = 0; i< places.length; i++){
+      if(skipArr.includes(places[i]._id)) continue;
+      places.map(p => {
+        const coods = {
+          latitude: parseFloat(p.location.coordinates[1]),
+          longitude: parseFloat(p.location.coordinates[0])
+        }
+
+        const currentCoods = {
+          latitude: parseFloat(places[i].location.coordinates[1]),
+          longitude: parseFloat(places[i].location.coordinates[0])
+
+        }
+
+        if ((p._id.toString() !== places[i]._id.toString()) && checkCoordsForAttractionIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)) {
+          isNear = true;
+          skipArr.push(p._id);
+        }
+
+      });
+
+      selectedPlaces.push(new Place(places[i]));
+    }
+
+    places = selectedPlaces;
 
     //FORMAT ADDRESS
-    // let country = "";
-    // const location = await getCountry(ip);
-    // if (location != null && location.country !== undefined) {
-    //   country = location.country;
-    // } else {
-    //   country = "IN";
-    // }
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
 
-    // places.forEach((place) => {
-    //   if (place.display_name) {
-    //     place.name = place.display_name;
-    //   }
+    places.forEach((place) => {
+      if (place.display_name) {
+        place.name = place.display_name;
+      }
 
-    //   if (place.types.length > 1) {
-    //     const typeArray = place.types[1].split("_");
-    //     const capitalizedArray = typeArray.map((item) => {
-    //       return item.charAt(0).toUpperCase() + item.slice(1);
-    //     });
-    //     place.types[1] = capitalizedArray.join(" ");
-    //   }
+      if (place.types.length > 1) {
+        const typeArray = place.types[1].split("_");
+        const capitalizedArray = typeArray.map((item) => {
+          return item.charAt(0).toUpperCase() + item.slice(1);
+        });
+        place.types[1] = capitalizedArray.join(" ");
+      }
 
-    //   if (place.address.short_country == country) {
-    //     if (place.display_address_for_own_country != "") {
-    //       place.local_address =
-    //         place.display_address_for_own_country.substr(2);
-    //     } else {
-    //       place.local_address = place.display_address_for_own_country;
-    //     }
-    //   } else {
-    //     if (place.display_address_for_other_country != "") {
-    //       place.short_address =
-    //         place.display_address_for_other_country.substr(2);
-    //     } else {
-    //       place.short_address =
-    //         place.display_address_for_other_country;
-    //     }
-    //   }
-    // });
+      if (place.address.short_country == country) {
+        if (place.display_address_for_own_country != "") {
+          place.local_address =
+            place.display_address_for_own_country.substr(2);
+        } else {
+          place.local_address = place.display_address_for_own_country;
+        }
+      } else {
+        if (place.display_address_for_other_country != "") {
+          place.short_address =
+            place.display_address_for_other_country.substr(2);
+        } else {
+          place.short_address =
+            place.display_address_for_other_country;
+        }
+      }
+    });
 
     const displayLabel = [];
 
@@ -1584,21 +1822,21 @@ exports.exploreMapPlace = async (req, res) => {
     //           { latitude: parseFloat(place.location.coordinates[1]), longitude: parseFloat(place.location.coordinates[0]) },
     //           { latitude: parseFloat(p.location.coordinates[1]), longitude: parseFloat(p.location.coordinates[0]) },
     //         )
-  
+
     //         if (distance <= distInMeter) {
     //           isNear = true
     //           return;
     //         }
     //       }
     //     })
-  
+
     //     if(!isNear){
     //       displayLabel.push(place._id);
     //     }
     //   })
     // }
 
-    if (lngDelta <= 0.5){
+    if (lngDelta <= 0.5) {
       places.map(place => {
         if (displayLabel.length >= 12) return;
         let isNear = false;
@@ -1612,14 +1850,14 @@ exports.exploreMapPlace = async (req, res) => {
             latitude: parseFloat(place.location.coordinates[1]),
             longitude: parseFloat(place.location.coordinates[0])
           }
-          if (checkCoordsIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)){
+          if (checkCoordsIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)) {
             isNear = true;
             return
           }
 
         })
-  
-        if(!isNear){
+
+        if (!isNear) {
           displayLabel.push(place._id);
         }
       });
@@ -1671,6 +1909,35 @@ function checkCoordsIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsTo
     bottomLeftCoords,
     topLeftCoords
   ]);
+}
 
 
+function checkCoordsForAttractionIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsToCheck){
+  const topLeftCoords = {
+    latitude: currentCoords.latitude + (latDelta / 26),
+    longitude: currentCoords.longitude - (lngDelta / 20)
+  }
+
+  const topRightCoords = {
+    latitude: currentCoords.latitude + (latDelta / 26),
+    longitude: currentCoords.longitude + (lngDelta / 20)
+  }
+
+  const bottomRightCoords = {
+    latitude: currentCoords.latitude - (latDelta / 26),
+    longitude: currentCoords.longitude + (lngDelta / 14)
+  }
+
+  const bottomLeftCoords = {
+    latitude: currentCoords.latitude - (latDelta / 26),
+    longitude: currentCoords.longitude - (lngDelta / 14)
+  }
+
+  return  isPointInPolygon(coordsToCheck, [
+    topLeftCoords,
+    topRightCoords,
+    bottomRightCoords,
+    bottomLeftCoords,
+    topLeftCoords
+  ]);
 }

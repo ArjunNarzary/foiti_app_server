@@ -1932,7 +1932,7 @@ exports.exploreMapPost = async (req, res) => {
         }
       },
       { $sort: { location_viewers_count: -1, like_count: -1, viewers_count: -1, _id: 1 } },
-      { $limit: 300 }
+      { $limit: 100 }
     ]);
 
 
