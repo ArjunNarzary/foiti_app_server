@@ -1526,7 +1526,7 @@ exports.exploreMapPlace = async (req, res) => {
         }
       },
       { $sort: { editor_rating: -1, _id: 1 } },
-      { $limit: 30 }
+      { $limit: 100 }
     ]);
 
     places = places.map(doc => {
