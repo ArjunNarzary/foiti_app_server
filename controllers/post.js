@@ -1079,7 +1079,6 @@ exports.randomPosts = async (req, res) => {
   try {
     const { ip, authUser, skip } = req.body;
     const limit = 5000;
-    // console.log(skip);
     let posts;
     if (skip === undefined || skip === null) {
       //Random post form post screen, showing others post
@@ -1732,7 +1731,7 @@ exports.exploreMapPostData = async (req, res) => {
   let errors = {};
   try {
     let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, ip, skip = 0 } = req.body;
-    const limit = 16;
+    const limit = 20;
     let noMoreData = false;
 
     // const distInMeter = parseFloat(lngDelta) / 0.00004;
