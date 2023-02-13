@@ -1534,44 +1534,44 @@ exports.exploreMapPlace = async (req, res) => {
     });
 
     //FORMAT ADDRESS
-    let country = "";
-    const location = await getCountry(ip);
-    if (location != null && location.country !== undefined) {
-      country = location.country;
-    } else {
-      country = "IN";
-    }
+    // let country = "";
+    // const location = await getCountry(ip);
+    // if (location != null && location.country !== undefined) {
+    //   country = location.country;
+    // } else {
+    //   country = "IN";
+    // }
 
-    places.forEach((place) => {
-      if (place.display_name) {
-        place.name = place.display_name;
-      }
+    // places.forEach((place) => {
+    //   if (place.display_name) {
+    //     place.name = place.display_name;
+    //   }
 
-      if (place.types.length > 1) {
-        const typeArray = place.types[1].split("_");
-        const capitalizedArray = typeArray.map((item) => {
-          return item.charAt(0).toUpperCase() + item.slice(1);
-        });
-        place.types[1] = capitalizedArray.join(" ");
-      }
+    //   if (place.types.length > 1) {
+    //     const typeArray = place.types[1].split("_");
+    //     const capitalizedArray = typeArray.map((item) => {
+    //       return item.charAt(0).toUpperCase() + item.slice(1);
+    //     });
+    //     place.types[1] = capitalizedArray.join(" ");
+    //   }
 
-      if (place.address.short_country == country) {
-        if (place.display_address_for_own_country != "") {
-          place.local_address =
-            place.display_address_for_own_country.substr(2);
-        } else {
-          place.local_address = place.display_address_for_own_country;
-        }
-      } else {
-        if (place.display_address_for_other_country != "") {
-          place.short_address =
-            place.display_address_for_other_country.substr(2);
-        } else {
-          place.short_address =
-            place.display_address_for_other_country;
-        }
-      }
-    });
+    //   if (place.address.short_country == country) {
+    //     if (place.display_address_for_own_country != "") {
+    //       place.local_address =
+    //         place.display_address_for_own_country.substr(2);
+    //     } else {
+    //       place.local_address = place.display_address_for_own_country;
+    //     }
+    //   } else {
+    //     if (place.display_address_for_other_country != "") {
+    //       place.short_address =
+    //         place.display_address_for_other_country.substr(2);
+    //     } else {
+    //       place.short_address =
+    //         place.display_address_for_other_country;
+    //     }
+    //   }
+    // });
 
     const displayLabel = [];
 
