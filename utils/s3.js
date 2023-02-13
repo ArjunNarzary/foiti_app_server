@@ -32,18 +32,34 @@ exports.uploadFile = (file, buffer) => {
 exports.getFileStream = (fileKey) => {
   try{
     let fileKeyValue = fileKey;
-    if(fileKeyValue == null || fileKeyValue == "" || fileKeyValue == 'undefined'){
-      fileKeyValue = "profile_picture.jpg";
+    if(!fileKeyValue){
+      fileKeyValue = "defaultimage.png";
     } 
     const downloadParams = {
       Key: fileKeyValue,
       Bucket: bucketName,
     };
+    // console.log(downloadParams)
+    // return storage.getObject(downloadParams).createReadStream();
+
+    return storage.getObject(downloadParams).createReadStream()
+    .on('error', error => {
+      const downloadDefaultParams = {
+        Key: "defaultimage.png",
+        Bucket: bucketName,
+      };
+      return storage.getObject(downloadDefaultParams).createReadStream();
+    })
+    .on('data', data =>{
+      return data;
+    })
   
-    return storage.getObject(downloadParams).createReadStream();
   }catch(error){
-    console.log("error", error);
-    return false;
+    const downloadDefaultParams = {
+      Key: "defaultimage.png",
+      Bucket: bucketName,
+    };
+    return storage.getObject(downloadDefaultParams).createReadStream();
   }
 };
 
@@ -55,7 +71,10 @@ exports.deleteFile = (filename) => {
   };
 
   if(filename != null && filename != "" && filename != undefined){
-    return storage.deleteObject(params).promise();
+    // return storage.deleteObject(params).promise();
+    storage.deleteObject(params, (error, data) => {
+      return true;
+    });
   }else{
     return true;
   }

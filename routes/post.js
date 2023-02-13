@@ -17,6 +17,8 @@ const {
   viewPostLikedUsers,
   exploreNearby,
   copyCoordinates,
+  exploreMapPost,
+  exploreMapPostData,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
@@ -53,6 +55,8 @@ router.route("/likedUsers/:post_id").post(isAuthenticated, viewPostLikedUsers);
 
 //NEARBY POST
 router.route("/explore-nearby").post(isAuthenticated, exploreNearby);
+router.route("/map-posts").post(isAuthenticated, exploreMapPost);
+router.route("/map-post-data").post(isAuthenticated, exploreMapPostData);
 //Coppy coordinates
 // router.route("/copy-coordinates").get(isAuthenticated, copyCoordinates);
 

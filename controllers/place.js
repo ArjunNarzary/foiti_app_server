@@ -1464,7 +1464,7 @@ exports.exploreMapPlace = async (req, res) => {
   let errors = {};
   try {
     let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, lngDelta, latDelta, ip } = req.body;
-    const distInMeter = parseFloat(lngDelta) / 0.00004;
+    // const distInMeter = parseFloat(lngDelta) / 0.00004;
 
     if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined || 
         bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||

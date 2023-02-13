@@ -8,6 +8,12 @@ exports.getImage = async (req, res) => {
     });
   }
   const readStream = getFileStream(key);
-
   readStream.pipe(res);
+
+  // if(readStream){
+  //   readStream.pipe(res);
+  // }else{
+  //   return null;
+  // }
+
 };
