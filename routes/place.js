@@ -13,6 +13,7 @@ const {
   attractions,
   copyPlaceCoordinates,
   exploreMapPlace,
+  exploreAllMapPlaces,
 } = require("../controllers/place");
 const router = express.Router();
 
@@ -47,7 +48,8 @@ router.route("/explore-place/:place_id").post(isAuthenticated, explorePlace);
 //NEARBY POSTS
 router.route("/attractions").post(isAuthenticated, attractions);
 //Map places
-router.route("/map-places").post(isAuthenticated, exploreMapPlace);
+router.route("/map-places").post(isAuthenticated, exploreMapPlace)
+                            .get(isAuthenticated, exploreAllMapPlaces);
 // router.route("/copy-coordinates").get(isAuthenticated, copyPlaceCoordinates);
 
 //============AT ALL QUERIES BEFORE THIS LINE==========
