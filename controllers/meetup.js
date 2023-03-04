@@ -460,6 +460,103 @@ exports.getLocals = async (req, res) => {
     }
 }
 
+//Version 7
+exports.getTravellerDetailsOld = async (req, res) => {
+    const errors = {};
+    try {
+        let { trip_id, ip } = req.params;
+        if (!trip_id) {
+            errors.genral = "Invalid request";
+            return res.status(400).json({
+                success: false,
+                error: errors
+            })
+        }
+
+        const tripPlan = await TripPlan.findById(trip_id);
+        if (!tripPlan) {
+            errors.genral = "Trip plan not found";
+            return res.status(400).json({
+                success: false,
+                error: errors
+            })
+        }
+
+        const user = await User.findById(tripPlan.user_id)
+            .select("_id name profileImage gender dob bio meetup_reason interests education occupation languages movies_books_music")
+            .populate("place", "name display_name address display_address_available display_address display_address_for_own_country display_address_for_other_country original_place_id")
+
+        if (!user) {
+            errors.genral = "User not found";
+            return res.status(400).json({
+                success: false,
+                error: errors
+            })
+        }
+
+
+        if (ip) {
+            //FORMAT ADDRESS
+            let country = "";
+            const location = await getCountry(ip);
+            if (location != null && location.country !== undefined) {
+                country = location.country;
+            } else {
+                country = "IN";
+            }
+
+            //FORMAT ADDRESS
+            if (user.place?._id) {
+                if (user.place.address.short_country == country) {
+                    if (user.place.display_address_for_own_country_home != "") {
+                        user.place.local_address =
+                            user.place.display_address_for_own_country_home;
+                    } else {
+                        user.place.local_address = user.place.display_address_for_own_country_home;
+                    }
+                } else {
+                    if (user.place.display_address_for_other_country_home != "") {
+                        user.place.short_address =
+                            user.place.display_address_for_other_country_home;
+                    } else {
+                        user.place.short_address =
+                            user.place.display_address_for_other_country_home;
+                    }
+                }
+            }
+
+        } else {
+            if (user.place.display_name) {
+                user.place.name = user.place.display_name;
+            }
+            if (user.place.display_address_for_own_country_home != "") {
+                user.place.local_address =
+                    user.place.display_address_for_own_country_home.substr(2);
+            } else {
+                user.place.local_address = user.place.display_address_for_own_country_home;
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            tripPlan,
+            user
+        })
+
+
+
+    } catch (error) {
+        console.log(error);
+        errors.general = "Something went wrong while fecthing traveller details";
+        res.status(500).json({
+            success: false,
+            message: errors,
+        });
+    }
+}
+
+
+//Version 8
 exports.getTravellerDetails = async (req, res) => {
     const errors = {};
     try {
