@@ -291,6 +291,7 @@ exports.createPost = async (req, res) => {
         coordinates: [parseFloat(post.content[0].coordinate.lng), parseFloat(post.content[0].coordinate.lat)]
       }
       post.coordinate_status = true;
+      post.verified_coordinates = true;
       await user.save();
     } else {
       post.coordinate_status = false;
@@ -320,6 +321,7 @@ exports.createPost = async (req, res) => {
       post,
       uploadedBefore,
       typeAddress,
+      place
     });
   } catch (error) {
     errors.general = error.message;
@@ -1941,6 +1943,90 @@ exports.exploreMapPost = async (req, res) => {
     });
 
   } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+
+exports.addCoordinates = async (req, res) => {
+  let errors = {};
+  try{
+    const { postId, coordinates, authUser } = req.body;
+
+    //Validate Object ID
+    if (!ObjectId.isValid(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post"
+      });
+    }
+
+    if(!coordinates.lat || !coordinates.lng){
+      return res.status(400).json({
+        success: false,
+        message: "Please select coordinates."
+      })
+    }
+
+    const post = await Post.findById(postId);
+    if(!post){
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      })
+    }
+
+    if(post.user.toString() != authUser._id){
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized to update this post."
+      })
+    }
+
+    const newCoords = {
+      lat: coordinates.lat,
+      lng: coordinates.lng
+    }
+
+    post.content[0].coordinate = newCoords;
+    post.content[0].location = {
+      coordinates: [parseFloat(coordinates.lng), parseFloat(coordinates.lat)]
+    }
+    post.coordinate_status = true;
+    post.manual_coordinates = true;
+    await post.save();
+
+    //Add Contribution
+    let contribution = await Contribution.findOne({ userId: authUser._id });
+    if (!contribution) {
+      contribution = await Contribution({ userId: authUser._id });
+    }
+
+    if (!contribution.photos_with_coordinates.includes(post._id)){
+      contribution.photos_with_coordinates.push(post._id);
+      await contribution.save();
+      //Recalculate total contributions
+      const user = await User.findById(authUser._id);
+      if(user){
+        user.total_contribution = contribution.calculateTotalContribution();
+        await user.save();
+      }
+    }
+
+
+    return res.status(200).json({
+      success: true,
+      message: "Post has been updated successfully.",
+      post
+    })
+
+
+  }catch(error){
     console.log(error);
     errors.general = "Something went wrong, please try again.";
     res.status(500).json({

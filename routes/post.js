@@ -19,12 +19,14 @@ const {
   copyCoordinates,
   exploreMapPost,
   exploreMapPostData,
+  addCoordinates,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
 
 //Create Post
 router.route("/").post(isAuthenticated, upload.single("postImage"), createPost);
+router.route("/add-coordinates").post(isAuthenticated, addCoordinates);
 // router.route("/").post(upload.single("postImage"), createPost);
 
 //Like POST

@@ -183,6 +183,10 @@ const userSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: "Post",
     }],
+    hidden_meetup_profile: {
+      type: Boolean,
+      default: false
+    },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   tokenVersion: {

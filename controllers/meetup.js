@@ -413,7 +413,11 @@ exports.getLocals = async (req, res) => {
         const locals = await User.find({ place: { $in: placesArr } })
             .where("deactivated")
             .ne(true)
+            .where("account_status")
+            .ne("deactivated")
             .where("terminated")
+            .ne(true)
+            .where("hidden_meetup_profile")
             .ne(true)
             .sort({ total_contribution: -1, _id: -1 })
             .select("_id name profileImage gender dob bio meetup_reason interests education occupation languages movies_books_music")
@@ -459,7 +463,7 @@ exports.getLocals = async (req, res) => {
 exports.getTravellerDetails = async (req, res) => {
     const errors = {};
     try {
-        const { trip_id } = req.params;
+        const { trip_id, ip } = req.params;
         if (!trip_id) {
             errors.genral = "Invalid request";
             return res.status(400).json({
@@ -489,15 +493,49 @@ exports.getTravellerDetails = async (req, res) => {
             })
         }
 
-        if (user.place.display_name) {
-            user.place.name = user.place.display_name;
+        
+        if(ip){
+            //FORMAT ADDRESS
+            let country = "";
+            const location = await getCountry(ip);
+            if (location != null && location.country !== undefined) {
+                country = location.country;
+            } else {
+                country = "IN";
+            }
+
+            //FORMAT ADDRESS
+            if (user.place?._id) {
+                if (user.place.address.short_country == country) {
+                    if (user.place.display_address_for_own_country_home != "") {
+                        user.place.local_address =
+                            user.place.display_address_for_own_country_home;
+                    } else {
+                        user.place.local_address = user.place.display_address_for_own_country_home;
+                    }
+                } else {
+                    if (user.place.display_address_for_other_country_home != "") {
+                        user.place.short_address =
+                            user.place.display_address_for_other_country_home;
+                    } else {
+                        user.place.short_address =
+                            user.place.display_address_for_other_country_home;
+                    }
+                }
+            }
+
+        }else{
+            if (user.place.display_name) {
+                user.place.name = user.place.display_name;
+            }
+            if (user.place.display_address_for_own_country_home != "") {
+                user.place.local_address =
+                    user.place.display_address_for_own_country_home.substr(2);
+            } else {
+                user.place.local_address = user.place.display_address_for_own_country_home;
+            }
         }
-        if (user.place.display_address_for_own_country_home != "") {
-            user.place.local_address =
-                user.place.display_address_for_own_country_home.substr(2);
-        } else {
-            user.place.local_address = user.place.display_address_for_own_country_home;
-        }
+
         return res.status(200).json({
             success: true,
             tripPlan,

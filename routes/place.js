@@ -16,6 +16,7 @@ const {
   exploreAllMapPlaces,
   exploreMapPlaces,
   exploreMapPlaceDetails,
+  exploreMapPlaceV8,
 } = require("../controllers/place");
 const router = express.Router();
 
@@ -54,6 +55,7 @@ router.route("/map-places").post(isAuthenticated, exploreMapPlace)
                             .get(isAuthenticated, exploreAllMapPlaces);
 //Map places version 7
 router.route("/map-places-v7").post(isAuthenticated, exploreMapPlaces);
+router.route("/map-places-v8").post(isAuthenticated, exploreMapPlaceV8);
 router.route("/map-place-details").post(isAuthenticated, exploreMapPlaceDetails);
 // router.route("/copy-coordinates").get(isAuthenticated, copyPlaceCoordinates);
 
