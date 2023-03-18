@@ -31,11 +31,12 @@ const placeSchema = new mongoose.Schema(
     address: {},
     //If display_address_availaible true show this address
     display_address: {
-      sublocality: String,
       locality: String,
+      sublocality: String,
       admin_area_2: String,  //District name
       admin_area_1: String, //State name
       country: String,
+      short_country: String,
     },
     //This is used to check if display address is available or not
     display_address_available: {
