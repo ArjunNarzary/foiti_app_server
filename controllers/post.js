@@ -1005,6 +1005,7 @@ exports.savePost = async (req, res) => {
       res.status(200).json({
         success: true,
         message: "You have successfully unsave the post",
+        saved:false
       });
       return;
     }
@@ -1021,7 +1022,8 @@ exports.savePost = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "You have successfully save the post",
-    });
+      saved: true,
+    })
   } catch (error) {
     errors.general = error.message;
     res.status(500).json({
@@ -1030,6 +1032,66 @@ exports.savePost = async (req, res) => {
     });
   }
 };
+
+
+//Save and Unsave post
+exports.savePostNew = async (req, res) => {
+  let errors = {}
+  try {
+    const postId = req.params.id
+    const { authUser } = req.body
+
+    const post = await Post.findById(postId)
+    //IF NOT POST FOUND
+    if (!post) {
+      errors.general = "Post not found"
+      res.status(404).json({
+        success: false,
+        message: errors,
+      })
+    }
+
+    //If post is already save by user
+    if (post.saved.includes(authUser._id)) {
+      const index = post.saved.indexOf(authUser._id)
+      post.saved.splice(index, 1)
+      await post.save()
+
+      //Remove from SavePostPlace table
+      await SavePostPlace.deleteOne({
+        and: [{ user: authUser._id }, { post: post._id }],
+      })
+
+      res.status(200).json({
+        success: true,
+        message: "You have successfully unsave the post",
+        saved: false,
+      })
+      return
+    }
+
+    post.saved.push(authUser._id)
+    await post.save()
+
+    //Add in SavePostPlace table
+    await SavePostPlace.create({
+      user: authUser._id,
+      post: post._id,
+    })
+
+    res.status(200).json({
+      success: true,
+      message: "You have successfully save the post",
+      saved: true,
+    })
+  } catch (error) {
+    errors.general = error.message
+    res.status(500).json({
+      success: false,
+      error: errors,
+    })
+  }
+}
 
 //RANDOMIZE ARRAY
 // function shuffleArray(array) {
@@ -2032,6 +2094,44 @@ exports.addCoordinates = async (req, res) => {
     res.status(500).json({
       success: false,
       message: errors
+    })
+  }
+}
+
+//Explore map post details
+exports.exploreMapPostDetails = async (req, res) => {
+  let errors = {};
+  try{
+    const { postId } = req.body
+    //Validate Object ID
+    if (!ObjectId.isValid(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post",
+      })
+    }
+
+    const post = await Post.findById(postId)
+      .select("_id name content saved like")
+      .populate("user", "_id name total_contribution profileImage")
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      })
+    }
+
+    return res.status(200).json({
+      sucess : true,
+      post
+    })
+  }catch(error){
+    console.log(error)
+    errors.general = "Something went wrong, please try again."
+    res.status(500).json({
+      success: false,
+      message: errors,
     })
   }
 }
