@@ -2107,7 +2107,7 @@ exports.exploreMapPlaceV8 = async (req, res) => {
     const skipArr = [];
 
     for (let i = 0; i < places.length; i++) {
-      if(selectedPlaces.length >= 35) break;
+      if(selectedPlaces.length >= 6) break;
       if (skipArr.includes(places[i]._id)) continue;
       places.map(p => {
         const coods = {
@@ -2214,24 +2214,43 @@ function checkCoordsIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsTo
 
 function checkCoordsForAttractionIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsToCheck){
   const topLeftCoords = {
-    latitude: currentCoords.latitude + (latDelta / 26),
-    longitude: currentCoords.longitude - (lngDelta / 20)
+    latitude: currentCoords.latitude + (latDelta / 11),
+    longitude: currentCoords.longitude - (lngDelta / 5)
   }
 
   const topRightCoords = {
-    latitude: currentCoords.latitude + (latDelta / 26),
-    longitude: currentCoords.longitude + (lngDelta / 20)
+    latitude: currentCoords.latitude + (latDelta / 11),
+    longitude: currentCoords.longitude + (lngDelta / 5)
   }
 
   const bottomRightCoords = {
-    latitude: currentCoords.latitude - (latDelta / 26),
-    longitude: currentCoords.longitude + (lngDelta / 14)
+    latitude: currentCoords.latitude - (latDelta / 11),
+    longitude: currentCoords.longitude + (lngDelta / 5)
   }
 
   const bottomLeftCoords = {
-    latitude: currentCoords.latitude - (latDelta / 26),
-    longitude: currentCoords.longitude - (lngDelta / 14)
+    latitude: currentCoords.latitude - (latDelta / 11),
+    longitude: currentCoords.longitude - (lngDelta / 5)
   }
+  // const topLeftCoords = {
+  //   latitude: currentCoords.latitude + (latDelta / 26),
+  //   longitude: currentCoords.longitude - (lngDelta / 20)
+  // }
+
+  // const topRightCoords = {
+  //   latitude: currentCoords.latitude + (latDelta / 26),
+  //   longitude: currentCoords.longitude + (lngDelta / 20)
+  // }
+
+  // const bottomRightCoords = {
+  //   latitude: currentCoords.latitude - (latDelta / 26),
+  //   longitude: currentCoords.longitude + (lngDelta / 14)
+  // }
+
+  // const bottomLeftCoords = {
+  //   latitude: currentCoords.latitude - (latDelta / 26),
+  //   longitude: currentCoords.longitude - (lngDelta / 14)
+  // }
 
   return  isPointInPolygon(coordsToCheck, [
     topLeftCoords,
@@ -2241,3 +2260,32 @@ function checkCoordsForAttractionIsInsidePolygone(currentCoords, latDelta, lngDe
     topLeftCoords
   ]);
 }
+// function checkCoordsForAttractionIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsToCheck){
+//   const topLeftCoords = {
+//     latitude: currentCoords.latitude + (latDelta / 26),
+//     longitude: currentCoords.longitude - (lngDelta / 20)
+//   }
+
+//   const topRightCoords = {
+//     latitude: currentCoords.latitude + (latDelta / 26),
+//     longitude: currentCoords.longitude + (lngDelta / 20)
+//   }
+
+//   const bottomRightCoords = {
+//     latitude: currentCoords.latitude - (latDelta / 26),
+//     longitude: currentCoords.longitude + (lngDelta / 14)
+//   }
+
+//   const bottomLeftCoords = {
+//     latitude: currentCoords.latitude - (latDelta / 26),
+//     longitude: currentCoords.longitude - (lngDelta / 14)
+//   }
+
+//   return  isPointInPolygon(coordsToCheck, [
+//     topLeftCoords,
+//     topRightCoords,
+//     bottomRightCoords,
+//     bottomLeftCoords,
+//     topLeftCoords
+//   ]);
+// }
