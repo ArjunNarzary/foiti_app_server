@@ -1,4 +1,5 @@
 const UsageTime = require("../models/UsageTime");
+const moment = require('moment');
 
 
 exports.setUsageTime = async (req, res) => {
@@ -11,21 +12,32 @@ exports.setUsageTime = async (req, res) => {
             });
         }
 
-        //create today's date
-        const now = new Date();
-        const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        // console.log(
+        //   moment(startSession).format("DD/MM/YYYY hh:mm:ss"),
+        //   moment(endSession).format("DD/MM/YYYY hh:mm:ss")
+        // )
 
         //Calculate total time between start and end session
         let firstDate = new Date(startSession),
             secondDate = new Date(endSession),
             timeDifference = Math.abs(secondDate.getTime() - firstDate.getTime())/1000; //IN second
 
-        // console.log("First == ", firstDate, "Second == ", secondDate);
+        const startDateEnd = moment(firstDate).endOf('day').toDate();
+        const startDateStart = moment(firstDate).startOf('day').toDate();
 
-        // console.log("Time Difference", timeDifference);
 
-
-        let userSession = await UsageTime.findOne({$and :([{user: authUser._id}, {appVersion: appVersion}, {updatedAt: {$gte: todayDate}}])});
+        let userSession = await UsageTime.findOne({
+          $and: [
+            { user: authUser._id },
+            { appVersion: appVersion },
+            {
+              createdAt: {
+                $gte: startDateStart,
+                $lte: startDateEnd,
+              },
+            },
+          ],
+        })
         if(!userSession){
             userSession = await UsageTime.create({
                 user: authUser._id,
