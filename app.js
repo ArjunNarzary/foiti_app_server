@@ -28,6 +28,11 @@ const helpSupport = require("./routes/helpSupport");
 const updateNotification = require("./routes/updateNotification");
 const inAppNotification = require("./routes/inAppNotification");
 const usageTime = require("./routes/usageTime");
+const chatRoute = require('./routes/chat');
+const messageRoute = require('./routes/message');
+const meetupMessageRoute = require('./routes/meetupMessage');
+const trip = require('./routes/trip');
+const meetup = require('./routes/meetup');
 const versionUrl = "/api/v1";
 
 //Use Routes
@@ -41,5 +46,10 @@ app.use(`${versionUrl}/place`, place);
 app.use(`${versionUrl}/updateNotification`, updateNotification);
 app.use(`${versionUrl}/usageTime`, usageTime);
 app.use(`${versionUrl}/inAppNotification`, inAppNotification);
+app.use(`${versionUrl}/chat`, chatRoute)
+app.use(`${versionUrl}/message`, messageRoute)
+app.use(`${versionUrl}/trip`, trip)
+app.use(`${versionUrl}/meetup`, meetup)
+app.use(`${versionUrl}/meetup-message`, meetupMessageRoute)
 
 module.exports = app;

@@ -27,6 +27,7 @@ const CurrentAddress = require("../models/CurrentAddress");
 const ReportUser = require("../models/ReportUser");
 const Place = require("../models/Place");
 const Review = require("../models/Review");
+const TripPlan = require("../models/TripPlan");
 var ObjectId = require("mongoose").Types.ObjectId;
 
 function createError(errors, validate) {
@@ -293,11 +294,13 @@ exports.googleLogin = async (req, res) =>{
         upload_status: true,
         account_status: "silent",
         last_account_status: "silent"
-      })
+      });
+
+      //Create notification table
+      await Notification.create({ user: user._id });
     }
 
     const token = await user.generateToken();
-
     user.password = "";
 
     return res.status(200).json({
@@ -389,11 +392,12 @@ exports.facebookLogin = async (req, res) =>{
         upload_status: true,
         account_status: "silent",
         last_account_status: "silent"
-      })
+      });
+      //Create notification table
+      await Notification.create({ user: user._id });
     }
 
     const token = await user.generateToken();
-
     user.password = "";
 
     return res.status(200).json({
@@ -461,7 +465,9 @@ exports.editProfile = async (req, res) => {
       });
     }
 
-    const { name, bio, website, address, currentAddress, authUser, place } = req.body;
+    const { name, bio, website, address, currentAddress, authUser, place,
+            gender, dob, meetup_reason, interests, education, occupation,
+            languages, movies_books_music, } = req.body;
 
     const user = await User.findById(authUser._id).populate('place');
 
@@ -473,14 +479,90 @@ exports.editProfile = async (req, res) => {
           .replace(/(\r\n|\r|\n){2}/g, "$1")
           .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
           .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    } else {
-      user.bio = bio;
+    }else{
+      user.bio = "";
     }
+
     if (website != "" && website != undefined) {
       user.website = website.toLowerCase().trim() || "";
-    } else {
-      user.website = website;
+    }else{
+      user.website = ""
     }
+
+    // if (about_me != undefined && about_me != "") {
+    //   user.about_me =
+    //     about_me
+    //       .trim()
+    //       .replace(/(\r\n|\r|\n){2}/g, "$1")
+    //       .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+    //       .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    // }else{
+    //   user.about_me = "";
+    // }
+
+    if (meetup_reason != undefined && meetup_reason != "") {
+      user.meetup_reason =
+        meetup_reason
+          .trim()
+          .replace(/(\r\n|\r|\n){2}/g, "$1")
+          .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+          .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    }else{
+      user.meetup_reason = "";
+    }
+    
+    const genderEnum = ['male', 'female', 'other'];
+    if(gender && genderEnum.includes(gender)){
+      user.gender = gender;
+    }else{
+      user.gender = undefined;
+    }
+
+    if (dob != "" && dob != undefined ) {
+      user.dob = new Date(dob);
+    } else{
+      user.dob = undefined;
+    }
+
+    if (interests != "" && interests != undefined) {
+      user.interests = interests
+                      .trim()
+                      .replace(/(\r\n|\r|\n){2}/g, "$1")
+                      .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+                      .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    }else{
+      user.interests = "";
+    }
+
+    if (education != "" && education != undefined) {
+      user.education = education.trim() || "";
+    }else{
+      user.education = "";
+    }
+
+    if (occupation != "" && occupation != undefined) {
+      user.occupation = occupation.trim() || "";
+    }else{
+      user.occupation = "";
+    }
+
+    if(languages.length > 0){
+      user.languages = languages;
+    }else{
+      user.languages = [];
+    }
+
+    if (movies_books_music != "" && movies_books_music != undefined) {
+      user.movies_books_music = movies_books_music
+        .trim()
+        .replace(/(\r\n|\r|\n){2}/g, "$1")
+        .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+        .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    }else{
+      user.movies_books_music = "";
+    }
+
+
     user.address = address;
 
     if (currentAddress != null) {
@@ -583,10 +665,14 @@ exports.editProfile = async (req, res) => {
           user.place = placeData._id;
         }
       }
-
     }
 
     await user.save();
+
+    //SET MEETUP STATUS TO TRUE
+    if(user.place._id && user.gender && user.dob){
+      await TripPlan.updateMany({$and: [{ "user_id": authUser._id}, {"meetup_status": false }]}, { "$set": { "meetup_status": true } });
+    }
 
     return res.status(200).json({
       success: true,
@@ -605,11 +691,11 @@ exports.editProfile = async (req, res) => {
 
 exports.addCurrentLocation = async (req, res) => {
   try {
-    const { address, authUser, types, name } = req.body;
+    const { address, authUser, types, name, coordinates } = req.body;
 
     const user = await User.findById(authUser._id);
 
-    if (name != null) {
+    if (name != null && coordinates.lng && coordinates.lat) {
       let currentAddress = await CurrentAddress.findOne({ userId: user._id });
       if (!currentAddress) {
         currentAddress = await CurrentAddress.create({ userId: user._id });
@@ -618,6 +704,9 @@ exports.addCurrentLocation = async (req, res) => {
       currentAddress.name = name;
       currentAddress.address = address;
       currentAddress.google_types = types;
+      currentAddress.location = {
+        coordinates: [parseFloat(coordinates.lng), parseFloat(coordinates.lat)]
+      },
       await currentAddress.save();
       user.currently_in = currentAddress._id;
     }
@@ -932,6 +1021,11 @@ exports.viewOwnProfile = async (req, res) => {
       countryVisited = 0;
     }
 
+    //GET ALL ACTIVE TRIP PLANS
+    const activeTrips = await TripPlan.find({})
+                        .where('user_id').equals(authUser._id)
+                        .where('status').equals('active');
+
     return res.status(200).json({
       success: true,
       user,
@@ -941,6 +1035,7 @@ exports.viewOwnProfile = async (req, res) => {
       placesVisited,
       countryVisited,
       helpNavigate,
+      tripPlans: activeTrips
     });
   } catch (error) {
     console.log(error.message);
@@ -1091,13 +1186,10 @@ exports.viewOthersProfile = async (req, res) => {
       countryVisited = 0;
     }
 
-    // Make name first letter capital
-    // const name = profileUser.name;
-    // const nameArray = name.split(" ");
-    // const capitalizedName = nameArray.map((name) => {
-    //   return name.charAt(0).toUpperCase() + name.slice(1);
-    // })
-    // profileUser.name = capitalizedName.join(" ");
+    //GET ALL ACTIVE TRIP PLANS
+    const activeTrips = await TripPlan.find({})
+      .where('user_id').equals(profileId)
+      .where('status').equals('active');
 
     return res.status(200).json({
       success: true,
@@ -1109,6 +1201,7 @@ exports.viewOthersProfile = async (req, res) => {
       placesVisited,
       countryVisited,
       helpNavigate,
+      tripPlans: activeTrips
     });
   } catch (error) {
     console.log(error);
@@ -1856,18 +1949,6 @@ exports.setExpoToken = async (req, res) => {
       user.expoToken = expoToken;
       await user.save();
 
-      // let notification = await Notification.findOne({ user: authUser._id });
-      // if (!notification) {
-      //   notification = await Notification.create({
-      //     user: authUser._id,
-      //   });
-      // }
-      // notification.new_post = true;
-      // notification.post_likes = true;
-      // notification.new_followers = true;
-      // notification.email_notitications = true;
-      // await notification.save();
-
       //IF no token existed before
       if (!hasToken) {
         let notification = await Notification.findOne({ user: authUser._id });
@@ -1879,6 +1960,7 @@ exports.setExpoToken = async (req, res) => {
         notification.new_post = true;
         notification.post_likes = true;
         notification.new_followers = true;
+        notification.chat_message = true;
         notification.email_notitications = true;
         await notification.save();
       }
@@ -1971,10 +2053,13 @@ exports.setNotificationSettings = async (req, res) => {
       notificationTable.new_followers = status;
     } else if (notification == "email_notitications") {
       notificationTable.email_notitications = status;
+    } else if (notification == "chat_message") {
+      notificationTable.chat_message = status;
     } else {
       notificationTable.new_post = status;
       notificationTable.post_likes = status;
       notificationTable.new_followers = status;
+      notificationTable.chat_message = status;
     }
 
     await notificationTable.save();
@@ -2274,3 +2359,35 @@ exports.reportUser = async (req, res) => {
     });
   }
 };
+
+exports.getHomeTown = async (req, res) => {
+  const  errors = {};
+  try{
+      const { authUser } = req.body;
+      let  address = "";
+      if(authUser.place){
+        const place = await Place.findById(authUser.place);
+        if(place){
+          const add = place.display_address_for_own_country_home;
+          if(add){
+            address = `${place.name}${add}`;
+          }else{
+            address = place.name;
+          }
+        }
+      }
+
+      res.status(200).json({
+        success: true,
+        address
+      })
+
+  }catch(error){
+    errors.general = "Something went wrong. Please try again.";
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+}

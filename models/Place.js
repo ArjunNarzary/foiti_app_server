@@ -31,11 +31,12 @@ const placeSchema = new mongoose.Schema(
     address: {},
     //If display_address_availaible true show this address
     display_address: {
-      sublocality: String,
       locality: String,
+      sublocality: String,
       admin_area_2: String,  //District name
       admin_area_1: String, //State name
       country: String,
+      short_country: String,
     },
     //This is used to check if display address is available or not
     display_address_available: {
@@ -290,13 +291,11 @@ placeSchema.virtual("display_address_for_own_country_place").get(function () {
     if (this.display_address.admin_area_2) {
       addressArr.push(this.display_address.admin_area_2);
     }
-    if (this.display_address.sublocality) {
+    if (this.display_address.sublocality && this.display_address.sublocality !== this.display_address.admin_area_2) {
       addressArr.push(this.display_address.sublocality);
-    } else if (this.display_address.locality) {
+    } else if (this.display_address.locality && this.display_address.locality !== this.display_address.admin_area_2) {
       addressArr.push(this.display_address.locality);
-    }
-    
-    
+    }  
   } else {
     if (
       this.address.administrative_area_level_1 != this.name &&
@@ -470,9 +469,9 @@ placeSchema.virtual("display_address_for_other_country_place").get(function () {
     if (this.display_address.admin_area_2) {
       arrAddress.push(this.display_address.admin_area_2);
     }
-    if (this.display_address.sublocality) {
+    if (this.display_address.sublocality && this.display_address.sublocality !== this.display_address.admin_area_2) {
       arrAddress.push(this.display_address.sublocality);
-    } else if (this.display_address.locality) {
+    } else if (this.display_address.locality && this.display_address.locality !== this.display_address.admin_area_2) {
       arrAddress.push(this.display_address.locality);
     }
   } else {

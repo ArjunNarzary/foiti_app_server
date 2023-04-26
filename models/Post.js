@@ -87,10 +87,6 @@ const postSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    coordinate_status: {
-      type: Boolean,
-      default: false,
-    },
     location_viewers: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -115,6 +111,22 @@ const postSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["silent", "active", "deactivated", "blocked"],
+    },
+    coordinate_status: {
+      type: Boolean,
+      default: false,
+    },
+    manual_coordinates:{
+      type: Boolean,
+      default: false,
+    },
+    verified_coordinates:{
+      type: Boolean,
+      default: false,
+    },
+    recommend: {
+      type: Boolean,
+      default: false,
     },
     deactivated:{
       type:Boolean,

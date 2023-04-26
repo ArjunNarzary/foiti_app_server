@@ -16,10 +16,14 @@ const inAppNotificationSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
     },
+    chat: {
+        type:Schema.Types.ObjectId,
+        ref:"Chat"
+    },
     message:String,
     type:{
         type: String,
-        enum: ["like", "new_post", "follow", "comment", "reply_comment", "like_comment"],
+        enum: ["like", "new_post", "follow", "comment", "reply_comment", "like_comment", "chat"],
     },
     status: {
         type: String,

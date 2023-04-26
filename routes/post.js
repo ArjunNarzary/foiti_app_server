@@ -17,18 +17,27 @@ const {
   viewPostLikedUsers,
   exploreNearby,
   copyCoordinates,
+  exploreMapPost,
+  exploreMapPostData,
+  addCoordinates,
+  exploreMapPostDetails,
+  savePostNew,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
 
 //Create Post
 router.route("/").post(isAuthenticated, upload.single("postImage"), createPost);
+router.route("/add-coordinates").post(isAuthenticated, addCoordinates);
 // router.route("/").post(upload.single("postImage"), createPost);
 
 //Like POST
 router.route("/like/:id").get(isAuthenticated, likeUnlikePost);
 //Save and Unsave post
-router.route("/save/:id").get(isAuthenticated, savePost);
+router
+  .route("/save/:id")
+  .get(isAuthenticated, savePost)
+  .post(isAuthenticated, savePostNew)
 
 router.route("/contribution/points").get(createContributionPoints);
 
@@ -53,6 +62,9 @@ router.route("/likedUsers/:post_id").post(isAuthenticated, viewPostLikedUsers);
 
 //NEARBY POST
 router.route("/explore-nearby").post(isAuthenticated, exploreNearby);
+router.route("/map-posts").post(isAuthenticated, exploreMapPost);
+router.route("/map-post-data").post(isAuthenticated, exploreMapPostData);
+router.route("/map-post-details").post(isAuthenticated, exploreMapPostDetails)
 //Coppy coordinates
 // router.route("/copy-coordinates").get(isAuthenticated, copyCoordinates);
 

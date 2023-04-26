@@ -133,6 +133,31 @@ exports.sendCommentLikeNotification = async (authUser, notifyTo, post) => {
     }
 }
 
+//SEND NEW CHAT NOTIFCATION TO FOLLOWERS
+exports.sendNewChatNotification = async (authUser, userId, chatId) => {
+    try {
+        const message = {
+            type: "chat",
+            body: `${authUser.name} sent you a message.`,
+        }
+        sendPushNotification(userId, message);
+    } catch (error) {
+        console.log(error);
+    }
+}
+//SEND NEW CHAT NOTIFCATION TO FOLLOWERS
+exports.sendMeetupRequestNotification = async (authUser, userId, chatId) => {
+    try {
+        const message = {
+            type: "chat",
+            body: `${authUser.name} sent you a meetup request.`,
+        }
+        sendPushNotification(userId, message);
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 //DELETE IF LIKED POST EXIST ON UNLIKED POST
 exports.deleteNotificationOnUnlike = async (authUser, post) => {
     try{
@@ -158,7 +183,7 @@ exports.deleteInvalidNotification = async (user, notification) => {
     }
 }
 
-//SEND NEW POST NOTIFCATION TO FOLLOWERS
+//SEND NEW POST NOTIFCATION TO FOLLOWERS (BROADCAST)
 exports.sendNewPostNotification = async (user, post) => {
     try{
         user.follower.map(async (follower) => {
@@ -210,6 +235,15 @@ async function sendPushNotification(receiver_id, message) {
             sound: 'default',
             body: message.body,
             data: { "screen": "follow_details", "id": message.id, "name": newName },
+        })
+    }else if(message.type == "chat"){
+        if (!user.chat_message) return;
+
+        messages.push({
+            to: user.user.expoToken,
+            sound: 'default',
+            body: message.body,
+            data: { "screen": "chat" },
         })
     }else {
         if (!user.new_post) return;

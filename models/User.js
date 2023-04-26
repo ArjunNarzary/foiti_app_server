@@ -52,19 +52,20 @@ const userSchema = new mongoose.Schema({
       private_id: String,
     },
   },
-  gender: String,
-  dob: {
-    date: Date,
+  gender: {
+    type: String,
+    enum: ["male", "female", "other"],
   },
+  dob: Date,
   phoneNumber: String,
   address: {
     name: String,
     administrative_area_level_1: String,
     country: String,
     short_country: String,
-    coordinates:{
+    coordinates: {
       lat: String,
-      lng:String,
+      lng: String,
     }
   },
   place: {
@@ -82,6 +83,31 @@ const userSchema = new mongoose.Schema({
   website: {
     type: String,
     lowercase: true,
+  },
+  // about_me:{
+  //   type: String,
+  //   maxlength: [1000, "About me should be under 1000 characters"],
+  // },
+  meetup_reason: {
+    type: String,
+    maxlength: [1000, "Meetup reason should be under 1000 characters"],
+  },
+  interests: {
+    type: String,
+    maxlength: [500, "Interest should be under 500 characters"],
+  },
+  education: {
+    type: String,
+    maxlength: [500, "Education should be under 500 characters"],
+  },
+  occupation: {
+    type: String,
+    maxlength: [500, "Occupation should be under 500 characters"],
+  },
+  languages: [String],
+  movies_books_music: {
+    type: String,
+    maxlength: [500, "Movies_books_music should be under 500 characters"],
   },
   visited: {
     places: {
@@ -142,21 +168,25 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  blocked_users:[
+  blocked_users: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     }],
-  reported_users:[
+  reported_users: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     }],
-  reported_posts:[
+  reported_posts: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Post",
     }],
+  hidden_meetup_profile: {
+    type: Boolean,
+    default: false
+  },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
   tokenVersion: {

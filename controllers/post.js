@@ -37,7 +37,7 @@ exports.createContributionPoints = async (req, res) => {
       success: true,
       contri,
     });
-  } catch (error) {}
+  } catch (error) { }
 };
 
 //CREATE POST
@@ -116,11 +116,11 @@ exports.createPost = async (req, res) => {
       .toBuffer();
     const resultSmall = await uploadFile(req.file, sharpSmall);
     // const resultThumb = await uploadFile(req.file, fileStream);
-    
+
     //CHECK IF PLACE ID IS ALREADY PRESENT
     let newPlaceCreated = false;
     let place = await Place.findOne({ google_place_id: details.place_id });
-    if (details.created_place){
+    if (details.created_place) {
       place = null;
     }
     if (!place) {
@@ -132,12 +132,12 @@ exports.createPost = async (req, res) => {
           timingArr = formatTiming(details.timing);
         }
       }
-      if(typeof(details.phone_number) === "string"){
+      if (typeof (details.phone_number) === "string") {
         phone_number = details.phone_number;
       }
 
       let uniqueId = "";
-      if (details.created_place){
+      if (details.created_place) {
         const currentDate = new Date();
         uniqueId = `created_${user.username}_${currentDate.getTime()}`;
       }
@@ -147,7 +147,7 @@ exports.createPost = async (req, res) => {
         google_place_id: details.created_place ? uniqueId : details.place_id,
         address: details.address,
         coordinates: details.coordinates,
-        location : {
+        location: {
           coordinates: [parseFloat(details.coordinates.lng), parseFloat(details.coordinates.lat)]
         },
         google_types: details.types,
@@ -170,13 +170,13 @@ exports.createPost = async (req, res) => {
         phone_number,
       });
       newPlaceCreated = true;
-    }else{
+    } else {
       //PLACE IS DUPLICATE AND NOT ADDRESS OR SUB-PLACE
-      if (place.duplicate && (place.types[0] != "address" && !place.types.includes("sub-place"))){
+      if (place.duplicate && (place.types[0] != "address" && !place.types.includes("sub-place"))) {
         const currentPlaceId = place._id;
         place = await Place.findById(place.original_place_id);
 
-        if(!place){
+        if (!place) {
           place = await Place.findById(currentPlaceId);
         }
       }
@@ -287,10 +287,11 @@ exports.createPost = async (req, res) => {
     ) {
       //ADD POST TO CONTRIBUTION TABLE
       contribution.photos_with_coordinates.push(post._id);
-      post.content[0].location =  {
+      post.content[0].location = {
         coordinates: [parseFloat(post.content[0].coordinate.lng), parseFloat(post.content[0].coordinate.lat)]
       }
       post.coordinate_status = true;
+      post.verified_coordinates = true;
       await user.save();
     } else {
       post.coordinate_status = false;
@@ -311,7 +312,7 @@ exports.createPost = async (req, res) => {
 
     let typeAddress = false;
     const typeArr = ["route", "neighborhood", "sublocality_level_2", "sublocality_level_1", "locality", "administrative_area_level_2", "administrative_area_level_1", "country"];
-    if (place.google_types.length > 0 && typeArr.includes(place.google_types[0])){
+    if (place.google_types.length > 0 && typeArr.includes(place.google_types[0])) {
       typeAddress = true;
     }
 
@@ -320,6 +321,7 @@ exports.createPost = async (req, res) => {
       post,
       uploadedBefore,
       typeAddress,
+      place
     });
   } catch (error) {
     errors.general = error.message;
@@ -433,38 +435,38 @@ exports.editPost = async (req, res) => {
 
           if (place.reviewed_status === false && place.users.length === 0) {
             //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
-            if (
-              place.cover_photo.large.private_id != undefined &&
-              place.cover_photo.large.private_id !=
-              post.content[0].image.large.private_id
-            ) {
-              await deleteFile(place.cover_photo.large.private_id);
-              await deleteFile(place.cover_photo.thumbnail.private_id);
-              await deleteFile(place.cover_photo.small.private_id);
-            }
+            // if (
+            //   place.cover_photo.large.private_id != undefined &&
+            //   place.cover_photo.large.private_id !=
+            //   post.content[0].image.large.private_id
+            // ) {
+            //   await deleteFile(place.cover_photo.large.private_id);
+            //   await deleteFile(place.cover_photo.thumbnail.private_id);
+            //   await deleteFile(place.cover_photo.small.private_id);
+            // }
 
             //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
             const reviews = await Review.find({ place_id: place._id });
-            if(reviews.length > 0){
+            if (reviews.length > 0) {
               //Remove contributions
               reviews.forEach(async (reviewData) => {
                 const userContribution = await Contribution.findOne({ userId: reviewData.user_id });
-                if(userContribution.reviews.includes(reviewData._id)){
+                if (userContribution.reviews.includes(reviewData._id)) {
                   const index = userContribution.reviews.indexOf(reviewData._id);
                   userContribution.reviews.splice(index, 1);
                 }
-                if(userContribution.review_200_characters.includes(reviewData._id)){
+                if (userContribution.review_200_characters.includes(reviewData._id)) {
                   const index = userContribution.review_200_characters.indexOf(reviewData._id);
                   userContribution.review_200_characters.splice(index, 1);
                 }
-                if(userContribution.ratings.includes(reviewData._id)){
+                if (userContribution.ratings.includes(reviewData._id)) {
                   const index = userContribution.ratings.indexOf(reviewData._id);
                   userContribution.ratings.splice(index, 1);
                 }
 
                 await userContribution.save();
                 const contributionOwner = await User.findById(userContribution.userId);
-                if(contributionOwner){
+                if (contributionOwner) {
                   contributionOwner.total_contribution = userContribution.calculateTotalContribution();
                   await contributionOwner.save();
                 }
@@ -485,6 +487,38 @@ exports.editPost = async (req, res) => {
               place.cover_photo = {};
             }
             place.posts = [];
+            await place.save();
+          }
+        } else {
+          //REPLACE PLACE COVER PHOTO IF DELETED POST IS COVER PHOTO`
+          if (
+            place.cover_photo.large.private_id != undefined &&
+            place.cover_photo.large.private_id ==
+            post.content[0].image.large.private_id
+          ) {
+            //GET MOST LIKE ARRAY COUNT
+            const HighestLikedPost = await Post.aggregate([
+              {
+                $match: Post.where("_id")
+                  .ne(post._id)
+                  .where("place")
+                  .equals(place._id)
+                  .where("coordinate_status")
+                  .equals(true)
+                  .cast(Post),
+              },
+              {
+                $addFields: {
+                  TotalLike: { $size: "$like" },
+                },
+              },
+              { $sort: { TotalLike: -1 } },
+            ]).limit(1);
+            if (HighestLikedPost.length > 0) {
+              place.cover_photo = HighestLikedPost[0].content[0].image;
+            } else {
+              place.cover_photo = {};
+            }
             await place.save();
           }
         }
@@ -522,7 +556,7 @@ exports.editPost = async (req, res) => {
             address: details.address,
             coordinates: details.coordinates,
             google_types: details.types,
-            cover_photo : post.content[0].image,
+            cover_photo: post.content[0].image,
             location: {
               coordinates: [parseFloat(details.coordinates.lng), parseFloat(details.coordinates.lat)]
             },
@@ -531,7 +565,7 @@ exports.editPost = async (req, res) => {
             phone_number
           });
           newPlaceCreated = true;
-        }else{
+        } else {
           //PLACE IS DUPLICATE AND NOT ADDRESS OR SUB-PLACE
           if (place.duplicate && (place.types[0] != "address" && !place.types.includes("sub-place"))) {
             const currentPlaceId = place._id;
@@ -557,8 +591,8 @@ exports.editPost = async (req, res) => {
         place: place._id,
         user: authUser._id,
       });
-        //ADD to contribution table
-        currentUserContribution.added_places.push(place._id)
+      //ADD to contribution table
+      currentUserContribution.added_places.push(place._id)
     } else {
       //IF PLACE IS SAME AND FIRST POST WITH COORDINATES CREATED
       if (samePlace) {
@@ -632,8 +666,8 @@ exports.viewPost = async (req, res) => {
       .select("_id content user place caption like like_count viewers status terminated deactivated saved")
       .populate("user", "_id name profileImage follower foiti_ambassador total_contribution")
       .populate("place", "_id name display_name address local_address short_address google_place_id coordinates types destination alias display_address display_address_available original_place_id");
-    
-      if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
+
+    if (!post || post.status === "deactivated" || post.terminated === true || post.deactivated === true) {
       errors.general = "Post not found";
       return res.status(404).json({
         success: false,
@@ -749,15 +783,15 @@ exports.deletePost = async (req, res) => {
 
       if (place.reviewed_status === false && place.users.length === 0) {
         //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
-        if (
-          place.cover_photo.large.private_id != undefined &&
-          place.cover_photo.large.private_id !=
-          post.content[0].image.large.private_id
-        ) {
-          await deleteFile(place.cover_photo.large.private_id);
-          await deleteFile(place.cover_photo.thumbnail.private_id);
-          await deleteFile(place.cover_photo.small.private_id);
-        }
+        // if (
+        //   place.cover_photo.large.private_id != undefined &&
+        //   place.cover_photo.large.private_id !=
+        //   post.content[0].image.large.private_id
+        // ) {
+        //   await deleteFile(place.cover_photo.large.private_id);
+        //   await deleteFile(place.cover_photo.thumbnail.private_id);
+        //   await deleteFile(place.cover_photo.small.private_id);
+        // }
 
         //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
         const reviews = await Review.find({ place_id: place._id });
@@ -791,7 +825,7 @@ exports.deletePost = async (req, res) => {
         //GET ALL REVIEWS OF THE PLACE AND REMOVE
         await Review.deleteMany({ place_id: place._id });
         await place.remove();
-      }else{
+      } else {
         //IF PLACE COVER SAME AS POST
         //REMOVE COVER PICTURE IF IMAGE NOT SAME AS POST IMAGE
         if (
@@ -922,7 +956,7 @@ exports.likeUnlikePost = async (req, res) => {
       });
 
       //SEND POST LIKE IN APP NOTIFICATION
-      if(post.user.toString() !== authUser._id.toString()){
+      if (post.user.toString() !== authUser._id.toString()) {
         sendPostLikeNotification(authUser, post);
       }
 
@@ -971,6 +1005,7 @@ exports.savePost = async (req, res) => {
       res.status(200).json({
         success: true,
         message: "You have successfully unsave the post",
+        saved:false
       });
       return;
     }
@@ -987,7 +1022,8 @@ exports.savePost = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "You have successfully save the post",
-    });
+      saved: true,
+    })
   } catch (error) {
     errors.general = error.message;
     res.status(500).json({
@@ -996,6 +1032,66 @@ exports.savePost = async (req, res) => {
     });
   }
 };
+
+
+//Save and Unsave post
+exports.savePostNew = async (req, res) => {
+  let errors = {}
+  try {
+    const postId = req.params.id
+    const { authUser } = req.body
+
+    const post = await Post.findById(postId)
+    //IF NOT POST FOUND
+    if (!post) {
+      errors.general = "Post not found"
+      res.status(404).json({
+        success: false,
+        message: errors,
+      })
+    }
+
+    //If post is already save by user
+    if (post.saved.includes(authUser._id)) {
+      const index = post.saved.indexOf(authUser._id)
+      post.saved.splice(index, 1)
+      await post.save()
+
+      //Remove from SavePostPlace table
+      await SavePostPlace.deleteOne({
+        and: [{ user: authUser._id }, { post: post._id }],
+      })
+
+      res.status(200).json({
+        success: true,
+        message: "You have successfully unsave the post",
+        saved: false,
+      })
+      return
+    }
+
+    post.saved.push(authUser._id)
+    await post.save()
+
+    //Add in SavePostPlace table
+    await SavePostPlace.create({
+      user: authUser._id,
+      post: post._id,
+    })
+
+    res.status(200).json({
+      success: true,
+      message: "You have successfully save the post",
+      saved: true,
+    })
+  } catch (error) {
+    errors.general = error.message
+    res.status(500).json({
+      success: false,
+      error: errors,
+    })
+  }
+}
 
 //RANDOMIZE ARRAY
 // function shuffleArray(array) {
@@ -1045,16 +1141,18 @@ function shuffleArray(array) {
 exports.randomPosts = async (req, res) => {
   let errors = {};
   try {
-    const { ip, authUser, skip, limit } = req.body;
-    // console.log(skip);
+    const { ip, authUser, skip } = req.body;
+    const limit = 5000;
     let posts;
     if (skip === undefined || skip === null) {
       //Random post form post screen, showing others post
-      posts = await Post.find({ $and: [
+      posts = await Post.find({
+        $and: [
           { user: { $nin: authUser.blocked_users } },
           { user: { $nin: authUser.reported_users } },
           { _id: { $nin: authUser.reported_posts } }
-        ]})
+        ]
+      })
         .select("_id content name place createdAt")
         .populate("place", "name display_name address alias display_address display_address_available original_place_id")
         // .or([{ 'status': 'active' }, { 'status': 'silent' }])
@@ -1067,11 +1165,13 @@ exports.randomPosts = async (req, res) => {
         .sort({ createdAt: -1 });
     } else {
       //Random post form explorer screen, showing all posts
-      posts = await Post.find({$and: [
+      posts = await Post.find({
+        $and: [
           { user: { $nin: authUser.blocked_users } },
           { user: { $nin: authUser.reported_users } },
           { _id: { $nin: authUser.reported_posts } }
-        ]})
+        ]
+      })
         .select("_id content name place createdAt")
         .populate("place", "name display_name address alias display_address display_address_available original_place_id")
         .where("status").equals("active")
@@ -1102,9 +1202,9 @@ exports.randomPosts = async (req, res) => {
     let randomPosts = [];
     //SUFFLE ARRAY
     if (posts.length > 0) {
-      if (skip === undefined || skip === null){
+      if (skip === undefined || skip === null) {
         randomPosts = shuffleArraytoNew(posts, 6);
-      }else{
+      } else {
         randomPosts = shuffleArray(posts);
       }
     }
@@ -1118,19 +1218,19 @@ exports.randomPosts = async (req, res) => {
     }
 
     randomPosts.forEach((post) => {
-      if(post.place.display_name){
+      if (post.place.display_name) {
         post.place.name = post.place.display_name
       }
       if (post.place.address.short_country == country) {
-        if (post.place.display_address_for_own_country != ""){
+        if (post.place.display_address_for_own_country != "") {
           post.place.local_address = post.place.display_address_for_own_country.substr(2);
-        }else{
+        } else {
           post.place.local_address = post.place.display_address_for_own_country;
         }
       } else {
-        if (post.place.display_address_for_other_country != ""){
+        if (post.place.display_address_for_other_country != "") {
           post.place.short_address = post.place.display_address_for_other_country.substr(2);
-        }else{
+        } else {
           post.place.short_address = post.place.display_address_for_other_country
         }
       }
@@ -1154,11 +1254,11 @@ exports.randomPosts = async (req, res) => {
 exports.viewFollowersPosts = async (req, res) => {
   let errors = {};
   try {
-    const { authUser, skip, limit, hasFollowing, ip, suggestedSkip } = req.body;
+    const { authUser, skip, ip } = req.body;
+    const limit = 5000;
     let posts = [];
-    let following = true;
     let skipCount = skip;
-    let suggestedSkipCount = suggestedSkip;
+    let noMorePosts = false;
 
     posts = await Post.find({ user: { $in: authUser.following } })
       // .where("status").equals("active")
@@ -1176,50 +1276,51 @@ exports.viewFollowersPosts = async (req, res) => {
 
     skipCount = skip + posts.length;
 
-    if (posts.length === 0) {
-      following = false;
-      posts = await Post.find({
-        $and: [
-          { user: { $nin: authUser.following } },
-          { user: { $ne: authUser._id } },
-          { user: { $nin: authUser.blocked_users } },
-          { user: { $nin: authUser.reported_users } },
-          { _id: { $nin: authUser.reported_posts } }
-        ],
-      })
-        .where("status").equals("active")
-        .where("coordinate_status").equals(true)
-        .where('deactivated').ne(true)
-        .where("terminated").ne(true)
-        .select(
-          "_id user place createdAt status coordinate_status content caption like like_count comments saved"
-        )
-        .populate(
-          "user",
-          "name username total_contribution profileImage foiti_ambassador"
-        )
-        .populate("place")
-        .sort({ createdAt: -1 })
-        .skip(suggestedSkip)
-        .limit(limit);
-      if (posts.length > 0) {
-        posts = shuffleArray(posts);
-      }
-      let count = suggestedSkip;
-      suggestedSkipCount = count + posts.length;
-    } else {
-      following = true;
-    }
+    // if (posts.length === 0) {
+    //   following = false;
+    //   posts = await Post.find({
+    //     $and: [
+    //       { user: { $nin: authUser.following } },
+    //       { user: { $ne: authUser._id } },
+    //       { user: { $nin: authUser.blocked_users } },
+    //       { user: { $nin: authUser.reported_users } },
+    //       { _id: { $nin: authUser.reported_posts } }
+    //     ],
+    //   })
+    //     .where("status").equals("active")
+    //     .where("coordinate_status").equals(true)
+    //     .where('deactivated').ne(true)
+    //     .where("terminated").ne(true)
+    //     .select(
+    //       "_id user place createdAt status coordinate_status content caption like like_count comments saved"
+    //     )
+    //     .populate(
+    //       "user",
+    //       "name username total_contribution profileImage foiti_ambassador"
+    //     )
+    //     .populate("place")
+    //     .sort({ createdAt: -1 })
+    //     .skip(suggestedSkip)
+    // //     .limit(limit);
+    //   if (posts.length > 0) {
+    //     posts = shuffleArray(posts);
+    //   }
+    //   let count = suggestedSkip;
+    //   suggestedSkipCount = count + posts.length;
+    // } else {
+    //   following = true;
+    // }
 
-    if (!posts) {
-      return res.status(200).json({
-        success: true,
-        posts,
-        suggestedSkip: suggestedSkipCount,
-        skip: skipCount,
-        hasFollowing: following,
-      });
-    }
+    // if (!posts) {
+    //   return res.status(200).json({
+    //     success: true,
+    //     posts,
+    //     suggestedSkip: suggestedSkipCount,
+    //     skip: skipCount,
+    //     hasFollowing: following,
+    //     limit
+    //   });
+    // }
 
     let country = "";
     const location = await getCountry(ip);
@@ -1229,23 +1330,28 @@ exports.viewFollowersPosts = async (req, res) => {
       country = "IN";
     }
 
-    posts.forEach((post) => {
-      if (post.place.display_name) {
-        post.place.name = post.place.display_name;
-      }
-      if (post.place.address.short_country == country) {
-        post.place.local_address = post.place.display_address_for_own_country_home;
-      } else {
-        post.place.short_address = post.place.display_address_for_other_country_home;
-      }
-    });
+    if (posts.length > 0) {
+      posts.forEach((post) => {
+        if (post.place.display_name) {
+          post.place.name = post.place.display_name;
+        }
+        if (post.place.address.short_country == country) {
+          post.place.local_address = post.place.display_address_for_own_country_home;
+        } else {
+          post.place.short_address = post.place.display_address_for_other_country_home;
+        }
+      });
+    }
+
+    if (posts.length < limit) {
+      noMorePosts = true;
+    }
 
     return res.status(200).json({
       success: true,
       posts,
-      suggestedSkip: suggestedSkipCount,
-      skip: skipCount,
-      hasFollowing: following,
+      noMorePosts,
+      skip: skipCount
     });
   } catch (error) {
     errors.general = "Something went wrong. Please try again";
@@ -1305,10 +1411,10 @@ exports.addPostLocationClickedDetails = async (req, res) => {
 };
 
 exports.viewSavedPosts = async (req, res) => {
-  let errors ={};
-  try{
+  let errors = {};
+  try {
     const { authUser, skip, limit, ip } = req.body;
-    
+
     const posts = await Post.find({ saved: { $in: authUser._id } })
       .where('deactivated').ne(true)
       .where("terminated").ne(true)
@@ -1333,7 +1439,7 @@ exports.viewSavedPosts = async (req, res) => {
     }
 
     posts.forEach((post) => {
-      if(post.place.display_name){
+      if (post.place.display_name) {
         post.place.name = post.place.display_name;
       }
       if (post.place.address.short_country == country) {
@@ -1355,13 +1461,13 @@ exports.viewSavedPosts = async (req, res) => {
       skipData,
       success: true,
     })
-    
-  }catch(error){
+
+  } catch (error) {
     console.log(error);
     errors.general = error.message;
     return res.status(500).json({
       success: false,
-      message:errors
+      message: errors
     })
   }
 }
@@ -1369,7 +1475,7 @@ exports.viewSavedPosts = async (req, res) => {
 //REPORT POST
 exports.reportPost = async (req, res) => {
   let errors = {};
-  try{
+  try {
     const { authUser, post_id, message } = req.body;
     //Validate Object ID
     if (!ObjectId.isValid(post_id)) {
@@ -1379,7 +1485,7 @@ exports.reportPost = async (req, res) => {
       });
     }
 
-    if(message.length > 5000){
+    if (message.length > 5000) {
       errors.message = "Please write message within 5000 characters.";
       return res.status(400).json({
         success: false,
@@ -1389,7 +1495,7 @@ exports.reportPost = async (req, res) => {
 
     const post = await Post.findById(post_id);
     //CHECK IF POST EXIST
-    if(!post){
+    if (!post) {
       errors.general = "Post not found";
       console.log(errors);
       return res.status(404).json({
@@ -1399,17 +1505,17 @@ exports.reportPost = async (req, res) => {
     }
 
     //CHECK IF POST IS UPLOADED BY AUTHENTICATED USER
-    if(post.user.toString() === authUser._id.toString()){
+    if (post.user.toString() === authUser._id.toString()) {
       errors.general = "You cannot report your own post";
       console.log(errors);
       return res.status(401).json({
-        succes:false,
+        succes: false,
         message: errors
       })
     }
 
     const user = await User.findById(authUser._id);
-    if (!user.reported_posts.includes(post._id)){
+    if (!user.reported_posts.includes(post._id)) {
       user.reported_posts.push(post._id);
       await ReportPost.create({
         reporter: user._id,
@@ -1425,7 +1531,7 @@ exports.reportPost = async (req, res) => {
     })
 
 
-  }catch(error){
+  } catch (error) {
     console.log(error);
     errors.general = "Something went wrong. Please try again";
     return res.status(500).json({
@@ -1438,7 +1544,7 @@ exports.reportPost = async (req, res) => {
 //VIEW POST LIKED USERS
 exports.viewPostLikedUsers = async (req, res) => {
   let errors = {};
-  try{
+  try {
     const { post_id } = req.params;
     let { skip, limit } = req.body;
     //Validate Object ID
@@ -1451,7 +1557,7 @@ exports.viewPostLikedUsers = async (req, res) => {
 
     const post = await Post.findById(post_id);
     //CHECK IF POST EXIST
-    if(!post){
+    if (!post) {
       errors.general = "Post not found";
       console.log(errors);
       return res.status(404).json({
@@ -1461,7 +1567,7 @@ exports.viewPostLikedUsers = async (req, res) => {
     }
 
     const users = await User.find({ _id: { $in: post.like } }).select("name total_contribution profileImage").limit(limit).skip(skip);
-    if(users.length > 0){
+    if (users.length > 0) {
       skip = skip + users.length;
     }
 
@@ -1472,7 +1578,7 @@ exports.viewPostLikedUsers = async (req, res) => {
     });
 
 
-  }catch(error){
+  } catch (error) {
     console.log(error);
     errors.general = "Something went wrong. Please try again";
     return res.status(500).json({
@@ -1484,7 +1590,7 @@ exports.viewPostLikedUsers = async (req, res) => {
 
 exports.exploreNearby = async (req, res) => {
   let errors = {};
-  try{
+  try {
     let { skip, currentCoordinate, ip, sortBy, distance } = req.body;
     let limit = 20;
 
@@ -1493,7 +1599,7 @@ exports.exploreNearby = async (req, res) => {
     // const maxDistanceInMeter = Number(distance) * 1609;
     const maxDistanceInMeter = Number(distance) * 1000;
     let posts = [];
-    if (sortBy === "nearest"){
+    if (sortBy === "nearest") {
       posts = await Post.aggregate([
         {
           $geoNear: {
@@ -1542,7 +1648,7 @@ exports.exploreNearby = async (req, res) => {
         { $skip: skip },
         { $limit: limit }
       ]);
-    }else{
+    } else {
       posts = await Post.aggregate([
         {
           $geoNear: {
@@ -1590,7 +1696,7 @@ exports.exploreNearby = async (req, res) => {
             'placeData.display_address_for_other_country': 1,
           }
         },
-        { $sort: { viewers_count: -1, _id:1 } },
+        { $sort: { viewers_count: -1, _id: 1 } },
         { $skip: skip },
         { $limit: limit }
       ]);
@@ -1601,7 +1707,7 @@ exports.exploreNearby = async (req, res) => {
       return { ...doc, placeData: new Place(doc.placeData[0]) }
     });
 
-    if (posts.length > 0){
+    if (posts.length > 0) {
       let country = "";
       const location = await getCountry(ip);
       if (location != null && location.country !== undefined) {
@@ -1634,7 +1740,7 @@ exports.exploreNearby = async (req, res) => {
     skip = skip + posts.length;
 
     let noMorePost = false;
-    if (posts.length < limit){
+    if (posts.length < limit) {
       noMorePost = true;
     }
 
@@ -1644,7 +1750,7 @@ exports.exploreNearby = async (req, res) => {
       noMorePost
     });
 
-  }catch(error){
+  } catch (error) {
     console.log(error);
     errors.general = "Something went wrong, please try again.";
     res.status(500).json({
@@ -1656,11 +1762,11 @@ exports.exploreNearby = async (req, res) => {
 
 exports.copyCoordinates = async (req, res) => {
   return;
-  try{
+  try {
     const posts = await Post.find({ coordinate_status: true });
     posts.forEach(async (post) => {
       const postData = await Post.findById(post._id);
-      if (postData.content[0].coordinate.lat){
+      if (postData.content[0].coordinate.lat) {
         const newArr = [parseFloat(postData.content[0].coordinate.lng), parseFloat(postData.content[0].coordinate.lat)];
         const data = {
           coordinates: newArr
@@ -1673,11 +1779,359 @@ exports.copyCoordinates = async (req, res) => {
     res.status(200).json({
       success: true,
     })
-  }catch(error){
+  } catch (error) {
     console.log(error);
     res.status(500).json({
       success: false,
       message: error.message
+    })
+  }
+}
+
+
+//Eplore post data for map view
+//MAP VIEW
+exports.exploreMapPostData = async (req, res) => {
+  let errors = {};
+  try {
+    let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, ip, skip = 0 } = req.body;
+    const limit = 20;
+    let noMoreData = false;
+
+    // const distInMeter = parseFloat(lngDelta) / 0.00004;
+
+    if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined ||
+      bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
+      topLeftCoords.latitude === undefined || topLeftCoords.longitude === undefined ||
+      bottomRightCoords.latitude === undefined || bottomRightCoords.longitude === undefined
+    ) {
+      return res.status(401).json({
+        success: false
+      })
+    }
+
+    const upperLeftArr = [parseFloat(topLeftCoords.longitude), parseFloat(topLeftCoords.latitude)]
+    const upperRightArr = [parseFloat(topRightCoords.longitude), parseFloat(topRightCoords.latitude)]
+    const bottomRightArr = [parseFloat(bottomRightCoords.longitude), parseFloat(bottomRightCoords.latitude)]
+    const bottomLeftArr = [parseFloat(bottomLeftCoords.longitude), parseFloat(bottomLeftCoords.latitude)]
+
+    let posts = await Post.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              'content.location': {
+                $geoWithin: {
+                  $geometry: {
+                    type: "Polygon",
+                    coordinates: [
+                      [upperLeftArr, bottomLeftArr, bottomRightArr, upperRightArr, upperLeftArr]
+                    ]
+                  }
+                }
+              }
+            },
+            { "coordinate_status": true },
+            { "status": 'active' },
+            { "deactivated": false },
+            { "terminated": false }
+          ]
+        }
+      },
+      {
+        $lookup:
+        {
+          from: "places",
+          localField: "place",
+          foreignField: "_id",
+          as: "placeData",
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          content: 1,
+          coordinate_status: 1,
+          status: 1,
+          deactivated: 1,
+          terminated: 1,
+          location_viewers_count: 1,
+          like_count: 1,
+          viewers_count: 1,
+          place: 1,
+          'placeData.name': 1,
+          'placeData.display_name': 1,
+          'placeData.address': 1,
+          'placeData.display_address': 1,
+          'placeData.types': 1,
+          'placeData.google_types': 1,
+          'placeData.local_address': 1,
+          'placeData.short_address': 1,
+          'placeData.display_address_for_own_country': 1,
+          'placeData.display_address_for_other_country': 1,
+
+        }
+      },
+      { $sort: { location_viewers_count: -1, like_count: -1, viewers_count: -1, _id: 1 } },
+      // { $sort: { like_count: -1, _id: 1 } },
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
+    posts = posts.map(doc => {
+      return { ...doc, place: new Place(doc.placeData[0]) }
+    });
+
+    if (posts.length > 0) {
+      let country = "";
+      const location = await getCountry(ip);
+      if (location != null && location.country !== undefined) {
+        country = location.country;
+      } else {
+        country = "IN";
+      }
+
+      posts.forEach((post) => {
+        if (post.place.display_name) {
+          post.place.name = post.place.display_name;
+        }
+        if (post.place.address.short_country == country) {
+          if (post.place.display_address_for_own_country != "") {
+            post.place.local_address = post.place.display_address_for_own_country.substr(2);
+          } else {
+            post.place.local_address = post.place.display_address_for_own_country;
+          }
+        } else {
+          if (post.place.display_address_for_other_country != "") {
+            post.place.short_address = post.place.display_address_for_other_country.substr(2);
+          } else {
+            post.place.short_address = post.place.display_address_for_other_country
+          }
+        }
+      });
+    }
+
+    if(posts.length < limit){
+      noMoreData = true;
+    }
+    skip = skip + posts.length;
+
+    res.status(200).json({
+      posts,
+      noMoreData,
+      skip
+    });
+
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+
+//Eplore post for map view
+//MAP VIEW
+exports.exploreMapPost = async (req, res) => {
+  let errors = {};
+  try {
+    let { topLeftCoords, topRightCoords, bottomRightCoords, bottomLeftCoords, lngDelta, latDelta, ip } = req.body;
+    // const distInMeter = parseFloat(lngDelta) / 0.00004;
+
+    if (topRightCoords.latitude === undefined || topRightCoords.longitude === undefined ||
+      bottomLeftCoords.latitude === undefined || bottomLeftCoords.longitude === undefined ||
+      topLeftCoords.latitude === undefined || topLeftCoords.longitude === undefined ||
+      bottomRightCoords.latitude === undefined || bottomRightCoords.longitude === undefined
+    ) {
+      return res.status(401).json({
+        success: false
+      })
+    }
+
+    const upperLeftArr = [parseFloat(topLeftCoords.longitude), parseFloat(topLeftCoords.latitude)]
+    const upperRightArr = [parseFloat(topRightCoords.longitude), parseFloat(topRightCoords.latitude)]
+    const bottomRightArr = [parseFloat(bottomRightCoords.longitude), parseFloat(bottomRightCoords.latitude)]
+    const bottomLeftArr = [parseFloat(bottomLeftCoords.longitude), parseFloat(bottomLeftCoords.latitude)]
+
+    let posts = await Post.aggregate([
+      {
+        $match: {
+          $and: [
+            {
+              'content.location': {
+                $geoWithin: {
+                  $geometry: {
+                    type: "Polygon",
+                    coordinates: [
+                      [upperLeftArr, bottomLeftArr, bottomRightArr, upperRightArr, upperLeftArr]
+                    ]
+                  }
+                }
+              }
+            },
+            { "coordinate_status": true },
+            { "status": 'active' },
+            { "deactivated": false },
+            { "terminated": false }
+          ]
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          content: 1,
+          coordinate_status: 1,
+          status: 1,
+          deactivated: 1,
+          terminated: 1,
+          location_viewers_count: 1,
+          like_count: 1,
+          viewers_count: 1
+
+        }
+      },
+      { $sort: { location_viewers_count: -1, like_count: -1, viewers_count: -1, _id: 1 } },
+      { $limit: 100 }
+    ]);
+
+
+    res.status(200).json({
+      posts
+    });
+
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+
+exports.addCoordinates = async (req, res) => {
+  let errors = {};
+  try{
+    const { postId, coordinates, authUser } = req.body;
+
+    //Validate Object ID
+    if (!ObjectId.isValid(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post"
+      });
+    }
+
+    if(!coordinates.lat || !coordinates.lng){
+      return res.status(400).json({
+        success: false,
+        message: "Please select coordinates."
+      })
+    }
+
+    const post = await Post.findById(postId);
+    if(!post){
+      return res.status(404).json({
+        success: false,
+        message: "Post not found"
+      })
+    }
+
+    if(post.user.toString() != authUser._id){
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized to update this post."
+      })
+    }
+
+    const newCoords = {
+      lat: coordinates.lat,
+      lng: coordinates.lng
+    }
+
+    post.content[0].coordinate = newCoords;
+    post.content[0].location = {
+      coordinates: [parseFloat(coordinates.lng), parseFloat(coordinates.lat)]
+    }
+    post.coordinate_status = true;
+    post.manual_coordinates = true;
+    await post.save();
+
+    //Add Contribution
+    let contribution = await Contribution.findOne({ userId: authUser._id });
+    if (!contribution) {
+      contribution = await Contribution({ userId: authUser._id });
+    }
+
+    if (!contribution.photos_with_coordinates.includes(post._id)){
+      contribution.photos_with_coordinates.push(post._id);
+      await contribution.save();
+      //Recalculate total contributions
+      const user = await User.findById(authUser._id);
+      if(user){
+        user.total_contribution = contribution.calculateTotalContribution();
+        await user.save();
+      }
+    }
+
+
+    return res.status(200).json({
+      success: true,
+      message: "Post has been updated successfully.",
+      post
+    })
+
+
+  }catch(error){
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+//Explore map post details
+exports.exploreMapPostDetails = async (req, res) => {
+  let errors = {};
+  try{
+    const { postId } = req.body
+    //Validate Object ID
+    if (!ObjectId.isValid(postId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid post",
+      })
+    }
+
+    const post = await Post.findById(postId)
+      .select("_id name content saved like")
+      .populate("user", "_id name total_contribution profileImage")
+
+    if (!post) {
+      return res.status(404).json({
+        success: false,
+        message: "Post not found",
+      })
+    }
+
+    return res.status(200).json({
+      sucess : true,
+      post
+    })
+  }catch(error){
+    console.log(error)
+    errors.general = "Something went wrong, please try again."
+    res.status(500).json({
+      success: false,
+      message: errors,
     })
   }
 }
