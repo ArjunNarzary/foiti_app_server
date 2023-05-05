@@ -650,16 +650,20 @@ exports.editProfile = async (req, res) => {
             address: place.address,
             coordinates: place.coordinates,
             location: {
-              coordinates: [parseFloat(place.coordinates.lng), parseFloat(place.coordinates.lat)]
+              coordinates: [
+                parseFloat(place.coordinates.lng),
+                parseFloat(place.coordinates.lat),
+              ],
             },
             google_types: place.types,
             created_place: place.created_place,
             open_hours: timingArr,
             phone_number,
-          });
+          })
         }
 
         if (!placeData.users.includes(user._id)) {
+          placeData.review_required = true;
           placeData.users.push(user._id);
           await placeData.save();
           user.place = placeData._id;
