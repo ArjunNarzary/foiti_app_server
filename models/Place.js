@@ -19,7 +19,7 @@ const placeSchema = new mongoose.Schema(
       index: true,
     },
     //This will be the copy of original place name to show in app
-    display_name: String, 
+    display_name: String,
     //This array will be used to search for the place, will be manually added by team
     alias: [String],
     google_place_id: {
@@ -33,7 +33,9 @@ const placeSchema = new mongoose.Schema(
     display_address: {
       locality: String,
       sublocality: String,
-      admin_area_2: String,  //District name
+      premise: String, //manual
+      admin_area_3: String, //manual
+      admin_area_2: String, //District name -> google_admin_area_3
       admin_area_1: String, //State name
       country: String,
       short_country: String,
@@ -53,8 +55,8 @@ const placeSchema = new mongoose.Schema(
     },
     location: {
       type: pointSchema,
-      index: '2dsphere', // Create a special 2dsphere index
-      sparse: true
+      index: "2dsphere", // Create a special 2dsphere index
+      sparse: true,
     },
     google_types: [String],
     //Custom type to show in type field ["Category-> will be used in filtering", "Display in type field"]
@@ -128,7 +130,7 @@ const placeSchema = new mongoose.Schema(
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-      }
+      },
     ],
     //This will be used to check if place is duplicate or not
     duplicate: {
@@ -157,6 +159,10 @@ const placeSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    review_required: {
+      type: Boolean,
+      default: false,
+    },
     destination: {
       type: Boolean,
       default: false,
@@ -171,7 +177,7 @@ const placeSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
-);
+)
 
 //CALCULATE AVG RATING
 placeSchema.virtual("avgRating").get(function () {

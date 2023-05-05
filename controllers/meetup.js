@@ -211,6 +211,7 @@ exports.updateProfile = async (req, res) => {
 
                 if (!placeData.users.includes(user._id)) {
                     placeData.users.push(user._id);
+                    placeData.review_required = true;
                     await placeData.save();
                     user.place = placeData._id;
                 }
