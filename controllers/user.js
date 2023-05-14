@@ -985,10 +985,12 @@ exports.viewOwnProfile = async (req, res) => {
       if (post.location_viewers_count != undefined) {
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
-      if (post.place.duplicate && post.place.original_place_id){
-        return post.place.original_place_id
-      }else{
-        return post.place._id;
+      if(post?.place){
+        if (post?.place?.duplicate && post?.place?.original_place_id){
+          return post.place.original_place_id
+        }else{
+          return post?.place?._id;
+        }
       }
     });
 
@@ -996,7 +998,9 @@ exports.viewOwnProfile = async (req, res) => {
 
     const uniquePlacesVisitedIds = new Set();
     totalPlaces.map((ele) => {
-      uniquePlacesVisitedIds.add(ele.toString());
+      if(ele){
+        uniquePlacesVisitedIds.add(ele.toString());
+      }
     })
 
 
@@ -1008,7 +1012,7 @@ exports.viewOwnProfile = async (req, res) => {
     //Country Visited
     let countryVisited = 0;
     const totalCountriesSaved = posts.map((post) => {
-      return post.place.address.country;
+      return post?.place?.address?.country;
     });
 
     const totalCountries = totalCountriesSaved.filter((c) => {
@@ -1042,7 +1046,7 @@ exports.viewOwnProfile = async (req, res) => {
       tripPlans: activeTrips
     });
   } catch (error) {
-    console.log(error.message);
+    console.log(error);
     errors.general = "Something went wrong while viewing your profile";
     return res.status(500).json({
       success: false,

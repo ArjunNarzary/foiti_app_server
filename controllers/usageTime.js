@@ -105,7 +105,8 @@ exports.setUsageTimeV9 = async (req, res) => {
         })
       }
 
-      userSession.totalTime += timeDifference
+      userSession.totalTime += timeDifference;
+      userSession.sessions += 1;
       await userSession.save()
       return res.status(200).json({
         success: true,
