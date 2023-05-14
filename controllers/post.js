@@ -266,7 +266,9 @@ exports.createPost = async (req, res) => {
         place: place._id,
         user: user._id,
       });
+      place.review_required = user.account_status === "active" ? true : false;
       contribution.added_places.push(place._id);
+      await place.save();
     } else {
       //ADD to contribution table if this place creation contribution is not added before
       const findPostCreatedBy = await PlaceAddedBy.findOne({
@@ -562,7 +564,8 @@ exports.editPost = async (req, res) => {
             },
             created_place: details.created_place,
             open_hours: timingArr,
-            phone_number
+            phone_number,
+            review_required: post?.status === "active" ? true : false,
           });
           newPlaceCreated = true;
         } else {
