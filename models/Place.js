@@ -110,7 +110,7 @@ const placeSchema = new mongoose.Schema(
     location_viewers: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "DirectionClick",
+        ref: "PlaceLocationViewer",
       },
     ],
     location_viewers_count: Number,
@@ -214,7 +214,12 @@ placeSchema.virtual("display_address_for_own_country").get(function () {
   ) {
     addressArr.push(this.address.administrative_area_level_1);
   }
-  if (
+    if (
+      this.address.administrative_area_level_3 != undefined &&
+      this.address.administrative_area_level_3 != this.name
+    ) {
+      addressArr.push(this.address.administrative_area_level_3);
+    }else if (
     this.address.administrative_area_level_2 != undefined &&
     this.address.administrative_area_level_2 != this.name
   ) {
@@ -310,6 +315,11 @@ placeSchema.virtual("display_address_for_own_country_place").get(function () {
       addressArr.push(this.address.administrative_area_level_1);
     }
     if (
+      this.address.administrative_area_level_3 != undefined &&
+      this.address.administrative_area_level_3 != this.name
+    ) {
+      addressArr.push(this.address.administrative_area_level_3);
+    }else if (
       this.address.administrative_area_level_2 != undefined &&
       this.address.administrative_area_level_2 != this.name
     ) {
@@ -377,6 +387,11 @@ placeSchema.virtual("display_address_for_other_country").get(function () {
       this.address.administrative_area_level_1 != undefined
     ) {
       arrAddress.push(this.address.administrative_area_level_1);
+    } else if (
+      this.address.administrative_area_level_3 != undefined &&
+      this.address.administrative_area_level_3 != this.name
+    ) {
+      arrAddress.push(this.address.administrative_area_level_3);
     } else if (
       this.address.administrative_area_level_2 != undefined &&
       this.address.administrative_area_level_2 != this.name
@@ -487,6 +502,11 @@ placeSchema.virtual("display_address_for_other_country_place").get(function () {
     ) {
       arrAddress.push(this.address.administrative_area_level_1);
     } else if (
+      this.address.administrative_area_level_3 != undefined &&
+      this.address.administrative_area_level_3 != this.name
+    ) {
+      arrAddress.push(this.address.administrative_area_level_3);
+    } else if (
       this.address.administrative_area_level_2 != undefined &&
       this.address.administrative_area_level_2 != this.name
     ) {
@@ -526,6 +546,118 @@ placeSchema.virtual("display_address_for_other_country_place").get(function () {
 
   return address;
 });
+
+//TODO::SET VIRTUAL FOR DISPLAYING ADDRESS FOR OWN COUNTRY FOR MEETUP USERLIST
+placeSchema.virtual("display_address_for_own_country_meetup_list").get(function () {
+  let addressArr = [];
+
+  if (this.display_address_available) {
+    if (this.display_address.locality) {
+      addressArr.push(this.display_address.locality);
+      if(this.display_address.admin_area_1 && (this.display_address.admin_area_1.toLowerCase() !== this.display_address.locality.toLowerCase())){
+        addressArr.push(this.display_address.admin_area_1);
+      }
+    }else{
+      addressArr.push(this.name);
+      if(this.display_address.admin_area_1 && (this.display_address.admin_area_1.toLowerCase() !== this.name.toLowerCase())){
+        addressArr.push(this.display_address.admin_area_1);
+      }
+    }
+  } else {
+    if (this.address.locality) {
+      addressArr.push(this.address.locality);
+      if(this?.address?.administrative_area_level_1 && (this.address.administrative_area_level_1.toLowerCase() !== this.address.locality.toLowerCase())){
+        addressArr.push(this.address.administrative_area_level_1);
+      }
+    }else{
+      addressArr.push(this.name);
+      if(this.address.administrative_area_level_1 && (this.address.administrative_area_level_1.toLowerCase() !== this.name.toLowerCase())){
+        addressArr.push(this.address.administrative_area_level_1);
+      }
+    }
+  }
+
+  let address = addressArr.join((", "));
+  return address
+})
+
+placeSchema.virtual("display_address_for_own_country_meetup_profile").get(function () {
+  let addressArr = [];
+  let checkAdd = [];
+
+  if (this?.display_name) {
+    addressArr.push(this.display_name);
+    checkAdd.push(this.display_name.toLowerCase());
+  } else {
+    addressArr.push(this.name);
+    checkAdd.push(this.name.toLowerCase());
+  }
+
+  if (this?.display_address_available) {
+    if (this?.display_address?.locality && !checkAdd.includes(this?.display_address?.locality.toLowerCase())) {
+      addressArr.push(this.display_address?.locality)
+      checkAdd.push(this.display_address?.locality.toLowerCase());
+    }
+    if (this?.display_address?.admin_area_1 && !checkAdd.includes(this?.display_address?.admin_area_1.toLowerCase())) {
+      addressArr.push(this.display_address?.admin_area_1)
+      checkAdd.push(this.display_address?.admin_area_1.toLowerCase());
+    }
+  } else {
+    if (this?.address?.locality && !checkAdd.includes(this?.address?.locality.toLowerCase())) {
+      addressArr.push(this.address?.locality)
+      checkAdd.push(this.address?.locality.toLowerCase());
+    }
+    if (this?.address?.administrative_area_level_1 && !checkAdd.includes(this?.address?.administrative_area_level_1.toLowerCase())) {
+      addressArr.push(this.address?.administrative_area_level_1)
+    }
+  }
+
+  return addressArr.join(', ');
+})
+
+placeSchema.virtual("display_address_for_other_country_meetup_profile").get(function () {
+  let addressArr = [];
+  let checkAdd = [];
+
+  if (this?.display_name) {
+    addressArr.push(this.display_name);
+    checkAdd.push(this.display_name.toLowerCase());
+  } else {
+    addressArr.push(this.name);
+    checkAdd.push(this.name.toLowerCase());
+  }
+
+  if (this?.display_address_available) {
+    if (this?.display_address?.locality && !checkAdd.includes(this?.display_address?.locality.toLowerCase())) {
+      addressArr.push(this.display_address?.locality)
+      checkAdd.push(this.display_address?.locality.toLowerCase());
+    }
+    if (this?.display_address?.admin_area_1 && !checkAdd.includes(this?.display_address?.admin_area_1.toLowerCase())) {
+      addressArr.push(this.display_address?.admin_area_1)
+      checkAdd.push(this.display_address?.admin_area_1.toLowerCase());
+    }
+
+    if (this?.display_address?.country && !checkAdd.includes(this?.display_address?.country.toLowerCase())) {
+      addressArr.push(this.display_address?.country);
+    }
+  } else {
+    if (this?.address?.locality && !checkAdd.includes(this?.address?.locality.toLowerCase())) {
+      addressArr.push(this.address?.locality)
+      checkAdd.push(this.address?.locality.toLowerCase());
+    }
+    if (this?.address?.administrative_area_level_1 && !checkAdd.includes(this?.address?.administrative_area_level_1.toLowerCase())) {
+      addressArr.push(this.address?.administrative_area_level_1);
+      checkAdd.push(this.address?.administrative_area_level_1.toLowerCase());
+    }
+    if (this?.address?.country && !checkAdd.includes(this?.address?.country.toLowerCase())) {
+      addressArr.push(this.address?.country)
+    }
+  }
+
+  return addressArr.join(', ');
+})
+
+
 
 //Update view count
 placeSchema.pre("save", function (next) {

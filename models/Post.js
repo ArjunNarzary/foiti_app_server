@@ -90,7 +90,7 @@ const postSchema = new mongoose.Schema(
     location_viewers: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "DirectionClick",
+        ref: "PostLocationViewer",
       },
     ],
     location_viewers_count: Number,

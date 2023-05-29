@@ -124,6 +124,8 @@ exports.autocompletePlace = async (req, res) => {
       })
         .where("duplicate")
         .ne(true)
+        .where("reviewed_status")
+        .ne(false)
         .select(
           "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
         )
@@ -133,6 +135,8 @@ exports.autocompletePlace = async (req, res) => {
       results = await Place.find({ name: { $regex: `^${trimedPlace}`, $options: "i" } })
         .where("duplicate")
         .ne(true)
+        .where("reviewed_status")
+        .ne(false)
         .select(
           "_id name address cover_photo short_address local_address types destination show_destinations alias display_address display_address_available destination"
         )
@@ -2107,7 +2111,7 @@ exports.exploreMapPlaceV8 = async (req, res) => {
     const skipArr = [];
 
     for (let i = 0; i < places.length; i++) {
-      if(selectedPlaces.length >= 6) break;
+      if(selectedPlaces.length >= 10) break;
       if (skipArr.includes(places[i]._id)) continue;
       places.map(p => {
         const coods = {
@@ -2214,23 +2218,43 @@ function checkCoordsIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsTo
 
 function checkCoordsForAttractionIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsToCheck){
   const topLeftCoords = {
-    latitude: currentCoords.latitude + (latDelta / 11),
-    longitude: currentCoords.longitude - (lngDelta / 5)
+    latitude: currentCoords.latitude + (latDelta / 10),
+    longitude: currentCoords.longitude - (lngDelta / 4)
+  }
+
+  const topCenterCoords = {
+    latitude: currentCoords.latitude + (latDelta / 7),
+    longitude: currentCoords.longitude
   }
 
   const topRightCoords = {
-    latitude: currentCoords.latitude + (latDelta / 11),
-    longitude: currentCoords.longitude + (lngDelta / 5)
+    latitude: currentCoords.latitude + (latDelta / 10),
+    longitude: currentCoords.longitude + (lngDelta / 4)
+  }
+
+  const rightCenterCoords = {
+    latitude: currentCoords.latitude,
+    longitude: currentCoords.longitude + (lngDelta / 3.5)
   }
 
   const bottomRightCoords = {
-    latitude: currentCoords.latitude - (latDelta / 11),
-    longitude: currentCoords.longitude + (lngDelta / 5)
+    latitude: currentCoords.latitude - (latDelta / 10),
+    longitude: currentCoords.longitude + (lngDelta / 4)
+  }
+
+  const bottomCenterCoords = {
+    latitude: currentCoords.latitude - (latDelta / 7),
+    longitude: currentCoords.longitude
   }
 
   const bottomLeftCoords = {
-    latitude: currentCoords.latitude - (latDelta / 11),
-    longitude: currentCoords.longitude - (lngDelta / 5)
+    latitude: currentCoords.latitude - (latDelta / 10),
+    longitude: currentCoords.longitude - (lngDelta / 4)
+  }
+
+  const leftCenterCoords = {
+    latitude: currentCoords.latitude,
+    longitude: currentCoords.longitude - (lngDelta / 3.5)
   }
   // const topLeftCoords = {
   //   latitude: currentCoords.latitude + (latDelta / 26),
@@ -2254,9 +2278,13 @@ function checkCoordsForAttractionIsInsidePolygone(currentCoords, latDelta, lngDe
 
   return  isPointInPolygon(coordsToCheck, [
     topLeftCoords,
+    topCenterCoords,
     topRightCoords,
+    rightCenterCoords,
     bottomRightCoords,
+    bottomCenterCoords,
     bottomLeftCoords,
+    leftCenterCoords,
     topLeftCoords
   ]);
 }

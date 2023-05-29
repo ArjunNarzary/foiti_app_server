@@ -28,6 +28,7 @@ const ReportUser = require("../models/ReportUser");
 const Place = require("../models/Place");
 const Review = require("../models/Review");
 const TripPlan = require("../models/TripPlan");
+const { calculateMeetupPoints } = require("../utils/handles");
 var ObjectId = require("mongoose").Types.ObjectId;
 
 function createError(errors, validate) {
@@ -671,6 +672,22 @@ exports.editProfile = async (req, res) => {
       }
     }
 
+    const meetupPoint = calculateMeetupPoints(
+      user?.bio,
+      user?.meetup_reason,
+      user?.gender,
+      user?.dob,
+      user?.place?._id,
+      user?.profileImage?.thumbnail?.private_id,
+      user?.interests,
+      user?.movies_books_music,
+      user?.languages,
+      user?.occupation,
+      user?.education
+    )
+
+
+    user.meetup_points = meetupPoint;
     await user.save();
 
     //SET MEETUP STATUS TO TRUE
@@ -1455,6 +1472,9 @@ exports.uploadProfileImage = async (req, res) => {
     }
 
     //Resize Image for large DP
+    const sharpExtraLarge = await sharp(req.file.path).resize(500).toBuffer();
+    const resultExtraLarge = await uploadFile(req.file, sharpExtraLarge);
+    //Resize Image for large DP
     const sharpLarge = await sharp(req.file.path).resize(200).toBuffer();
     const resultLarge = await uploadFile(req.file, sharpLarge);
     //Resize Image for thumbnail
@@ -1463,10 +1483,17 @@ exports.uploadProfileImage = async (req, res) => {
 
     //If not empty delete file from S3
     if (user.profileImage.large.private_id != null) {
+      if (user.profileImage.extraLarge.private_id != null){
+        await deleteFile(user.profileImage.extraLarge.private_id);
+      }
       await deleteFile(user.profileImage.large.private_id);
       await deleteFile(user.profileImage.thumbnail.private_id);
     }
     const newData = {
+      extraLarge: {
+        public_url: resultExtraLarge.Location,
+        private_id: resultExtraLarge.Key,
+      },
       large: {
         public_url: resultLarge.Location,
         private_id: resultLarge.Key,
@@ -1477,6 +1504,24 @@ exports.uploadProfileImage = async (req, res) => {
       },
     };
     user.profileImage = newData;
+
+    const meetupPoint = calculateMeetupPoints(
+      user?.bio,
+      user?.meetup_reason,
+      user?.gender,
+      user?.dob,
+      user?.place?._id,
+      user?.profileImage?.thumbnail?.private_id,
+      user?.interests,
+      user?.movies_books_music,
+      user?.languages,
+      user?.occupation,
+      user?.education
+    )
+
+
+    user.meetup_points = meetupPoint;
+
     await user.save();
 
     //delete file from server storage
