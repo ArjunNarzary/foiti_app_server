@@ -41,6 +41,10 @@ const userSchema = new mongoose.Schema({
       public_url: String,
       private_id: String,
     },
+    extraLarge: {
+      public_url: String,
+      private_id: String,
+    },
   },
   coverImage: {
     thumbnail: {
@@ -186,6 +190,18 @@ const userSchema = new mongoose.Schema({
   hidden_meetup_profile: {
     type: Boolean,
     default: false
+  },
+  /**
+   * MEETUP POINT CATEGORIES
+  - bio and meetup_reason == <10 is 0pts, 11 to 50 is 5pts and geater than 50 is 10pts.
+  - gender, dob and address == 5pts each,
+  - if profileImage exist = 10pts
+  - interests & movies_books_music  = 1 - 10 is 0pts, 11 to 50 is 5pts and geater than 50 is 10pts.
+  - if languages, occupation and education exist = 5pts each
+   */
+  meetup_points: {
+    type: Number,
+    default: 0
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,

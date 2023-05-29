@@ -19,6 +19,7 @@ const PostLocationViewer = require("../models/PostLocationViewer");
 const { deleteNotificationOnUnlike, sendPostLikeNotification, sendNewPostNotification } = require("../utils/sendInAppNotification");
 const ReportPost = require("../models/ReportPost");
 const { formatTiming } = require("../utils/handles");
+const { isPointInPolygon } = require("geolib");
 var ObjectId = require('mongoose').Types.ObjectId;
 
 exports.createContributionPoints = async (req, res) => {
@@ -1372,6 +1373,7 @@ exports.addPostLocationClickedDetails = async (req, res) => {
   try {
     const postId = req.params.id;
     const { authUser } = req.body;
+    console.log(postId)
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -1998,9 +2000,41 @@ exports.exploreMapPost = async (req, res) => {
 
         }
       },
-      { $sort: { location_viewers_count: -1, like_count: -1, viewers_count: -1, _id: 1 } },
-      { $limit: 100 }
+      // { $sort: { location_viewers_count: -1, like_count: -1, viewers_count: -1, _id: 1 } },
+      { $sort: { viewers_count: -1, location_viewers_count: -1, like_count: -1, _id: 1 } },
+      { $limit: 500 }
     ]);
+
+
+    const selectedPost = [];
+    const skipArr = [];
+
+    for (let i = 0; i < posts.length; i++) {
+      if (selectedPost.length >= 100) break;
+      if (skipArr.includes(posts[i]._id)) continue;
+      posts.map(p => {
+        const coods = {
+          latitude: parseFloat(p.content[0].location.coordinates[1]),
+          longitude: parseFloat(p.content[0].location.coordinates[0])
+        }
+
+        const currentCoods = {
+          latitude: parseFloat(posts[i].content[0].location.coordinates[1]),
+          longitude: parseFloat(posts[i].content[0].location.coordinates[0])
+
+        }
+
+        if ((p._id.toString() !== posts[i]._id.toString()) && checkCoordsForPostIsInsidePolygone(currentCoods, latDelta, lngDelta, coods)) {
+          isNear = true;
+          skipArr.push(p._id);
+        }
+
+      });
+
+      selectedPost.push(new Post(posts[i]));
+    }
+
+    posts = selectedPost;
 
 
     res.status(200).json({
@@ -2137,4 +2171,38 @@ exports.exploreMapPostDetails = async (req, res) => {
       message: errors,
     })
   }
+}
+
+
+
+
+
+function checkCoordsForPostIsInsidePolygone(currentCoords, latDelta, lngDelta, coordsToCheck) {
+  const topLeftCoords = {
+    latitude: currentCoords.latitude + (latDelta / 60),
+    longitude: currentCoords.longitude - (lngDelta / 30)
+  }
+
+  const topRightCoords = {
+    latitude: currentCoords.latitude + (latDelta / 60),
+    longitude: currentCoords.longitude + (lngDelta / 30)
+  }
+
+  const bottomRightCoords = {
+    latitude: currentCoords.latitude - (latDelta / 60),
+    longitude: currentCoords.longitude + (lngDelta / 30)
+  }
+
+  const bottomLeftCoords = {
+    latitude: currentCoords.latitude - (latDelta / 60),
+    longitude: currentCoords.longitude - (lngDelta / 30)
+  }
+
+  return isPointInPolygon(coordsToCheck, [
+    topLeftCoords,
+    topRightCoords,
+    bottomRightCoords,
+    bottomLeftCoords,
+    topLeftCoords
+  ]);
 }

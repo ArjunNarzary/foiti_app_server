@@ -104,3 +104,75 @@ const getTime = (timeRange) => {
         }
     }
 }
+
+exports.calculateMeetupPoints = (bio = undefined, 
+                                meetupReason = undefined, 
+                                gender = undefined, 
+                                dob = undefined, 
+                                address = undefined, 
+                                profile = undefined, 
+                                interest = undefined, 
+                                movies = undefined, 
+                                languages = [], 
+                                occupation = undefined,
+                                education = undefined 
+                                ) => 
+        {
+            let totalPoint = 0;
+            if(bio){
+                if(bio.length > 10 && bio.length <= 50){
+                    totalPoint += 5;
+                }else if(bio.length > 50){
+                    totalPoint += 10
+                }
+            }
+
+            if(meetupReason){
+                if (meetupReason.length > 10 && meetupReason.length <= 50) {
+                    totalPoint += 5;
+                } else if (meetupReason.length > 50) {
+                    totalPoint += 10;
+                }
+            }
+
+            if (gender){
+                totalPoint += 5;
+            }
+            if(dob){
+                totalPoint += 5;
+            }
+            if(address){
+                totalPoint += 5;
+            }
+            if(profile){
+                totalPoint += 10;
+            }
+
+            if (interest) {
+                if (interest.length > 10 && interest.length <= 50) {
+                    totalPoint += 5;
+                } else if (interest.length > 50) {
+                    totalPoint += 10
+                }
+            }
+
+            if (movies) {
+                if (movies.length > 10 && movies.length <= 50) {
+                    totalPoint += 5;
+                } else if (movies.length > 50) {
+                    totalPoint += 10
+                }
+            }
+
+            if (languages.length > 0) {
+                totalPoint += 5;
+            }
+            if (occupation) {
+                totalPoint += 5;
+            }
+            if (education) {
+                totalPoint += 5;
+            }
+
+            return totalPoint;
+        }
