@@ -38,6 +38,8 @@ const {
   googleLogin,
   facebookLogin,
   getHomeTown,
+  viewOthersProfilev10,
+  viewOwnProfilev10,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -65,6 +67,10 @@ router
   .get(isAuthenticated, viewOwnProfile)
   .post(isAuthenticated, addCurrentLocation)
   .delete(isAuthenticated, removeCurrentLocation);
+  
+  //TODO::v10
+router
+  .route("/v10").get(isAuthenticated, viewOwnProfilev10);
 
 //GET USER HOME TOWN
 router.route('/hometown').get(isAuthenticated, getHomeTown);
@@ -126,6 +132,9 @@ router.route("/block").post(isAuthenticated, blockUser)
                       .get(isAuthenticated, blockedList)
                       .put(isAuthenticated, unBlockUser);
 router.route("/report").post(isAuthenticated, reportUser);
+
+router
+  .route("/v10/:id").get(isAuthenticated, viewOthersProfilev10);
 
 // ==============ADD ROUTES ABOVE THIS ====================
 //FOLLOW UNFOLLOW VIEW OTHERS PROFILE USER

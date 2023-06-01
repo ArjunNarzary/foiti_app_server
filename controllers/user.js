@@ -943,8 +943,8 @@ exports.updatePhone = async (req, res) => {
   }
 };
 
-//View own profile
-exports.viewOwnProfile = async (req, res) => {
+//TODO::View own profile v10
+exports.viewOwnProfilev10 = async (req, res) => {
   let errors = {};
   try {
     const { authUser } = req.body;
@@ -970,26 +970,36 @@ exports.viewOwnProfile = async (req, res) => {
       }
     }
 
+
+
     if (user.place?._id){
-      if (user.place.address.short_country == country){
-        if (user.place.display_address_for_own_country_home != "") {
-        user.place.local_address =
-          user.place.display_address_for_own_country_home;
-        } else {
-          user.place.local_address = user.place.display_address_for_own_country_home;
+      if (user.place?.duplicate && user?.place?.original_place_id){
+        const originalPlace = await Place.findById(user?.place?.original_place_id);
+        if(originalPlace){
+          if (originalPlace.address.short_country == country){
+            user.place.local_address = originalPlace?.display_name ? originalPlace?.display_name : originalPlace?.name + originalPlace.display_address_for_own_country_home;
+            }else{
+            user.place.short_address =
+              originalPlace?.display_name ? originalPlace?.display_name : originalPlace?.name + originalPlace.display_address_for_other_country_home;
+            }
+        }else{
+          if (user.place.address.short_country == country) {
+            user.place.local_address = user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_own_country_home;
+          } else {
+            user.place.short_address =
+              user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_other_country_home;
+          }
         }
       }else{
-        if (user.place.display_address_for_other_country_home != "") {
-        user.place.short_address =
-          user.place.display_address_for_other_country_home;
-      } else {
-        user.place.short_address =
-          user.place.display_address_for_other_country_home;
-      }
+          if (user.place.address.short_country == country){
+            user.place.local_address = user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_own_country_home;
+          }else{
+            user.place.short_address =
+              user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_other_country_home;
+          }
       }
     }
 
-    // console.log(user);
 
     //COUNT TOTAL POST UPLOADS
     let posts = await Post.find({ user: user._id }).populate("place");
@@ -1072,6 +1082,318 @@ exports.viewOwnProfile = async (req, res) => {
   }
 };
 
+//View own profile
+exports.viewOwnProfile = async (req, res) => {
+  let errors = {};
+  try {
+    const { authUser } = req.body;
+    const { ip } = req.headers;
+    // const user = authUser;
+    const user = await User.findById(authUser._id).populate("currently_in").populate("place");
+    //FORMAT ADDRESS
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    if (user.currently_in?.name != undefined) {
+      if (user.currently_in.address.short_country == country) {
+        user.currently_in.formattedAddress =
+          user.currently_in.display_address_for_own_country;
+      } else {
+        user.currently_in.formattedAddress =
+          user.currently_in.display_address_for_other_country;
+      }
+    }
+
+
+
+    if (user.place?._id){
+      if (user.place?.duplicate && user?.place?.original_place_id){
+        const originalPlace = await Place.findById(user?.place?.original_place_id);
+        if(originalPlace){
+          if (originalPlace.address.short_country == country){
+            user.place.local_address = originalPlace.display_address_for_own_country_home;
+            }else{
+            user.place.short_address =
+              originalPlace.display_address_for_other_country_home;
+            }
+        }else{
+          if (user.place.address.short_country == country) {
+            user.place.local_address = user.place.display_address_for_own_country_home;
+          } else {
+            user.place.short_address =
+              user.place.display_address_for_other_country_home;
+          }
+        }
+      }else{
+          if (user.place.address.short_country == country){
+            user.place.local_address = user.place.display_address_for_own_country_home;
+          }else{
+            user.place.short_address =
+              user.place.display_address_for_other_country_home;
+          }
+      }
+    }
+
+
+    //COUNT TOTAL POST UPLOADS
+    let posts = await Post.find({ user: user._id }).populate("place");
+
+    const totalPosts = posts.length;
+
+    //Unique Place
+    let helpNavigate = 0;
+    const totalPlaces = posts.map((post) => {
+      if (post.location_viewers_count != undefined) {
+        helpNavigate = helpNavigate + post.location_viewers_count;
+      }
+      if(post?.place){
+        if (post?.place?.duplicate && post?.place?.original_place_id){
+          return post.place.original_place_id
+        }else{
+          return post?.place?._id;
+        }
+      }
+    });
+
+    //COUNT HELPED NAVIGATE
+
+    const uniquePlacesVisitedIds = new Set();
+    totalPlaces.map((ele) => {
+      if(ele){
+        uniquePlacesVisitedIds.add(ele.toString());
+      }
+    })
+
+
+    // const uniquePlacesVisited = [...new Set(totalPlaces.toString())];
+    const uniquePlacesVisited = [...uniquePlacesVisitedIds];
+    const placesVisited = uniquePlacesVisited.length;
+
+
+    //Country Visited
+    let countryVisited = 0;
+    const totalCountriesSaved = posts.map((post) => {
+      return post?.place?.address?.country;
+    });
+
+    const totalCountries = totalCountriesSaved.filter((c) => {
+      return c != undefined;
+    });
+
+    const uniqueCountryVisited = [...new Set(totalCountries)];
+
+    const countryVisitedCount = uniqueCountryVisited.length;
+
+    if (countryVisitedCount > 1) {
+      countryVisited = countryVisitedCount - 1;
+    } else {
+      countryVisited = 0;
+    }
+
+    //GET ALL ACTIVE TRIP PLANS
+    const activeTrips = await TripPlan.find({})
+                        .where('user_id').equals(authUser._id)
+                        .where('status').equals('active');
+
+    return res.status(200).json({
+      success: true,
+      user,
+      totalFollowing: authUser.totalFollowing,
+      totalFollower: authUser.totalFollower,
+      totalPosts,
+      placesVisited,
+      countryVisited,
+      helpNavigate,
+      tripPlans: activeTrips
+    });
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong while viewing your profile";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+};
+
+//TODO::V10 View others profile
+exports.viewOthersProfilev10 = async (req, res) => {
+  let errors = {};
+  try {
+    const profileId = req.params.id;
+    const { authUser } = req.body;
+    const { ip } = req.headers;
+    //Validate Object ID
+    if (!ObjectId.isValid(profileId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid user",
+      });
+    }
+
+    const profileUser = await User.findById(profileId).populate("currently_in").populate("place");
+    if (!profileUser) {
+      errors.general = "User not found";
+      return res.status(404).json({
+        success: false,
+        message: errors,
+      });
+    }
+
+    if (profileUser.account_status === "deactivated") {
+      return res.status(401).json({
+        success: false,
+        message: "This account has been deactivated",
+      });
+    }
+
+    if (profileUser.terminated) {
+      return res.status(401).json({
+        success: false,
+        message: "This account has been terminated",
+      });
+    }
+
+    //FORMAT ADDRESS
+    let country = "";
+    const location = await getCountry(ip);
+    if (location != null && location.country !== undefined) {
+      country = location.country;
+    } else {
+      country = "IN";
+    }
+
+    if (profileUser.currently_in?.name != undefined) {
+      if (profileUser.currently_in.address.short_country == country) {
+        profileUser.currently_in.formattedAddress =
+          profileUser.currently_in.display_address_for_own_country;
+      } else {
+        profileUser.currently_in.formattedAddress =
+          profileUser.currently_in.display_address_for_other_country;
+      }
+    }
+
+    //FORMAT ADDRESS
+    if (profileUser.place?._id) {
+      if (profileUser.place?.duplicate && profileUser?.place?.original_place_id) {
+        const originalPlace = await Place.findById(profileUser?.place?.original_place_id);
+        if (originalPlace) {
+          if (originalPlace.address.short_country == country) {
+            profileUser.place.local_address = originalPlace?.display_name ? originalPlace?.display_name : originalPlace?.name + originalPlace.display_address_for_own_country_home;
+          } else {
+            profileUser.place.short_address =
+              originalPlace?.display_name ? originalPlace?.display_name : originalPlace?.name + originalPlace.display_address_for_other_country_home;
+          }
+        } else {
+          if (profileUser.place.address.short_country == country) {
+            profileUser.place.local_address = profileUser?.place?.display_name ? profileUser?.place?.display_name : profileUser?.place?.name + profileUser.place.display_address_for_own_country_home;
+          } else {
+            profileUser.place.short_address =
+              profileUser.place.display_address_for_other_country_home;
+          }
+        }
+      } else {
+        if (profileUser.place.address.short_country == country) {
+          profileUser.place.local_address = profileUser?.place?.display_name ? profileUser?.place?.display_name : profileUser?.place?.name + profileUser.place.display_address_for_own_country_home;
+        } else {
+          profileUser.place.short_address =
+            profileUser?.place?.display_name ? profileUser?.place?.display_name : profileUser?.place?.name + profileUser.place.display_address_for_other_country_home;
+        }
+      }
+    }
+
+    //CHECK WHEATHER FOLLOWED CURRENT USER
+    let isFollowed = false;
+    if (await profileUser.isFollowed(authUser._id)) {
+      isFollowed = true;
+    }
+
+    //TOTOAL NUMBER
+    const posts = await Post.find({ user: profileUser._id })
+      .or([{ status: "active" }, { status: "silent" }])
+      .where("deactivated")
+      .ne(true)
+      // .where('coordinate_status').ne(false)
+      .where("terminated")
+      .ne(true)
+      .populate("place");
+
+    const totalPosts = posts.length;
+    //Unique Place
+    let helpNavigate = 0;
+    const totalPlaces = posts.map((post) => {
+      if (post.location_viewers_count != undefined) {
+        helpNavigate = helpNavigate + post.location_viewers_count;
+      }
+      if (post.place.duplicate && post.place.original_place_id) {
+        return post.place.original_place_id
+      } else {
+        return post.place._id;
+      }
+    });
+
+    const uniquePlacesVisitedIds = new Set();
+    totalPlaces.map((ele) => {
+      uniquePlacesVisitedIds.add(ele.toString());
+    })
+
+
+    // const uniquePlacesVisited = [...new Set(totalPlaces.toString())];
+    const uniquePlacesVisited = [...uniquePlacesVisitedIds];
+    const placesVisited = uniquePlacesVisited.length;
+
+    //Country Visited
+    let countryVisited = 0;
+    const totalCountriesSaved = posts.map((post) => {
+      return post.place.address.country;
+    });
+
+    const totalCountries = totalCountriesSaved.filter((c) => {
+      return c != undefined;
+    });
+
+    const uniqueCountryVisited = [...new Set(totalCountries)];
+
+    const countryVisitedCount = uniqueCountryVisited.length;
+
+    if (countryVisitedCount > 1) {
+      countryVisited = countryVisitedCount - 1;
+    } else {
+      countryVisited = 0;
+    }
+
+    //GET ALL ACTIVE TRIP PLANS
+    const activeTrips = await TripPlan.find({})
+      .where('user_id').equals(profileId)
+      .where('status').equals('active');
+
+    return res.status(200).json({
+      success: true,
+      user: profileUser,
+      totalFollowing: authUser.totalFollowing,
+      totalFollower: authUser.totalFollower,
+      isFollowed,
+      totalPosts,
+      placesVisited,
+      countryVisited,
+      helpNavigate,
+      tripPlans: activeTrips
+    });
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong while viewing this user's profile";
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+};
+
 //View others profile
 exports.viewOthersProfile = async (req, res) => {
   let errors = {};
@@ -1131,25 +1453,32 @@ exports.viewOthersProfile = async (req, res) => {
 
     //FORMAT ADDRESS
     if (profileUser.place?._id) {
-      if (profileUser.place.address.short_country == country) {
-        if (profileUser.place.display_address_for_own_country_home != "") {
-          profileUser.place.local_address =
-            profileUser.place.display_address_for_own_country_home;
+      if (profileUser.place?.duplicate && profileUser?.place?.original_place_id) {
+        const originalPlace = await Place.findById(profileUser?.place?.original_place_id);
+        if (originalPlace) {
+          if (originalPlace.address.short_country == country) {
+            profileUser.place.local_address = originalPlace.display_address_for_own_country_home;
+          } else {
+            profileUser.place.short_address =
+              originalPlace.display_address_for_other_country_home;
+          }
         } else {
-          profileUser.place.local_address = profileUser.place.display_address_for_own_country_home;
+          if (profileUser.place.address.short_country == country) {
+            profileUser.place.local_address = profileUser.place.display_address_for_own_country_home;
+          } else {
+            profileUser.place.short_address =
+              profileUser.place.display_address_for_other_country_home;
+          }
         }
       } else {
-        if (profileUser.place.display_address_for_other_country_home != "") {
-          profileUser.place.short_address =
-            profileUser.place.display_address_for_other_country_home;
+        if (profileUser.place.address.short_country == country) {
+          profileUser.place.local_address = profileUser.place.display_address_for_own_country_home;
         } else {
           profileUser.place.short_address =
             profileUser.place.display_address_for_other_country_home;
         }
       }
     }
-
-    // console.log(profileUser);
 
     //CHECK WHEATHER FOLLOWED CURRENT USER
     let isFollowed = false;
