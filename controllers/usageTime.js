@@ -83,7 +83,7 @@ exports.setUsageTimeV9 = async (req, res) => {
       let userSession = await UsageTime.findOne({
         $and: [
           { user: authUser._id },
-          { appVersion: appVersion },
+          // { appVersion: appVersion },
           {
             createdAt: {
               $gte: startDateStart,

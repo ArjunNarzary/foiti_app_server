@@ -103,7 +103,7 @@ const placeSchema = new mongoose.Schema(
     viewers: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "PlaceView",
+        ref: "PlaceViewer",
       },
     ],
     viewers_count: Number,
