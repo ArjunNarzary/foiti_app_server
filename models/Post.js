@@ -110,7 +110,7 @@ const postSchema = new mongoose.Schema(
     viewers_count: Number,
     status: {
       type: String,
-      enum: ["silent", "active", "deactivated", "blocked"],
+      enum: ["silent", "active", "deactivated", "blocked", "removed"],
     },
     coordinate_status: {
       type: Boolean,

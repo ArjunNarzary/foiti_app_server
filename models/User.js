@@ -88,10 +88,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     lowercase: true,
   },
-  // about_me:{
-  //   type: String,
-  //   maxlength: [1000, "About me should be under 1000 characters"],
-  // },
   meetup_reason: {
     type: String,
     maxlength: [1000, "Meetup reason should be under 1000 characters"],
