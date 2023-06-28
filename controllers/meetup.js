@@ -926,7 +926,7 @@ exports.getLocalDetails = async (req, res) => {
 
     if (!user) {
       errors.genral = "User not found"
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         error: errors,
       })
@@ -964,7 +964,8 @@ exports.getLocalDetails = async (req, res) => {
   } catch (error) {
     console.log(error)
     errors.general = "Something went wrong while fecthing traveller details"
-    res.status(500).json({
+    //TODO::CHANGE BELOW STATUS TO 500 LATER
+    res.status(400).json({
       success: false,
       message: errors,
     })
