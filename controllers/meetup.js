@@ -964,8 +964,7 @@ exports.getLocalDetails = async (req, res) => {
   } catch (error) {
     console.log(error)
     errors.general = "Something went wrong while fecthing traveller details"
-    //TODO::CHANGE BELOW STATUS TO 500 LATER
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: errors,
     })
