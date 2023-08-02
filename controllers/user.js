@@ -65,13 +65,13 @@ function generatePassword() {
 
 function generateUniqueUsernameByName(name) {
   const rString = randomString(5, "0123456789abcdefghijklmnopqrstuvwxyz");
-  const generatedName = name+rString;
+  const generatedName = name + rString;
   return User.findOne({ username: generatedName })
     .then(function (account) {
       if (account) {
         return generateUniqueUsernameByName(name); // <== return statement here
       }
-      return generatedName; 
+      return generatedName;
     })
     .catch(function (err) {
       console.error(err);
@@ -222,12 +222,12 @@ exports.loginUser = async (req, res) => {
 };
 
 //Goole Login
-exports.googleLogin = async (req, res) =>{
-  let  errors = {};
-  try{
+exports.googleLogin = async (req, res) => {
+  let errors = {};
+  try {
     const { access_token } = req.body;
 
-    if(!access_token){
+    if (!access_token) {
       errors.general = "Something went wrong while logging in";
       return res.status(500).json({
         success: false,
@@ -244,7 +244,7 @@ exports.googleLogin = async (req, res) =>{
       }
     });
 
-    if(!userData.data){
+    if (!userData.data) {
       errors.general = "Something went wrong while logging in. Please try again";
       return res.status(500).json({
         success: false,
@@ -253,7 +253,7 @@ exports.googleLogin = async (req, res) =>{
     }
 
     const nativeUserData = userData.data;
-    if (!nativeUserData.email){
+    if (!nativeUserData.email) {
       errors.general = "Something went wrong while logging in. Please try again";
       return res.status(500).json({
         success: false,
@@ -263,7 +263,7 @@ exports.googleLogin = async (req, res) =>{
 
     //Search email in USER model
     let user = await User.findOne({ email: nativeUserData.email });
-    if(user){
+    if (user) {
       if (user.terminated) {
         errors.general = "Your account has been terminated.";
         return res.status(403).json({
@@ -278,7 +278,7 @@ exports.googleLogin = async (req, res) =>{
         await user.save();
         await Post.updateMany({ user: user._id }, { deactivated: false });
       }
-    }else{
+    } else {
       //Create new User
       let rString = randomString(10, "0123456789abcdefghijklmnopqrstuvwxyz");
       const username = await generateUniqueUsername(rString);
@@ -310,7 +310,7 @@ exports.googleLogin = async (req, res) =>{
       token,
     });
 
-  }catch(error){
+  } catch (error) {
     console.log(error);
     errors.general = "Something went wrong while logging in";
     return res.status(500).json({
@@ -321,12 +321,12 @@ exports.googleLogin = async (req, res) =>{
 }
 
 //Facebook Login
-exports.facebookLogin = async (req, res) =>{
-  let  errors = {};
-  try{
+exports.facebookLogin = async (req, res) => {
+  let errors = {};
+  try {
     const { access_token } = req.body;
 
-    if(!access_token){
+    if (!access_token) {
       errors.general = "Something went wrong while logging in";
       return res.status(500).json({
         success: false,
@@ -342,7 +342,7 @@ exports.facebookLogin = async (req, res) =>{
       }
     });
 
-    if(!userData.data){
+    if (!userData.data) {
       errors.general = "Something went wrong while logging in. Please try again";
       return res.status(500).json({
         success: false,
@@ -351,7 +351,7 @@ exports.facebookLogin = async (req, res) =>{
     }
 
     const nativeUserData = userData.data;
-    if (!nativeUserData.email){
+    if (!nativeUserData.email) {
       errors.general = "Something went wrong while logging in. Please try again";
       return res.status(500).json({
         success: false,
@@ -361,7 +361,7 @@ exports.facebookLogin = async (req, res) =>{
 
     //Search email in USER model
     let user = await User.findOne({ email: nativeUserData.email });
-    if(user){
+    if (user) {
       if (user.terminated) {
         errors.general = "Your account has been terminated.";
         return res.status(403).json({
@@ -376,7 +376,7 @@ exports.facebookLogin = async (req, res) =>{
         await user.save();
         await Post.updateMany({ user: user._id }, { deactivated: false });
       }
-    }else{
+    } else {
       //Create new User
       let rString = randomString(10, "0123456789abcdefghijklmnopqrstuvwxyz");
       const username = await generateUniqueUsername(rString);
@@ -407,7 +407,7 @@ exports.facebookLogin = async (req, res) =>{
       token,
     });
 
-  }catch(error){
+  } catch (error) {
     console.log(error);
     errors.general = "Something went wrong while logging in";
     return res.status(500).json({
@@ -467,8 +467,8 @@ exports.editProfile = async (req, res) => {
     }
 
     const { name, bio, website, address, currentAddress, authUser, place,
-            gender, dob, meetup_reason, interests, education, occupation,
-            languages, movies_books_music, } = req.body;
+      gender, dob, meetup_reason, interests, education, occupation,
+      languages, movies_books_music, } = req.body;
 
     const user = await User.findById(authUser._id).populate('place');
 
@@ -480,13 +480,13 @@ exports.editProfile = async (req, res) => {
           .replace(/(\r\n|\r|\n){2}/g, "$1")
           .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
           .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    }else{
+    } else {
       user.bio = "";
     }
 
     if (website != "" && website != undefined) {
       user.website = website.toLowerCase().trim() || "";
-    }else{
+    } else {
       user.website = ""
     }
 
@@ -508,48 +508,48 @@ exports.editProfile = async (req, res) => {
           .replace(/(\r\n|\r|\n){2}/g, "$1")
           .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
           .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    }else{
+    } else {
       user.meetup_reason = "";
     }
-    
+
     const genderEnum = ['male', 'female', 'other'];
-    if(gender && genderEnum.includes(gender)){
+    if (gender && genderEnum.includes(gender)) {
       user.gender = gender;
-    }else{
+    } else {
       user.gender = undefined;
     }
 
-    if (dob != "" && dob != undefined ) {
+    if (dob != "" && dob != undefined) {
       user.dob = new Date(dob);
-    } else{
+    } else {
       user.dob = undefined;
     }
 
     if (interests != "" && interests != undefined) {
       user.interests = interests
-                      .trim()
-                      .replace(/(\r\n|\r|\n){2}/g, "$1")
-                      .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
-                      .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    }else{
+        .trim()
+        .replace(/(\r\n|\r|\n){2}/g, "$1")
+        .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
+        .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
+    } else {
       user.interests = "";
     }
 
     if (education != "" && education != undefined) {
       user.education = education.trim() || "";
-    }else{
+    } else {
       user.education = "";
     }
 
     if (occupation != "" && occupation != undefined) {
       user.occupation = occupation.trim() || "";
-    }else{
+    } else {
       user.occupation = "";
     }
 
-    if(languages.length > 0){
+    if (languages.length > 0) {
       user.languages = languages;
-    }else{
+    } else {
       user.languages = [];
     }
 
@@ -559,7 +559,7 @@ exports.editProfile = async (req, res) => {
         .replace(/(\r\n|\r|\n){2}/g, "$1")
         .replace(/(\r\n|\r|\n){3,}/g, "$1\n")
         .replace(/(\r\n|\r|\n){2}/g, "$1") || "";
-    }else{
+    } else {
       user.movies_books_music = "";
     }
 
@@ -571,26 +571,26 @@ exports.editProfile = async (req, res) => {
       user.current_location.createDate = Date.now();
     }
 
-    if(place && place.place_id != ""){
+    if (place && place.place_id != "") {
       //Remove previous place if exist and not same
       let differentPlace = true;
-      if (user.place){
-        if (user.place.google_place_id.toString() !== place.place_id.toString()){
+      if (user.place) {
+        if (user.place.google_place_id.toString() !== place.place_id.toString()) {
           const prevPlace = await Place.findById(user.place._id);
-          if(prevPlace){
-            if(prevPlace.users.includes(user._id)){
-              if(prevPlace.users.length === 1){
+          if (prevPlace) {
+            if (prevPlace.users.includes(user._id)) {
+              if (prevPlace.users.length === 1) {
                 prevPlace.users = [];
-              }else{
+              } else {
                 const index = prevPlace.users.indexOf(user._id);
                 prevPlace.users.splice(index, 1);
               }
               await prevPlace.save();
             }
           }
-  
+
           //DELETE PLACE
-          if (prevPlace.posts.length === 0 && prevPlace.users.length === 0 && !prevPlace.reviewed_status){
+          if (prevPlace.posts.length === 0 && prevPlace.users.length === 0 && !prevPlace.reviewed_status) {
             //DELETE ALL REVIEWS ADDED BY USERS AND CONTRIBUTIONS
             const reviews = await Review.find({ place_id: place._id });
             if (reviews.length > 0) {
@@ -609,28 +609,28 @@ exports.editProfile = async (req, res) => {
                   const index = userContribution.ratings.indexOf(reviewData._id);
                   userContribution.ratings.splice(index, 1);
                 }
-  
+
                 await userContribution.save();
                 const contributionOwner = await User.findById(userContribution.userId);
                 if (contributionOwner) {
                   contributionOwner.total_contribution = userContribution.calculateTotalContribution();
                   await contributionOwner.save();
                 }
-  
+
               })
             }
-  
+
             //GET ALL REVIEWS OF THE PLACE AND REMOVE
             await Review.deleteMany({ place_id: place._id });
             await prevPlace.remove();
           }
-  
-        }else{
+
+        } else {
           differentPlace = false;
         }
       }
 
-      if(differentPlace){
+      if (differentPlace) {
         let placeData = await Place.findOne({ google_place_id: place.place_id });
         if (!placeData) {
           //Format timming if available
@@ -691,8 +691,8 @@ exports.editProfile = async (req, res) => {
     await user.save();
 
     //SET MEETUP STATUS TO TRUE
-    if(user.place._id && user.gender && user.dob){
-      await TripPlan.updateMany({$and: [{ "user_id": authUser._id}, {"meetup_status": false }]}, { "$set": { "meetup_status": true } });
+    if (user.place._id && user.gender && user.dob) {
+      await TripPlan.updateMany({ $and: [{ "user_id": authUser._id }, { "meetup_status": false }] }, { "$set": { "meetup_status": true } });
     }
 
     return res.status(200).json({
@@ -728,7 +728,7 @@ exports.addCurrentLocation = async (req, res) => {
       currentAddress.location = {
         coordinates: [parseFloat(coordinates.lng), parseFloat(coordinates.lat)]
       },
-      await currentAddress.save();
+        await currentAddress.save();
       user.currently_in = currentAddress._id;
     }
 
@@ -972,17 +972,17 @@ exports.viewOwnProfilev10 = async (req, res) => {
 
 
 
-    if (user.place?._id){
-      if (user.place?.duplicate && user?.place?.original_place_id){
+    if (user.place?._id) {
+      if (user.place?.duplicate && user?.place?.original_place_id) {
         const originalPlace = await Place.findById(user?.place?.original_place_id);
-        if(originalPlace){
-          if (originalPlace.address.short_country == country){
+        if (originalPlace) {
+          if (originalPlace.address.short_country == country) {
             user.place.local_address = originalPlace?.display_name ? originalPlace?.display_name : originalPlace?.name + originalPlace.display_address_for_own_country_home;
-            }else{
+          } else {
             user.place.short_address =
               originalPlace?.display_name ? originalPlace?.display_name : originalPlace?.name + originalPlace.display_address_for_other_country_home;
-            }
-        }else{
+          }
+        } else {
           if (user.place.address.short_country == country) {
             user.place.local_address = user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_own_country_home;
           } else {
@@ -990,13 +990,13 @@ exports.viewOwnProfilev10 = async (req, res) => {
               user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_other_country_home;
           }
         }
-      }else{
-          if (user.place.address.short_country == country){
-            user.place.local_address = user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_own_country_home;
-          }else{
-            user.place.short_address =
-              user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_other_country_home;
-          }
+      } else {
+        if (user.place.address.short_country == country) {
+          user.place.local_address = user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_own_country_home;
+        } else {
+          user.place.short_address =
+            user?.place?.display_name ? user?.place?.display_name : user?.place?.name + user.place.display_address_for_other_country_home;
+        }
       }
     }
 
@@ -1012,10 +1012,10 @@ exports.viewOwnProfilev10 = async (req, res) => {
       if (post.location_viewers_count != undefined) {
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
-      if(post?.place){
-        if (post?.place?.duplicate && post?.place?.original_place_id){
+      if (post?.place) {
+        if (post?.place?.duplicate && post?.place?.original_place_id) {
           return post.place.original_place_id
-        }else{
+        } else {
           return post?.place?._id;
         }
       }
@@ -1025,7 +1025,7 @@ exports.viewOwnProfilev10 = async (req, res) => {
 
     const uniquePlacesVisitedIds = new Set();
     totalPlaces.map((ele) => {
-      if(ele){
+      if (ele) {
         uniquePlacesVisitedIds.add(ele.toString());
       }
     })
@@ -1058,8 +1058,8 @@ exports.viewOwnProfilev10 = async (req, res) => {
 
     //GET ALL ACTIVE TRIP PLANS
     const activeTrips = await TripPlan.find({})
-                        .where('user_id').equals(authUser._id)
-                        .where('status').equals('active');
+      .where('user_id').equals(authUser._id)
+      .where('status').equals('active');
 
     return res.status(200).json({
       success: true,
@@ -1111,17 +1111,17 @@ exports.viewOwnProfile = async (req, res) => {
 
 
 
-    if (user.place?._id){
-      if (user.place?.duplicate && user?.place?.original_place_id){
+    if (user.place?._id) {
+      if (user.place?.duplicate && user?.place?.original_place_id) {
         const originalPlace = await Place.findById(user?.place?.original_place_id);
-        if(originalPlace){
-          if (originalPlace.address.short_country == country){
+        if (originalPlace) {
+          if (originalPlace.address.short_country == country) {
             user.place.local_address = originalPlace.display_address_for_own_country_home;
-            }else{
+          } else {
             user.place.short_address =
               originalPlace.display_address_for_other_country_home;
-            }
-        }else{
+          }
+        } else {
           if (user.place.address.short_country == country) {
             user.place.local_address = user.place.display_address_for_own_country_home;
           } else {
@@ -1129,13 +1129,13 @@ exports.viewOwnProfile = async (req, res) => {
               user.place.display_address_for_other_country_home;
           }
         }
-      }else{
-          if (user.place.address.short_country == country){
-            user.place.local_address = user.place.display_address_for_own_country_home;
-          }else{
-            user.place.short_address =
-              user.place.display_address_for_other_country_home;
-          }
+      } else {
+        if (user.place.address.short_country == country) {
+          user.place.local_address = user.place.display_address_for_own_country_home;
+        } else {
+          user.place.short_address =
+            user.place.display_address_for_other_country_home;
+        }
       }
     }
 
@@ -1151,10 +1151,10 @@ exports.viewOwnProfile = async (req, res) => {
       if (post.location_viewers_count != undefined) {
         helpNavigate = helpNavigate + post.location_viewers_count;
       }
-      if(post?.place){
-        if (post?.place?.duplicate && post?.place?.original_place_id){
+      if (post?.place) {
+        if (post?.place?.duplicate && post?.place?.original_place_id) {
           return post.place.original_place_id
-        }else{
+        } else {
           return post?.place?._id;
         }
       }
@@ -1164,7 +1164,7 @@ exports.viewOwnProfile = async (req, res) => {
 
     const uniquePlacesVisitedIds = new Set();
     totalPlaces.map((ele) => {
-      if(ele){
+      if (ele) {
         uniquePlacesVisitedIds.add(ele.toString());
       }
     })
@@ -1197,8 +1197,8 @@ exports.viewOwnProfile = async (req, res) => {
 
     //GET ALL ACTIVE TRIP PLANS
     const activeTrips = await TripPlan.find({})
-                        .where('user_id').equals(authUser._id)
-                        .where('status').equals('active');
+      .where('user_id').equals(authUser._id)
+      .where('status').equals('active');
 
     return res.status(200).json({
       success: true,
@@ -1812,7 +1812,7 @@ exports.uploadProfileImage = async (req, res) => {
 
     //If not empty delete file from S3
     if (user.profileImage.large.private_id != null) {
-      if (user.profileImage.extraLarge.private_id != null){
+      if (user.profileImage.extraLarge.private_id != null) {
         await deleteFile(user.profileImage.extraLarge.private_id);
       }
       await deleteFile(user.profileImage.large.private_id);
@@ -2363,19 +2363,32 @@ exports.setExpoToken = async (req, res) => {
 exports.removeExpoToken = async (req, res) => {
   let errors = {};
   try {
-    let { authUser, expoToken } = req.body;
-    if (expoToken != "" || expoToken != undefined) {
-      const user = await User.findById(authUser._id).select("+expoToken");
-      let hasToken = false;
-      if (user.expoToken != undefined && user.expoToken != "") {
-        hasToken = true;
-      }
-
-      if(hasToken && user.expoToken == expoToken){
-        user.expoToken = undefined;
-        await user.save();
-      }
+    // let { authUser, expoToken } = req.body;
+    let { authUser } = req.body;
+    // if (expoToken != "" || expoToken != undefined) {
+    const user = await User.findById(authUser._id).select("+expoToken");
+    let hasToken = false;
+    if (user.expoToken != undefined && user.expoToken != "") {
+      hasToken = true;
     }
+
+    // if(hasToken && user.expoToken == expoToken){
+    if (hasToken) {
+      user.expoToken = undefined;
+      await user.save();
+
+      //Turnoff all notifications
+      // const  notification = await Notification.findOne({ user: authUser._id });
+      // if(notification){
+      //   notification.new_post = false;
+      //   notification.post_likes = false;
+      //   notification.new_followers = false;
+      //   notification.chat_message = false;
+      //   notification.email_notitications = false;
+      //   await notification.save();
+      // }
+    }
+    // }
     return res.status(200).json({
       success: true,
     });
@@ -2419,6 +2432,13 @@ exports.setNotificationSettings = async (req, res) => {
   let errors = {};
   try {
     let { authUser, notification, status } = req.body;
+    // if (expoToken && status){
+    //   const user = await User.findById(authUser._id).select("+expoToken");
+    //   if(user){
+    //     user.expoToken = expoToken;
+    //     await user.save();
+    //   }
+    // }
     // console.log(notification, status);
     let notificationTable = await Notification.findOne({ user: authUser._id });
     if (!notificationTable) {
@@ -2655,7 +2675,7 @@ exports.blockedList = async (req, res) => {
 
     const user = await User.findById(authUser._id).populate("blocked_users", "_id name profileImage total_contribution foiti_ambassador");
 
-    if(!user){
+    if (!user) {
       errors.general = "User not found";
       return res.status(404).json({
         success: false,
@@ -2743,28 +2763,149 @@ exports.reportUser = async (req, res) => {
 };
 
 exports.getHomeTown = async (req, res) => {
-  const  errors = {};
-  try{
-      const { authUser } = req.body;
-      let  address = "";
-      if(authUser.place){
-        const place = await Place.findById(authUser.place);
-        if(place){
-          const add = place.display_address_for_own_country_home;
-          if(add){
-            address = `${place.name}${add}`;
-          }else{
-            address = place.name;
-          }
+  const errors = {};
+  try {
+    const { authUser } = req.body;
+    let address = "";
+    if (authUser.place) {
+      const place = await Place.findById(authUser.place);
+      if (place) {
+        const add = place.display_address_for_own_country_home;
+        if (add) {
+          address = `${place.name}${add}`;
+        } else {
+          address = place.name;
         }
       }
+    }
 
-      res.status(200).json({
-        success: true,
-        address
-      })
+    res.status(200).json({
+      success: true,
+      address
+    })
 
-  }catch(error){
+  } catch (error) {
+    errors.general = "Something went wrong. Please try again.";
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: errors,
+    });
+  }
+}
+
+//Get top contributors
+exports.getTopContributors = async (req, res) => {
+  const errors = {}
+  try {
+    const { type, value, destination } = req.query
+    const { authUser } = req.body;
+    let users = [];
+    
+    //Id destination
+    if (destination === "true"){
+      users = await User.aggregate([
+        {
+          $match: {
+            $and: [
+              { top_contributor: { $eq: true } },
+              { _id: { $ne: authUser._id } },
+              { place: { $exists: true, $ne: null } }
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: 'places',
+            localField: "place",
+            foreignField: "_id",
+            as: "place"
+          }
+        },
+        {
+          $unwind: "$place"
+        },
+        {
+          $match: {
+            $or: [
+              { "place.display_address.admin_area_2": value }, 
+              { "place.address.administrative_area_level_2": value }
+            ]
+          }
+        }
+      ]).limit(7);
+    }
+    //If state
+    else if(type && type.toLowerCase() === "state"){
+      users = await User.aggregate([
+        {
+          $match : {
+            $and: [
+                {top_contributor: {$eq: true}}, 
+                {_id: {$ne: authUser._id}}, 
+                {place: { $exists: true, $ne: null }}
+              ]
+          }
+        },
+        {
+          $lookup : {
+            from: 'places',
+            localField: "place",
+            foreignField: "_id",
+            as: "place"
+          }
+        },
+        {
+          $unwind: "$place"
+        },
+        {
+          $match: {
+            $or: [
+              { "place.display_address.admin_area_1": value },
+              { "place.address.administrative_area_level_1": value }
+            ]
+          }
+        }
+      ]).limit(7);
+    } else if (type && type.toLowerCase() === "country"){
+      users = await User.aggregate([
+        {
+          $match: {
+            $and: [
+              { top_contributor: { $eq: true } },
+              { _id: { $ne: authUser._id } },
+              { place: { $exists: true, $ne: null } }
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: 'places',
+            localField: "place",
+            foreignField: "_id",
+            as: "place"
+          }
+        },
+        {
+          $unwind: "$place"
+        },
+        {
+          $match: {
+            $or: [
+              { "place.display_address.country": value },
+              { "place.address.country": value }
+            ]
+          }
+        }
+      ]).limit(7);
+    }
+
+
+    return res.status(200).json({
+      success: true,
+      users
+    })
+  } catch (error) {
     errors.general = "Something went wrong. Please try again.";
     console.log(error);
     return res.status(500).json({

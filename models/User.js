@@ -151,6 +151,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  top_contributor: {
+    type: Boolean,
+    default: false,
+  },
   expoToken: {
     type: String,
     select: false,

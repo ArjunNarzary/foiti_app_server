@@ -40,6 +40,7 @@ const {
   getHomeTown,
   viewOthersProfilev10,
   viewOwnProfilev10,
+  getTopContributors,
 } = require("../controllers/user");
 const { validateUser } = require("../middlewares/validations/userValidator");
 
@@ -132,6 +133,7 @@ router.route("/block").post(isAuthenticated, blockUser)
                       .get(isAuthenticated, blockedList)
                       .put(isAuthenticated, unBlockUser);
 router.route("/report").post(isAuthenticated, reportUser);
+router.route("/top-contributors").get(isAuthenticated, getTopContributors);
 
 router
   .route("/v10/:id").get(isAuthenticated, viewOthersProfilev10);

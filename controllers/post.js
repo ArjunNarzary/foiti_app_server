@@ -1373,7 +1373,6 @@ exports.addPostLocationClickedDetails = async (req, res) => {
   try {
     const postId = req.params.id;
     const { authUser } = req.body;
-    console.log(postId)
 
     const post = await Post.findById(postId);
     if (!post) {
@@ -1596,6 +1595,7 @@ exports.viewPostLikedUsers = async (req, res) => {
 exports.exploreNearby = async (req, res) => {
   let errors = {};
   try {
+
     let { skip, currentCoordinate, ip, sortBy, distance } = req.body;
     let limit = 20;
 
@@ -1737,6 +1737,106 @@ exports.exploreNearby = async (req, res) => {
           } else {
             post.placeData.short_address = post.placeData.display_address_for_other_country
           }
+        }
+      });
+    }
+
+
+    skip = skip + posts.length;
+
+    let noMorePost = false;
+    if (posts.length < limit) {
+      noMorePost = true;
+    }
+
+    res.status(200).json({
+      posts,
+      skip,
+      noMorePost
+    });
+
+  } catch (error) {
+    console.log(error);
+    errors.general = "Something went wrong, please try again.";
+    res.status(500).json({
+      success: false,
+      message: errors
+    })
+  }
+}
+
+//Explore nearby for home
+exports.exploreNearbyForHome = async (req, res) => {
+  let errors = {};
+  try {
+
+    let { skip, currentCoordinate, ip, sortBy, distance } = req.body;
+    let limit = 7;
+
+
+    const { lat, lng } = currentCoordinate;
+    const maxDistanceInMeter = Number(distance) * 1000;
+    let posts = [];
+
+    posts = await Post.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: [lng, lat],
+          },
+          query: { "status": "active" },
+          key: "content.location",
+          "maxDistance": maxDistanceInMeter,
+          "spherical": true,
+          "distanceField": "distance",
+          "distanceMultiplier": 0.001
+        }
+      },
+      {
+        $lookup:
+        {
+          from: "places",
+          localField: "place",
+          foreignField: "_id",
+          as: "placeData",
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          content: 1,
+          name: 1,
+          like: 1,
+          like_count: 1,
+          'distance': 1,
+          'place': 1,
+          'placeData.name': 1,
+          'placeData.display_name': 1,
+          'placeData.address': 1,
+          'placeData.display_address': 1,
+          'placeData.types': 1,
+          'placeData.google_types': 1,
+          'placeData.local_address': 1,
+          'placeData.short_address': 1,
+          'placeData.display_address_for_own_country': 1,
+          'placeData.display_address_for_other_country': 1,
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
+
+    posts = posts.map(doc => {
+      return { ...doc, placeData: new Place(doc.placeData[0]) }
+    });
+
+    if (posts.length > 0) {
+
+      posts.forEach((post) => {
+        if (post.placeData.display_name) {
+          post.placeData.name = post.placeData.display_name;
         }
       });
     }
