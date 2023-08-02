@@ -22,6 +22,7 @@ const {
   addCoordinates,
   exploreMapPostDetails,
   savePostNew,
+  exploreNearbyForHome,
 } = require("../controllers/post");
 const { isAuthenticated } = require("../middlewares/auth");
 const router = express.Router();
@@ -62,6 +63,7 @@ router.route("/likedUsers/:post_id").post(isAuthenticated, viewPostLikedUsers);
 
 //NEARBY POST
 router.route("/explore-nearby").post(isAuthenticated, exploreNearby);
+router.route("/explore-nearby-home").post(isAuthenticated, exploreNearbyForHome);
 router.route("/map-posts").post(isAuthenticated, exploreMapPost);
 router.route("/map-post-data").post(isAuthenticated, exploreMapPostData);
 router.route("/map-post-details").post(isAuthenticated, exploreMapPostDetails)

@@ -2794,15 +2794,112 @@ exports.getHomeTown = async (req, res) => {
   }
 }
 
+//Get top contributors
 exports.getTopContributors = async (req, res) => {
   const errors = {}
   try {
-    const users = await User.find({ place: { $exists: true, $ne: null } })
-      .select("_id name profileImage place total_contribution foiti_ambassador")
-      .populate("place", "name address display_address")
-      .limit(5);
+    const { type, value, destination } = req.query
+    const { authUser } = req.body;
+    let users = [];
+    
+    //Id destination
+    if (destination === "true"){
+      users = await User.aggregate([
+        {
+          $match: {
+            $and: [
+              { top_contributor: { $eq: true } },
+              { _id: { $ne: authUser._id } },
+              { place: { $exists: true, $ne: null } }
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: 'places',
+            localField: "place",
+            foreignField: "_id",
+            as: "place"
+          }
+        },
+        {
+          $unwind: "$place"
+        },
+        {
+          $match: {
+            $or: [
+              { "place.display_address.admin_area_2": value }, 
+              { "place.address.administrative_area_level_2": value }
+            ]
+          }
+        }
+      ]).limit(7);
+    }
+    //If state
+    else if(type && type.toLowerCase() === "state"){
+      users = await User.aggregate([
+        {
+          $match : {
+            $and: [
+                {top_contributor: {$eq: true}}, 
+                {_id: {$ne: authUser._id}}, 
+                {place: { $exists: true, $ne: null }}
+              ]
+          }
+        },
+        {
+          $lookup : {
+            from: 'places',
+            localField: "place",
+            foreignField: "_id",
+            as: "place"
+          }
+        },
+        {
+          $unwind: "$place"
+        },
+        {
+          $match: {
+            $or: [
+              { "place.display_address.admin_area_1": value },
+              { "place.address.administrative_area_level_1": value }
+            ]
+          }
+        }
+      ]).limit(7);
+    } else if (type && type.toLowerCase() === "country"){
+      users = await User.aggregate([
+        {
+          $match: {
+            $and: [
+              { top_contributor: { $eq: true } },
+              { _id: { $ne: authUser._id } },
+              { place: { $exists: true, $ne: null } }
+            ]
+          }
+        },
+        {
+          $lookup: {
+            from: 'places',
+            localField: "place",
+            foreignField: "_id",
+            as: "place"
+          }
+        },
+        {
+          $unwind: "$place"
+        },
+        {
+          $match: {
+            $or: [
+              { "place.display_address.country": value },
+              { "place.address.country": value }
+            ]
+          }
+        }
+      ]).limit(7);
+    }
 
-    console.log(users);
 
     return res.status(200).json({
       success: true,
