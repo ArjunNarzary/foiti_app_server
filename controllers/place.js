@@ -611,7 +611,9 @@ exports.placesVisited = async (req, res) => {
       if(p.original_place && p.original_place._id){
         distPost.add(p.original_place._id.toString());
       }else{
-        distPost.add(p.place._id.toString());
+        if (p?.place?._id){
+          distPost.add(p.place._id.toString());
+        }
       }
     })
 
