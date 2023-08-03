@@ -120,3 +120,29 @@ exports.setUsageTimeV9 = async (req, res) => {
         })
     }
 }
+
+exports.getUserDoc = async (req, res) => {
+  try{
+    const { authUser } = req.body
+    const totalDocs = await UsageTime.find({ user: authUser?._id }).countDocuments();
+    let showAlert = false;
+    if(totalDocs){
+      if (totalDocs % 3 === 0){
+        showAlert = true
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      totalDocs,
+      showAlert
+    })
+
+  }catch(error){
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong!"
+    })
+  }
+}
