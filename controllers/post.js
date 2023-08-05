@@ -52,8 +52,8 @@ exports.createPost = async (req, res) => {
     const details = JSON.parse(req.body.details);
 
     //Validate CAPTION LENGTH
-    if (req.body.caption.length > 2000) {
-      errors.caption = "Please write caption within 2000 characeters";
+    if (req.body.caption.length > 5000) {
+      errors.caption = "Please write caption within 5000 characeters";
       await unlinkFile(req.file.path);
       return res.status(400).json({
         success: false,
@@ -347,8 +347,8 @@ exports.editPost = async (req, res) => {
     const postId = req.params.id;
 
     //Validate CAPTION LENGTH
-    if (caption.length > 2000) {
-      errors.caption = "Please write caption within 2000 characeters";
+    if (caption.length > 5000) {
+      errors.caption = "Please write caption within 5000 characeters";
       res.status(400).json({
         success: false,
         message: errors,
@@ -1771,7 +1771,7 @@ exports.exploreNearbyForHome = async (req, res) => {
   try {
 
     let { skip, currentCoordinate, ip, sortBy, distance } = req.body;
-    let limit = 7;
+    let limit = 100;
 
 
     const { lat, lng } = currentCoordinate;
@@ -1826,6 +1826,10 @@ exports.exploreNearbyForHome = async (req, res) => {
       { $skip: skip },
       { $limit: limit }
     ]);
+
+    if(posts.length > 2){
+      posts = shuffleArraytoNew(posts, 7);
+    }
 
 
     posts = posts.map(doc => {
