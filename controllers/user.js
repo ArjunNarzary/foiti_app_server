@@ -2833,7 +2833,7 @@ exports.getTopContributors = async (req, res) => {
             ]
           }
         }
-      ]).limit(7);
+      ]).limit(100);
     }
     //If state
     else if(type && type.toLowerCase() === "state"){
@@ -2866,7 +2866,7 @@ exports.getTopContributors = async (req, res) => {
             ]
           }
         }
-      ]).limit(7);
+      ]).limit(100);
     } else if (type && type.toLowerCase() === "country"){
       users = await User.aggregate([
         {
@@ -2897,8 +2897,10 @@ exports.getTopContributors = async (req, res) => {
             ]
           }
         }
-      ]).limit(7);
+      ]).limit(100);
     }
+
+    users = shuffleArray(users).splice(0, 7);
 
 
     return res.status(200).json({

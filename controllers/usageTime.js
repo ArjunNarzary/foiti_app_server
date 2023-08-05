@@ -21,10 +21,6 @@ exports.setUsageTime = async (req, res) => {
       timeDifference =
         Math.abs(secondDate.getTime() - firstDate.getTime()) / 1000 //IN second
 
-    // console.log("First == ", firstDate, "Second == ", secondDate);
-
-    // console.log("Time Difference", timeDifference);
-
     let userSession = await UsageTime.findOne({
       $and: [
         { user: authUser._id },
@@ -128,6 +124,7 @@ exports.getUserDoc = async (req, res) => {
     let showAlert = false;
     if(totalDocs){
       if (totalDocs % 3 === 0){
+      // if (totalDocs === 1){
         showAlert = true
       }
     }
