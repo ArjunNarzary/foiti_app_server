@@ -1827,17 +1827,18 @@ exports.exploreNearbyForHome = async (req, res) => {
       { $limit: limit }
     ]);
 
+    
     if(posts.length > 2){
       posts = shuffleArraytoNew(posts, 7);
     }
-
-
+    
+    
     posts = posts.map(doc => {
       return { ...doc, placeData: new Place(doc.placeData[0]) }
     });
-
+    
     if (posts.length > 0) {
-
+      
       posts.forEach((post) => {
         if (post.placeData.display_name) {
           post.placeData.name = post.placeData.display_name;
@@ -1845,18 +1846,8 @@ exports.exploreNearbyForHome = async (req, res) => {
       });
     }
 
-
-    skip = skip + posts.length;
-
-    let noMorePost = false;
-    if (posts.length < limit) {
-      noMorePost = true;
-    }
-
     res.status(200).json({
       posts,
-      skip,
-      noMorePost
     });
 
   } catch (error) {
