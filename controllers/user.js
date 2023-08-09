@@ -3080,7 +3080,7 @@ exports.getTopContributors = async (req, res) => {
     }
 
     if(users.length > 2){
-      users = shuffleArray(users).splice(0, 7);
+      users = shuffleArray(users).splice(0, 15);
     }
 
 
