@@ -25,8 +25,8 @@ exports.createHelpSupport = async(req, res) => {
         //SEND EMAIL
         try {
             await sendSupportEmail({
-                from: "Foiti - Help and Support <inapp-helpandsupport@foiti.com>",
-                email: "support@foiti.com",
+                from: "Foiti - Help and Support <inapp-helpandsupport@gmail.com>",
+                email: "support@gmail.com",
                 subject: "In-App Help and Support",
                 user: authUser.email,
                 html,

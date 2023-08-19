@@ -2091,7 +2091,7 @@ exports.resetPassword = async (req, res) => {
     //SEND EMAIL
     try {
       await sendEmail({
-        from: "Foiti - Reset Password <authentication@foiti.com>",
+        from: "Foiti - Reset Password <authentication@gmail.com>",
         email: user.email,
         subject: "Reset Password",
         message,
